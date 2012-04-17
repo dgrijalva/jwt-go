@@ -9,6 +9,8 @@ var signingMethods = map[string]func() SigningMethod{}
 
 // Signing method
 type SigningMethod interface {
+	Verify(signingString, signature string, key []byte)error
+	Sign(token, key []byte)error
 }
 
 func RegisterSigningMethod(alg string, f func() SigningMethod) {

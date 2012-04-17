@@ -17,7 +17,7 @@ type Token struct {
 	Valid     bool
 }
 
-func Parse(tokenString string, keyFunc func(*Token)(string, error)) (token *Token, err error) {
+func Parse(tokenString string, keyFunc func(*Token)([]byte, error)) (token *Token, err error) {
 	parts := strings.Split(tokenString, ".")
 	if len(parts) == 3 {
 		token = new(Token)
@@ -32,7 +32,7 @@ func Parse(tokenString string, keyFunc func(*Token)(string, error)) (token *Toke
 		
 		// parse Claims
 		var claimBytes []byte
-		if claimBytes, err = base64.URLEncoding.DecodeString(parts[0]); err != nil {
+		if claimBytes, err = base64.URLEncoding.DecodeString(parts[1]); err != nil {
 			return
 		}
 		if err = json.Unmarshal(claimBytes, &token.Claims); err != nil {
@@ -57,8 +57,15 @@ func Parse(tokenString string, keyFunc func(*Token)(string, error)) (token *Toke
 		}
 
 		// Lookup key
+		var key []byte
+		if key, err = keyFunc(token); err != nil {
+			return
+		}
 		
-		
+		// Perform validation
+		if err = token.Method.Verify(strings.Join(parts[0:1], "."), parts[2], key); err == nil {
+			token.Valid = true
+		}
 		
 	} else {
 		err = errors.New("Token contains an invalid number of segments")
