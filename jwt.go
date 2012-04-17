@@ -5,6 +5,7 @@ import (
 	"errors"
 	"encoding/base64"
 	"encoding/json"
+	"time"
 )
 
 // A JWT Token
@@ -49,7 +50,11 @@ func Parse(tokenString string, keyFunc func(*Token)(string, error)) (token *Toke
 		}
 
 		// Check expiry times
-		
+		if exp, ok := token.Claims["exp"].(float64); ok {
+			if time.Now().Unix() > int64(exp) {
+				err = errors.New("Token is expired")
+			}
+		}
 
 		// Lookup key
 		
