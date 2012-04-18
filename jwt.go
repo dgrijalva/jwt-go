@@ -80,7 +80,15 @@ func Parse(tokenString string, keyFunc func(*Token)([]byte, error)) (token *Toke
 
 func ParseFromRequest(req *http.Request, keyFunc func(*Token)([]byte, error))(token *Token, err error) {
 	
-	return nil, nil
+	// Look for an Authorization header
+	if ah := req.Header.Get("Authorization"); ah != "" {
+		// Should be a bearer token
+		if len(ah) > 6 && strings.ToUpper(ah[0:6]) == "BEARER" {
+			return Parse(ah[7:], keyFunc)
+		}
+	}
+	
+	return nil, errors.New("No token present in request.")
 	
 }
 
