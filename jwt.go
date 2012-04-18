@@ -63,7 +63,7 @@ func Parse(tokenString string, keyFunc func(*Token)([]byte, error)) (token *Toke
 		}
 		
 		// Perform validation
-		if err = token.Method.Verify(strings.Join(parts[0:1], "."), parts[2], key); err == nil {
+		if err = token.Method.Verify(strings.Join(parts[0:2], "."), parts[2], key); err == nil {
 			token.Valid = true
 		}
 		

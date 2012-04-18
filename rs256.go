@@ -7,7 +7,7 @@ import (
 	"crypto"
 	"crypto/x509"
 	"crypto/rsa"
-	_ "crypto/sha256"
+	"crypto/sha256"
 )
 
 type SigningMethodRS256 struct {}
@@ -35,7 +35,7 @@ func (m *SigningMethodRS256) Verify(signingString, signature string, key []byte)
 			var parsedKey interface{}
 			if parsedKey, err = x509.ParsePKIXPublicKey(block.Bytes); err == nil {
 				if rsaKey, ok := parsedKey.(*rsa.PublicKey); ok {
-					hasher := crypto.SHA256.New()
+					hasher := sha256.New()
 					hasher.Write([]byte(signingString))
 					
 					err = rsa.VerifyPKCS1v15(rsaKey, crypto.SHA256, hasher.Sum(nil), sig)

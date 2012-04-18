@@ -39,7 +39,7 @@ func TestRS256Verify(t *testing.T) {
 		parts := strings.Split(data.tokenString, ".")
 		
 		method, _ := GetSigningMethod("RS256")
-		err := method.Verify(strings.Join(parts[0:1], "."), parts[2], key)
+		err := method.Verify(strings.Join(parts[0:2], "."), parts[2], key)
 		if data.valid && err != nil {
 			t.Errorf("[%v] Error while verifying key: %v", data.name, err)
 		}
