@@ -17,6 +17,9 @@ type Token struct {
 	Valid     bool
 }
 
+// Parse, validate, and return a token.
+// keyFunc will receive the parsed token and should return the key for validating.
+// If everything is kosher, err will be nil
 func Parse(tokenString string, keyFunc func(*Token)([]byte, error)) (token *Token, err error) {
 	parts := strings.Split(tokenString, ".")
 	if len(parts) == 3 {
