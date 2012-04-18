@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"time"
+	"net/http"
 )
 
 // A JWT Token
@@ -26,7 +27,7 @@ func Parse(tokenString string, keyFunc func(*Token)([]byte, error)) (token *Toke
 		token = new(Token)
 		// parse Header
 		var headerBytes []byte
-		if headerBytes, err = base64.URLEncoding.DecodeString(parts[0]); err != nil {
+		if headerBytes, err = DecodeSegment(parts[0]); err != nil {
 			return
 		}
 		if err = json.Unmarshal(headerBytes, &token.Header); err != nil {
@@ -35,7 +36,7 @@ func Parse(tokenString string, keyFunc func(*Token)([]byte, error)) (token *Toke
 		
 		// parse Claims
 		var claimBytes []byte
-		if claimBytes, err = base64.URLEncoding.DecodeString(parts[1]); err != nil {
+		if claimBytes, err = DecodeSegment(parts[1]); err != nil {
 			return
 		}
 		if err = json.Unmarshal(claimBytes, &token.Claims); err != nil {
@@ -74,4 +75,23 @@ func Parse(tokenString string, keyFunc func(*Token)([]byte, error)) (token *Toke
 		err = errors.New("Token contains an invalid number of segments")
 	}
 	return
+}
+
+
+func ParseFromRequest(req *http.Request, keyFunc func(*Token)([]byte, error))(token *Token, err error) {
+	
+	return nil, nil
+	
+}
+
+func DecodeSegment(seg string)([]byte, error) {
+	// len % 4
+	switch len(seg) % 4 {
+		case 2:
+		seg = seg + "=="
+		case 3:
+		seg = seg + "==="
+	}
+	
+	return base64.URLEncoding.DecodeString(seg)
 }

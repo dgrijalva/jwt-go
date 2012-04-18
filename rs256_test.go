@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-var testData = []struct{
+var rsaTestData = []struct{
 	name string
 	tokenString string
 	claims map[string]interface{}
@@ -35,7 +35,7 @@ func TestRS256Verify(t *testing.T) {
 	key := buf.Bytes()
 	file.Close()
 	
-	for _, data := range testData {
+	for _, data := range rsaTestData {
 		parts := strings.Split(data.tokenString, ".")
 		
 		method, _ := GetSigningMethod("RS256")

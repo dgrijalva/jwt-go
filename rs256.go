@@ -2,7 +2,6 @@ package jwt
 
 import (
 	"errors"
-	"encoding/base64"
 	"encoding/pem"
 	"crypto"
 	"crypto/x509"
@@ -19,17 +18,9 @@ func init() {
 }
 
 func (m *SigningMethodRS256) Verify(signingString, signature string, key []byte)(err error) {
-	// len % 4
-	switch len(signature) % 4 {
-		case 2:
-		signature = signature + "=="
-		case 3:
-		signature = signature + "==="
-	}
-	
 	// Key
 	var sig []byte
-	if sig, err = base64.URLEncoding.DecodeString(signature); err == nil {
+	if sig, err = DecodeSegment(signature); err == nil {
 		var block *pem.Block
 		if block, _ = pem.Decode(key); block != nil {
 			var parsedKey interface{}
@@ -50,6 +41,6 @@ func (m *SigningMethodRS256) Verify(signingString, signature string, key []byte)
 	return
 }
 
-func (m *SigningMethodRS256) Sign(token, key []byte)error {
+func (m *SigningMethodRS256) Sign(token *Token, key []byte)error {
 	return nil
 }
