@@ -1,20 +1,20 @@
 package jwt
 
 import (
-	"os"
-	"io"
 	"bytes"
-	"testing"
-	"reflect"
 	"fmt"
+	"io"
 	"net/http"
+	"os"
+	"reflect"
+	"testing"
 )
 
-var jwtTestData = []struct{
-	name string
+var jwtTestData = []struct {
+	name        string
 	tokenString string
-	claims map[string]interface{}
-	valid bool
+	claims      map[string]interface{}
+	valid       bool
 }{
 	{
 		"basic",
@@ -36,10 +36,10 @@ func TestJWT(t *testing.T) {
 	io.Copy(buf, file)
 	key := buf.Bytes()
 	file.Close()
-	
+
 	for _, data := range jwtTestData {
-		token, err := Parse(data.tokenString, func(t *Token)([]byte, error){ return key, nil })
-		
+		token, err := Parse(data.tokenString, func(t *Token) ([]byte, error) { return key, nil })
+
 		if !reflect.DeepEqual(data.claims, token.Claims) {
 			t.Errorf("[%v] Claims mismatch. Expecting: %v  Got: %v", data.name, data.claims, token.Claims)
 		}
@@ -58,13 +58,13 @@ func TestParseRequest(t *testing.T) {
 	io.Copy(buf, file)
 	key := buf.Bytes()
 	file.Close()
-	
+
 	// Bearer token request
 	for _, data := range jwtTestData {
 		r, _ := http.NewRequest("GET", "/", nil)
 		r.Header.Set("Authorization", fmt.Sprintf("Bearer %v", data.tokenString))
-		token, err := ParseFromRequest(r, func(t *Token)([]byte, error){ return key, nil })
-		
+		token, err := ParseFromRequest(r, func(t *Token) ([]byte, error) { return key, nil })
+
 		if !reflect.DeepEqual(data.claims, token.Claims) {
 			t.Errorf("[%v] Claims mismatch. Expecting: %v  Got: %v", data.name, data.claims, token.Claims)
 		}

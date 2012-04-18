@@ -1,18 +1,18 @@
 package jwt
 
 import (
-	"os"
-	"io"
 	"bytes"
-	"testing"
+	"io"
+	"os"
 	"strings"
+	"testing"
 )
 
-var rsaTestData = []struct{
-	name string
+var rsaTestData = []struct {
+	name        string
 	tokenString string
-	claims map[string]interface{}
-	valid bool
+	claims      map[string]interface{}
+	valid       bool
 }{
 	{
 		"basic: foo => bar",
@@ -34,10 +34,10 @@ func TestRS256Verify(t *testing.T) {
 	io.Copy(buf, file)
 	key := buf.Bytes()
 	file.Close()
-	
+
 	for _, data := range rsaTestData {
 		parts := strings.Split(data.tokenString, ".")
-		
+
 		method, _ := GetSigningMethod("RS256")
 		err := method.Verify(strings.Join(parts[0:2], "."), parts[2], key)
 		if data.valid && err != nil {
