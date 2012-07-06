@@ -16,6 +16,7 @@ type Token struct {
 	Method    SigningMethod
 	// This is only populated when you Parse a token
 	Signature string
+	// This is only populated when you Parse/Verify a token
 	Valid     bool
 }
 
@@ -29,6 +30,7 @@ func New(method SigningMethod)*Token {
 	}
 }
 
+// Get the complete, signed token
 func (t *Token) SignedString(key []byte)(string, error) {
 	var sig, sstr string
 	var err error
@@ -41,6 +43,10 @@ func (t *Token) SignedString(key []byte)(string, error) {
 	return strings.Join([]string{sstr, sig}, "."), nil
 }
 
+// Generate the signing string.  This is the
+// most expensive part of the whole deal.  Unless you
+// need this for something special, just go straight for
+// the SignedString.
 func (t *Token) SigningString()(string, error) {
 	var err error
 	parts := make([]string, 2)
@@ -121,6 +127,8 @@ func Parse(tokenString string, keyFunc func(*Token) ([]byte, error)) (token *Tok
 	return
 }
 
+// Try to find the token in an http.Request.
+// Currently, it only looks in the Authorization header
 func ParseFromRequest(req *http.Request, keyFunc func(*Token) ([]byte, error)) (token *Token, err error) {
 
 	// Look for an Authorization header
@@ -135,10 +143,12 @@ func ParseFromRequest(req *http.Request, keyFunc func(*Token) ([]byte, error)) (
 
 }
 
+// Encode JWT specific base64url encoding with padding stripped
 func EncodeSegment(seg []byte)string {
 	return strings.TrimRight(base64.URLEncoding.EncodeToString(seg), "=")
 }
 
+// Decode JWT specific base64url encoding with padding stripped
 func DecodeSegment(seg string) ([]byte, error) {
 	// len % 4
 	switch len(seg) % 4 {

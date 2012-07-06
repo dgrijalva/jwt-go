@@ -14,10 +14,13 @@ type SigningMethod interface {
 	Alg() string
 }
 
+// Register the "alg" name and a factory function for signing method.
+// This is typically done during init() in the method's implementation
 func RegisterSigningMethod(alg string, f func() SigningMethod) {
 	signingMethods[alg] = f
 }
 
+// Get a signing method from an "alg" string
 func GetSigningMethod(alg string) (method SigningMethod, err error) {
 	if methodF, ok := signingMethods[alg]; ok {
 		method = methodF()
