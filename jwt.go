@@ -18,6 +18,28 @@ type Token struct {
 	Valid     bool
 }
 
+func New(method SigningMethod)*Token {
+	return &Token{
+		Header: map[string]interface{}{
+			"typ": "JWT",
+			"alg": method.Alg(),
+		},
+		Claims: make(map[string]interface{}),
+	}
+}
+
+func Sign(key []byte) error {
+	return nil
+}
+
+func SigningString()string {
+	return ""
+}
+
+func String()string {
+	return ""
+}
+
 // Parse, validate, and return a token.
 // keyFunc will receive the parsed token and should return the key for validating.
 // If everything is kosher, err will be nil
@@ -89,6 +111,10 @@ func ParseFromRequest(req *http.Request, keyFunc func(*Token) ([]byte, error)) (
 
 	return nil, errors.New("No token present in request.")
 
+}
+
+func EncodeSegment(seg []byte)string {
+	return strings.TrimRight(base64.URLEncoding.EncodeToString(seg), "=")
 }
 
 func DecodeSegment(seg string) ([]byte, error) {

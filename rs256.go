@@ -5,6 +5,7 @@ import (
 	"crypto/rsa"
 	"crypto/sha256"
 	"crypto/x509"
+	"crypto/rand"
 	"encoding/pem"
 	"errors"
 )
@@ -15,6 +16,10 @@ func init() {
 	RegisterSigningMethod("RS256", func() SigningMethod {
 		return new(SigningMethodRS256)
 	})
+}
+
+func (m *SigningMethodRS256) Alg()string {
+	return "RS256"
 }
 
 func (m *SigningMethodRS256) Verify(signingString, signature string, key []byte) (err error) {
@@ -41,6 +46,34 @@ func (m *SigningMethodRS256) Verify(signingString, signature string, key []byte)
 	return
 }
 
-func (m *SigningMethodRS256) Sign(token *Token, key []byte) error {
-	return nil
+func (m *SigningMethodRS256) Sign(signingString string, key []byte)(sig string, err error) {
+	// Key
+	var rsaKey *rsa.PrivateKey
+	if rsaKey, err = m.parsePrivateKey(key); err == nil {
+		hasher := sha256.New()
+		hasher.Write([]byte(signingString))
+
+		var sigBytes []byte
+		if sigBytes, err = rsa.SignPKCS1v15(rand.Reader, rsaKey, crypto.SHA256, hasher.Sum(nil)); err == nil {
+			sig = EncodeSegment(sigBytes)
+		}
+	}
+	return
+}
+
+func (m *SigningMethodRS256) parsePrivateKey(key []byte)(pkey *rsa.PrivateKey, err error) {
+	var block *pem.Block
+	if block, _ = pem.Decode(key); block != nil {
+		var parsedKey interface{}
+		if parsedKey, err = x509.ParsePKCS1PrivateKey(block.Bytes); err != nil {
+			if parsedKey, err = x509.ParsePKCS8PrivateKey(block.Bytes); err != nil {
+				return nil, err
+			}
+		}
+		var ok bool
+		if pkey, ok = parsedKey.(*rsa.PrivateKey); !ok {
+			err = errors.New("Key is not a valid RSA private key")
+		}
+	}
+	return
 }

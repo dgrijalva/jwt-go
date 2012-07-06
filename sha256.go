@@ -15,6 +15,10 @@ func init() {
 	})
 }
 
+func (m *SigningMethodHS256) Alg()string {
+	return "HS256"
+}
+
 func (m *SigningMethodHS256) Verify(signingString, signature string, key []byte) (err error) {
 	// Key
 	var sig []byte
@@ -29,6 +33,9 @@ func (m *SigningMethodHS256) Verify(signingString, signature string, key []byte)
 	return
 }
 
-func (m *SigningMethodHS256) Sign(token *Token, key []byte) error {
-	return nil
+func (m *SigningMethodHS256) Sign(signingString string, key []byte)(string, error) {
+	hasher := hmac.New(sha256.New, key)
+	hasher.Write([]byte(signingString))
+	
+	return EncodeSegment(hasher.Sum(nil)), nil
 }

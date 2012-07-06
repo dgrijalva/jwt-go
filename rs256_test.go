@@ -48,3 +48,26 @@ func TestRS256Verify(t *testing.T) {
 		}
 	}
 }
+
+
+func TestRS256Sign(t *testing.T) {
+	file, _ := os.Open("test/sample_key")
+	buf := new(bytes.Buffer)
+	io.Copy(buf, file)
+	key := buf.Bytes()
+	file.Close()
+
+	for _, data := range rsaTestData {
+		if data.valid {
+			parts := strings.Split(data.tokenString, ".")
+			method, _ := GetSigningMethod("RS256")
+			sig, err := method.Sign(strings.Join(parts[0:2], "."), key)
+			if err != nil {
+				t.Errorf("[%v] Error signing token: %v", data.name, err)
+			}
+			if sig != parts[2] {
+				t.Errorf("[%v] Incorrect signature.\nwas:\n%v\nexpecting:\n%v", data.name, sig, parts[2])
+			}
+		}
+	}
+}
