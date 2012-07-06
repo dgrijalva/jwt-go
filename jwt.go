@@ -14,6 +14,7 @@ type Token struct {
 	Header    map[string]interface{}
 	Claims    map[string]interface{}
 	Method    SigningMethod
+	// This is only populated when you Parse a token
 	Signature string
 	Valid     bool
 }
@@ -28,16 +29,37 @@ func New(method SigningMethod)*Token {
 	}
 }
 
-func Sign(key []byte) error {
-	return nil
+func (t *Token) SignedString(key []byte)(string, error) {
+	var sig, sstr string
+	var err error
+	if sstr, err = t.SigningString(); err != nil {
+		return "", err
+	}
+	if sig, err = t.Method.Sign(sstr, key); err != nil {
+		return "", err
+	}
+	return strings.Join([]string{sstr, sig}, "."), nil
 }
 
-func SigningString()string {
-	return ""
-}
-
-func String()string {
-	return ""
+func (t *Token) SigningString()(string, error) {
+	var err error
+	parts := make([]string, 2)
+	for i, _ := range parts {
+		var source map[string]interface{}
+		if i == 0 {
+			source = t.Header
+		} else {
+			source = t.Claims
+		}
+		
+		var jsonValue []byte
+		if jsonValue, err = json.Marshal(source); err != nil {
+			return "", err
+		}
+		
+		parts[i] = EncodeSegment(jsonValue)
+	}
+	return strings.Join(parts, "."), nil
 }
 
 // Parse, validate, and return a token.
