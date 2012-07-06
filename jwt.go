@@ -9,6 +9,12 @@ import (
 	"time"
 )
 
+// Parse methods use this callback function to supply
+// the key for verification.  The function receives the parsed,
+// but unverified Token.  This allows you to use propries in the
+// Header of the token (such as `kid`) to identify which key to use.
+type Keyfunc func(*Token) ([]byte, error)
+
 // A JWT Token
 type Token struct {
 	Header    map[string]interface{}
@@ -71,7 +77,7 @@ func (t *Token) SigningString()(string, error) {
 // Parse, validate, and return a token.
 // keyFunc will receive the parsed token and should return the key for validating.
 // If everything is kosher, err will be nil
-func Parse(tokenString string, keyFunc func(*Token) ([]byte, error)) (token *Token, err error) {
+func Parse(tokenString string, keyFunc Keyfunc) (token *Token, err error) {
 	parts := strings.Split(tokenString, ".")
 	if len(parts) == 3 {
 		token = new(Token)
@@ -129,7 +135,7 @@ func Parse(tokenString string, keyFunc func(*Token) ([]byte, error)) (token *Tok
 
 // Try to find the token in an http.Request.
 // Currently, it only looks in the Authorization header
-func ParseFromRequest(req *http.Request, keyFunc func(*Token) ([]byte, error)) (token *Token, err error) {
+func ParseFromRequest(req *http.Request, keyFunc Keyfunc) (token *Token, err error) {
 
 	// Look for an Authorization header
 	if ah := req.Header.Get("Authorization"); ah != "" {
