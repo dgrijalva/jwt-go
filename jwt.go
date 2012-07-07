@@ -121,7 +121,7 @@ func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 		}
 
 		token.Valid = true
-		return token, err
+		return token, nil
 	}
 	return token, errors.New("Token contains an invalid number of segments")
 }
