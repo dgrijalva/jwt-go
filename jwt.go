@@ -150,7 +150,7 @@ func ParseFromRequest(req *http.Request, keyFunc Keyfunc) (token *Token, err err
 	}
 
 	// Look for "access_token" parameter
-	req.ParseMultipartForm(10e9)
+	req.ParseMultipartForm(10e6)
 	if tokStr := req.Form.Get("access_token"); tokStr != "" {
 		return Parse(tokStr, keyFunc)
 	}
