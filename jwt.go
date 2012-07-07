@@ -43,8 +43,8 @@ func (t *Token) SignedString(key []byte) (string, error) {
 		return "", err
 	}
 
-	sig, err := t.Method.Sign(sstr, key);
-        if err != nil {
+	sig, err := t.Method.Sign(sstr, key)
+	if err != nil {
 		return "", err
 	}
 
@@ -58,23 +58,20 @@ func (t *Token) SignedString(key []byte) (string, error) {
 func (t *Token) SigningString() (string, error) {
 	first, err := jsonMarshal(t.Header)
 	if err != nil {
-		return
+		return "", err
 	}
 
 	second, err := jsonMarshal(t.Claims)
 	if err != nil {
-		return
+		return "", err
 	}
 
 	return strings.Join([]string{first, second}, "."), nil
 }
 
 func jsonMarshal(m map[string]interface{}) (string, error) {
-	jsonValue, err := json.Marshal(data); 
-	if err != nil {
-		return "", err
-	}
-	return EncodeSegment(jsonValue), nil
+	jsonValue, err := json.Marshal(m)
+	return EncodeSegment(jsonValue), err
 }
 
 // Parse, validate, and return a token.
