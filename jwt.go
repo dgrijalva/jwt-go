@@ -51,11 +51,8 @@ func (t *Token) SignedString(key []byte) (string, error) {
 	}
 
 	sig, err := t.Method.Sign(sstr, key)
-	if err != nil {
-		return "", err
-	}
 
-	return strings.Join([]string{sstr, sig}, "."), nil
+	return strings.Join([]string{sstr, sig}, "."), err
 }
 
 // Generate the signing string.  This is the
@@ -64,16 +61,9 @@ func (t *Token) SignedString(key []byte) (string, error) {
 // the SignedString.
 func (t *Token) SigningString() (string, error) {
 	first, err := jsonMarshal(t.Header)
-	if err != nil {
-		return "", err
-	}
-
 	second, err := jsonMarshal(t.Claims)
-	if err != nil {
-		return "", err
-	}
 
-	return strings.Join([]string{first, second}, "."), nil
+	return strings.Join([]string{first, second}, "."), err
 }
 
 func jsonMarshal(m map[string]interface{}) (string, error) {
