@@ -23,19 +23,21 @@ func (m *SigningMethodHS256) Alg() string {
 	return "HS256"
 }
 
-func (m *SigningMethodHS256) Verify(signingString, signature string, key []byte) (err error) {
+func (m *SigningMethodHS256) Verify(signingString, signature string, key []byte) error {
 	// Key
-	sig, err := DecodeSegment(signature); err != nil {
-		return	
+	sig, err := DecodeSegment(signature)
+	if err != nil {
+		return err
 	}
 
 	hasher := hmac.New(sha256.New, key)
 	hasher.Write([]byte(signingString))
 
 	if !bytes.Equal(sig, hasher.Sum(nil)) {
-		err = ErrInvSig 
+		return ErrInvSig
 	}
-	return
+
+	return nil
 }
 
 func (m *SigningMethodHS256) Sign(signingString string, key []byte) (string, error) {
