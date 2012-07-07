@@ -60,18 +60,35 @@ func (t *Token) SignedString(key []byte) (string, error) {
 // need this for something special, just go straight for
 // the SignedString.
 func (t *Token) SigningString() (string, error) {
-	first, err := jsonMarshal(t.Header)
-	if err != nil {
-		return "", err
+	errChan := make(chan error)
+	head := jsonMarshal(errChan, t.Header)
+	claim := jsonMarshal(errChan, t.Claims)
+
+	var first, second string
+	for i := 0; i < 2; i++ {
+		select {
+		case first = <-head:
+		case second = <-claim:
+		case err := <-errChan:
+			return "", err
+		}
 	}
 
-	second, err := jsonMarshal(t.Claims)
-	return strings.Join([]string{first, second}, "."), err
+	return strings.Join([]string{first, second}, "."), nil
 }
 
-func jsonMarshal(m map[string]interface{}) (string, error) {
-	jsonValue, err := json.Marshal(m)
-	return EncodeSegment(jsonValue), err
+func jsonMarshal(err chan error, m map[string]interface{}) <-chan string {
+	c := make(chan string)
+	go func() {
+		data, e := json.Marshal(m)
+		if e != nil {
+			err <- e
+			return
+		}
+
+		c <- EncodeSegment(data)
+	}()
+	return c
 }
 
 // Parse, validate, and return a token.
