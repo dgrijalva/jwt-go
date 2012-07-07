@@ -38,14 +38,16 @@ func New(method SigningMethod) *Token {
 
 // Get the complete, signed token
 func (t *Token) SignedString(key []byte) (string, error) {
-	var sig, sstr string
-	var err error
-	if sstr, err = t.SigningString(); err != nil {
+	sstr, err := t.SigningString()
+	if err != nil {
 		return "", err
 	}
-	if sig, err = t.Method.Sign(sstr, key); err != nil {
+
+	sig, err := t.Method.Sign(sstr, key);
+        if err != nil {
 		return "", err
 	}
+
 	return strings.Join([]string{sstr, sig}, "."), nil
 }
 
@@ -53,84 +55,93 @@ func (t *Token) SignedString(key []byte) (string, error) {
 // most expensive part of the whole deal.  Unless you
 // need this for something special, just go straight for
 // the SignedString.
-func (t *Token) SigningString() (string, error) {
-	var err error
-	parts := make([]string, 2)
-	for i, _ := range parts {
-		var source map[string]interface{}
-		if i == 0 {
-			source = t.Header
-		} else {
-			source = t.Claims
-		}
-
-		var jsonValue []byte
-		if jsonValue, err = json.Marshal(source); err != nil {
-			return "", err
-		}
-
-		parts[i] = EncodeSegment(jsonValue)
+func (t *Token) SigningString() (signed string, err error) {
+	first, err := jsonMarshal(t.Header)
+	if err != nil {
+		return
 	}
-	return strings.Join(parts, "."), nil
+
+	second, err := jsonMarshal(t.Claims)
+	if err != nil {
+		return
+	}
+
+	signed = strings.Join([]string{first, second}, ".")
+	return
+}
+
+func jsonMarshal(m map[string]interface{}) (data string, err error) {
+	var jsonValue []byte
+	if jsonValue, err = json.Marshal(data); err != nil {
+		return
+	}
+	data = EncodeSegment(jsonValue)
+	return
 }
 
 // Parse, validate, and return a token.
 // keyFunc will receive the parsed token and should return the key for validating.
 // If everything is kosher, err will be nil
-func Parse(tokenString string, keyFunc Keyfunc) (token *Token, err error) {
+func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
+	token := new(Token)
+
 	parts := strings.Split(tokenString, ".")
 	if len(parts) == 3 {
-		token = new(Token)
 		// parse Header
-		var headerBytes []byte
-		if headerBytes, err = DecodeSegment(parts[0]); err != nil {
-			return
-		}
-		if err = json.Unmarshal(headerBytes, &token.Header); err != nil {
-			return
+		err := decUnmarshal(parts[0], &token.Header)
+		if err != nil {
+			return token, err
 		}
 
 		// parse Claims
-		var claimBytes []byte
-		if claimBytes, err = DecodeSegment(parts[1]); err != nil {
-			return
-		}
-		if err = json.Unmarshal(claimBytes, &token.Claims); err != nil {
-			return
+		err = decUnmarshal(parts[1], &token.Claims)
+		if err != nil {
+			return token, err
 		}
 
 		// Lookup signature method
-		if method, ok := token.Header["alg"].(string); ok {
-			if token.Method, err = GetSigningMethod(method); err != nil {
-				return
-			}
-		} else {
-			err = errors.New("Signing method (alg) is unspecified.")
-			return
+		method, ok := token.Header["alg"].(string)
+		if !ok {
+			return token, errors.New("Signing method (alg) is unspecified.")
+		}
+
+		if token.Method, err = GetSigningMethod(method); err != nil {
+			return token, err
 		}
 
 		// Check expiry times
-		if exp, ok := token.Claims["exp"].(float64); ok {
-			if time.Now().Unix() > int64(exp) {
-				err = errors.New("Token is expired")
-			}
+		if exp, ok := token.Claims["exp"].(int64); ok && time.Now().Unix() > exp {
+			return token, errors.New("Token is expired")
 		}
 
 		// Lookup key
-		var key []byte
-		if key, err = keyFunc(token); err != nil {
-			return
+		key, err := keyFunc(token)
+		if err != nil {
+			return token, err
 		}
 
 		// Perform validation
-		if err = token.Method.Verify(strings.Join(parts[0:2], "."), parts[2], key); err == nil {
-			token.Valid = true
+		if err = token.Method.Verify(strings.Join(parts[:2], "."), parts[2], key); err != nil {
+			return token, err
 		}
 
-	} else {
-		err = errors.New("Token contains an invalid number of segments")
+		token.Valid = true
+		return token, err
 	}
-	return
+	return token, errors.New("Token contains an invalid number of segments")
+}
+
+func decUnmarshal(data string, m *map[string]interface{}) error {
+	var b []byte
+	b, err := DecodeSegment(data)
+	if err != nil {
+		return err
+	}
+	if err := json.Unmarshal(b, m); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Try to find the token in an http.Request.
