@@ -136,7 +136,9 @@ func Parse(tokenString string, keyFunc Keyfunc) (token *Token, err error) {
 }
 
 // Try to find the token in an http.Request.
-// Currently, it only looks in the Authorization header
+// This method will call ParseMultipartForm if there's no token in the header.
+// Currently, it looks in the Authorization header as well as
+// looking for an 'access_token' request parameter in req.Form.
 func ParseFromRequest(req *http.Request, keyFunc Keyfunc) (token *Token, err error) {
 
 	// Look for an Authorization header
@@ -145,6 +147,12 @@ func ParseFromRequest(req *http.Request, keyFunc Keyfunc) (token *Token, err err
 		if len(ah) > 6 && strings.ToUpper(ah[0:6]) == "BEARER" {
 			return Parse(ah[7:], keyFunc)
 		}
+	}
+
+	// Look for "access_token" parameter
+	req.ParseMultipartForm(10e9)
+	if tokStr := req.Form.Get("access_token"); tokStr != "" {
+		return Parse(tokStr, keyFunc)
 	}
 
 	return nil, errors.New("No token present in request.")
