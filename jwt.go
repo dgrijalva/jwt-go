@@ -127,7 +127,6 @@ func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 }
 
 func decUnmarshal(data string, m *map[string]interface{}) error {
-	var b []byte
 	b, err := DecodeSegment(data)
 	if err != nil {
 		return err
@@ -152,7 +151,6 @@ func ParseFromRequest(req *http.Request, keyFunc Keyfunc) (token *Token, err err
 	}
 
 	return nil, errors.New("No token present in request.")
-
 }
 
 // Encode JWT specific base64url encoding with padding stripped
