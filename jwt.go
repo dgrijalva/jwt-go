@@ -55,7 +55,7 @@ func (t *Token) SignedString(key []byte) (string, error) {
 // most expensive part of the whole deal.  Unless you
 // need this for something special, just go straight for
 // the SignedString.
-func (t *Token) SigningString() (signed string, err error) {
+func (t *Token) SigningString() (string, error) {
 	first, err := jsonMarshal(t.Header)
 	if err != nil {
 		return
@@ -66,17 +66,15 @@ func (t *Token) SigningString() (signed string, err error) {
 		return
 	}
 
-	signed = strings.Join([]string{first, second}, ".")
-	return
+	return strings.Join([]string{first, second}, "."), nil
 }
 
-func jsonMarshal(m map[string]interface{}) (data string, err error) {
-	var jsonValue []byte
-	if jsonValue, err = json.Marshal(data); err != nil {
-		return
+func jsonMarshal(m map[string]interface{}) (string, error) {
+	jsonValue, err := json.Marshal(data); 
+	if err != nil {
+		return "", err
 	}
-	data = EncodeSegment(jsonValue)
-	return
+	return EncodeSegment(jsonValue), nil
 }
 
 // Parse, validate, and return a token.
