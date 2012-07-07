@@ -61,8 +61,11 @@ func (t *Token) SignedString(key []byte) (string, error) {
 // the SignedString.
 func (t *Token) SigningString() (string, error) {
 	first, err := jsonMarshal(t.Header)
-	second, err := jsonMarshal(t.Claims)
+	if err != nil {
+		return "", err
+	}
 
+	second, err := jsonMarshal(t.Claims)
 	return strings.Join([]string{first, second}, "."), err
 }
 
