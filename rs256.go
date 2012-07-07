@@ -27,38 +27,34 @@ func (m *SigningMethodRS256) Alg() string {
 	return "RS256"
 }
 
-func (m *SigningMethodRS256) Verify(signingString, signature string, key []byte) (err error) {
+func (m *SigningMethodRS256) Verify(signingString, signature string, key []byte) (error) {
 	// Key
 	sig, err := DecodeSegment(signature)
 	if err != nil {
-		return
-
+		return err
 	}
 
 	block, _ := pem.Decode(key)
 	if block == nil {
-		err = ErrParse
-		return
+		return ErrParse
 	}
 
 	parsedKey, err := x509.ParsePKIXPublicKey(block.Bytes)
 	if err != nil {
-		return
+		return err
 	}
 
 	rsaKey, ok := parsedKey.(*rsa.PublicKey)
 	if !ok {
-		err = ErrInvKey
-		return
+		return ErrInvKey
 	}
 
 	hasher := sha256.New()
 	hasher.Write([]byte(signingString))
-	err = rsa.VerifyPKCS1v15(rsaKey, crypto.SHA256, hasher.Sum(nil), sig)
-	return
+	return rsa.VerifyPKCS1v15(rsaKey, crypto.SHA256, hasher.Sum(nil), sig)
 }
 
-func (m *SigningMethodRS256) Sign(signingString string, key []byte) (sig string, err error) {
+func (m *SigningMethodRS256) Sign(signingString string, key []byte) (string, error) {
 	// Key
 	rsaKey, err := m.parsePrivateKey(key)
 	if err != nil {
@@ -70,11 +66,10 @@ func (m *SigningMethodRS256) Sign(signingString string, key []byte) (sig string,
 
 	sigBytes, err := rsa.SignPKCS1v15(rand.Reader, rsaKey, crypto.SHA256, hasher.Sum(nil))
 	if err != nil {
-		return
+		return "", err
 	}
 
-	sig = EncodeSegment(sigBytes)
-	return
+	return EncodeSegment(sigBytes), nil
 }
 
 func (m *SigningMethodRS256) parsePrivateKey(key []byte) (pkey *rsa.PrivateKey, err error) {
