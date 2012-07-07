@@ -1,10 +1,5 @@
 package jwt
 
-import (
-	"errors"
-	"fmt"
-)
-
 var signingMethods = map[string]func() SigningMethod{}
 
 // Signing method
@@ -21,11 +16,9 @@ func RegisterSigningMethod(alg string, f func() SigningMethod) {
 }
 
 // Get a signing method from an "alg" string
-func GetSigningMethod(alg string) (method SigningMethod, err error) {
+func GetSigningMethod(alg string) (method SigningMethod) {
 	if methodF, ok := signingMethods[alg]; ok {
 		method = methodF()
-	} else {
-		err = errors.New(fmt.Sprintf("Invalid signing method (alg): %v", method))
 	}
 	return
 }

@@ -33,6 +33,7 @@ func New(method SigningMethod) *Token {
 			"alg": method.Alg(),
 		},
 		Claims: make(map[string]interface{}),
+		Method: method,
 	}
 }
 
@@ -101,7 +102,8 @@ func Parse(tokenString string, keyFunc Keyfunc) (token *Token, err error) {
 
 		// Lookup signature method
 		if method, ok := token.Header["alg"].(string); ok {
-			if token.Method, err = GetSigningMethod(method); err != nil {
+			if token.Method = GetSigningMethod(method); token.Method == nil {
+				err = errors.New("Signing method (alg) is unavailable.")
 				return
 			}
 		} else {
