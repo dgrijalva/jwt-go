@@ -69,6 +69,7 @@ func (m *SigningMethodRS256) Sign(signingString string, key []byte) (sig string,
 	}
 
 	sig = EncodeSegment(sigBytes)
+	return
 }
 
 func (m *SigningMethodRS256) parsePrivateKey(key []byte) (pkey *rsa.PrivateKey, err error) {
@@ -77,17 +78,16 @@ func (m *SigningMethodRS256) parsePrivateKey(key []byte) (pkey *rsa.PrivateKey, 
 		return
 	}
 
-	parsedKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	parsedKey, err := x509.ParsePKCS8PrivateKey(block.Bytes)
 	if err != nil {
-		return nil, err
+		if parsedKey, err = x509.ParsePKCS1PrivateKey(block.Bytes); err != nil {
+			return
+		}
 	}
 
-	parsedKey, err = x509.ParsePKCS8PrivateKey(block.Bytes)
-	if err != nil {
-		return nil, err
-	}
-
-	if pkey, ok := parsedKey.(*rsa.PrivateKey); !ok {
+	pkey, ok := parsedKey.(*rsa.PrivateKey)
+	if !ok {
 		err = errors.New("Key is not a valid RSA private key")
 	}
+	return
 }
