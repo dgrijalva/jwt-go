@@ -10,7 +10,7 @@ var signingMethods = map[string]func() SigningMethod{}
 // Signing method
 type SigningMethod interface {
 	Verify(signingString, signature string, key []byte) error
-	Sign(signingString string, key []byte)(string, error)
+	Sign(signingString string, key []byte) (string, error)
 	Alg() string
 }
 

@@ -17,16 +17,16 @@ type Keyfunc func(*Token) ([]byte, error)
 
 // A JWT Token
 type Token struct {
-	Header    map[string]interface{}
-	Claims    map[string]interface{}
-	Method    SigningMethod
+	Header map[string]interface{}
+	Claims map[string]interface{}
+	Method SigningMethod
 	// This is only populated when you Parse a token
 	Signature string
 	// This is only populated when you Parse/Verify a token
-	Valid     bool
+	Valid bool
 }
 
-func New(method SigningMethod)*Token {
+func New(method SigningMethod) *Token {
 	return &Token{
 		Header: map[string]interface{}{
 			"typ": "JWT",
@@ -37,7 +37,7 @@ func New(method SigningMethod)*Token {
 }
 
 // Get the complete, signed token
-func (t *Token) SignedString(key []byte)(string, error) {
+func (t *Token) SignedString(key []byte) (string, error) {
 	var sig, sstr string
 	var err error
 	if sstr, err = t.SigningString(); err != nil {
@@ -53,7 +53,7 @@ func (t *Token) SignedString(key []byte)(string, error) {
 // most expensive part of the whole deal.  Unless you
 // need this for something special, just go straight for
 // the SignedString.
-func (t *Token) SigningString()(string, error) {
+func (t *Token) SigningString() (string, error) {
 	var err error
 	parts := make([]string, 2)
 	for i, _ := range parts {
@@ -63,12 +63,12 @@ func (t *Token) SigningString()(string, error) {
 		} else {
 			source = t.Claims
 		}
-		
+
 		var jsonValue []byte
 		if jsonValue, err = json.Marshal(source); err != nil {
 			return "", err
 		}
-		
+
 		parts[i] = EncodeSegment(jsonValue)
 	}
 	return strings.Join(parts, "."), nil
@@ -150,7 +150,7 @@ func ParseFromRequest(req *http.Request, keyFunc Keyfunc) (token *Token, err err
 }
 
 // Encode JWT specific base64url encoding with padding stripped
-func EncodeSegment(seg []byte)string {
+func EncodeSegment(seg []byte) string {
 	return strings.TrimRight(base64.URLEncoding.EncodeToString(seg), "=")
 }
 

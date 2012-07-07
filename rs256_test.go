@@ -49,7 +49,6 @@ func TestRS256Verify(t *testing.T) {
 	}
 }
 
-
 func TestRS256Sign(t *testing.T) {
 	file, _ := os.Open("test/sample_key")
 	buf := new(bytes.Buffer)

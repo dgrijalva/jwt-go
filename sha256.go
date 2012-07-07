@@ -1,9 +1,9 @@
 package jwt
 
 import (
-	"crypto/sha256"
-	"crypto/hmac"
 	"bytes"
+	"crypto/hmac"
+	"crypto/sha256"
 	"errors"
 )
 
@@ -15,7 +15,7 @@ func init() {
 	})
 }
 
-func (m *SigningMethodHS256) Alg()string {
+func (m *SigningMethodHS256) Alg() string {
 	return "HS256"
 }
 
@@ -33,9 +33,9 @@ func (m *SigningMethodHS256) Verify(signingString, signature string, key []byte)
 	return
 }
 
-func (m *SigningMethodHS256) Sign(signingString string, key []byte)(string, error) {
+func (m *SigningMethodHS256) Sign(signingString string, key []byte) (string, error) {
 	hasher := hmac.New(sha256.New, key)
 	hasher.Write([]byte(signingString))
-	
+
 	return EncodeSegment(hasher.Sum(nil)), nil
 }

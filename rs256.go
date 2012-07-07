@@ -2,10 +2,10 @@ package jwt
 
 import (
 	"crypto"
+	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
 	"crypto/x509"
-	"crypto/rand"
 	"encoding/pem"
 	"errors"
 )
@@ -18,7 +18,7 @@ func init() {
 	})
 }
 
-func (m *SigningMethodRS256) Alg()string {
+func (m *SigningMethodRS256) Alg() string {
 	return "RS256"
 }
 
@@ -46,7 +46,7 @@ func (m *SigningMethodRS256) Verify(signingString, signature string, key []byte)
 	return
 }
 
-func (m *SigningMethodRS256) Sign(signingString string, key []byte)(sig string, err error) {
+func (m *SigningMethodRS256) Sign(signingString string, key []byte) (sig string, err error) {
 	// Key
 	var rsaKey *rsa.PrivateKey
 	if rsaKey, err = m.parsePrivateKey(key); err == nil {
@@ -61,7 +61,7 @@ func (m *SigningMethodRS256) Sign(signingString string, key []byte)(sig string, 
 	return
 }
 
-func (m *SigningMethodRS256) parsePrivateKey(key []byte)(pkey *rsa.PrivateKey, err error) {
+func (m *SigningMethodRS256) parsePrivateKey(key []byte) (pkey *rsa.PrivateKey, err error) {
 	var block *pem.Block
 	if block, _ = pem.Decode(key); block != nil {
 		var parsedKey interface{}
