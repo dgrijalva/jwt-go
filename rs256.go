@@ -10,6 +10,11 @@ import (
 	"errors"
 )
 
+var (
+	ErrInvKey = errors.New("Key is not a valid RSA private key")
+	ErrParse = errors.New("Could not parse key data")
+)
+
 type SigningMethodRS256 struct{}
 
 func init() {
@@ -32,7 +37,7 @@ func (m *SigningMethodRS256) Verify(signingString, signature string, key []byte)
 
 	block, _ := pem.Decode(key)
 	if block == nil {
-		err = errors.New("Could not parse key data")
+		err = ErrParse
 		return
 	}
 
@@ -43,7 +48,7 @@ func (m *SigningMethodRS256) Verify(signingString, signature string, key []byte)
 
 	rsaKey, ok := parsedKey.(*rsa.PublicKey)
 	if !ok {
-		err = errors.New("Key is not a valid RSA public key")
+		err = ErrInvKey
 		return
 	}
 
@@ -87,7 +92,7 @@ func (m *SigningMethodRS256) parsePrivateKey(key []byte) (pkey *rsa.PrivateKey, 
 
 	pkey, ok := parsedKey.(*rsa.PrivateKey)
 	if !ok {
-		err = errors.New("Key is not a valid RSA private key")
+		err = ErrInvKey
 	}
 	return
 }
