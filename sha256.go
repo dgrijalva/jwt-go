@@ -7,6 +7,10 @@ import (
 	"errors"
 )
 
+var (
+	ErrInvSig = errors.New("Signature is invalid")
+)
+
 type SigningMethodHS256 struct{}
 
 func init() {
@@ -19,18 +23,21 @@ func (m *SigningMethodHS256) Alg() string {
 	return "HS256"
 }
 
-func (m *SigningMethodHS256) Verify(signingString, signature string, key []byte) (err error) {
+func (m *SigningMethodHS256) Verify(signingString, signature string, key []byte) error {
 	// Key
-	var sig []byte
-	if sig, err = DecodeSegment(signature); err == nil {
-		hasher := hmac.New(sha256.New, key)
-		hasher.Write([]byte(signingString))
-
-		if !bytes.Equal(sig, hasher.Sum(nil)) {
-			err = errors.New("Signature is invalid")
-		}
+	sig, err := DecodeSegment(signature)
+	if err != nil {
+		return err
 	}
-	return
+
+	hasher := hmac.New(sha256.New, key)
+	hasher.Write([]byte(signingString))
+
+	if !bytes.Equal(sig, hasher.Sum(nil)) {
+		return ErrInvSig
+	}
+
+	return nil
 }
 
 func (m *SigningMethodHS256) Sign(signingString string, key []byte) (string, error) {

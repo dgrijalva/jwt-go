@@ -21,11 +21,11 @@ func RegisterSigningMethod(alg string, f func() SigningMethod) {
 }
 
 // Get a signing method from an "alg" string
-func GetSigningMethod(alg string) (method SigningMethod, err error) {
-	if methodF, ok := signingMethods[alg]; ok {
-		method = methodF()
-	} else {
-		err = errors.New(fmt.Sprintf("Invalid signing method (alg): %v", method))
+func GetSigningMethod(alg string) (SigningMethod, error) {
+	method, ok := signingMethods[alg]
+	if !ok {
+		return method(), errors.New(fmt.Sprintf("Invalid signing method (alg): %v", method))
 	}
-	return
+
+	return method(), nil
 }

@@ -9,6 +9,13 @@ import (
 	"time"
 )
 
+var (
+	ErrSegment  = errors.New("Token contains an invalid number of segments")
+	ErrSign     = errors.New("Signing method (alg) is unspecified.")
+	ErrExpired  = errors.New("Token is expired")
+	ErrNotFound = errors.New("No token present in request.")
+)
+
 // Parse methods use this callback function to supply
 // the key for verification.  The function receives the parsed,
 // but unverified Token.  This allows you to use propries in the
@@ -38,15 +45,14 @@ func New(method SigningMethod) *Token {
 
 // Get the complete, signed token
 func (t *Token) SignedString(key []byte) (string, error) {
-	var sig, sstr string
-	var err error
-	if sstr, err = t.SigningString(); err != nil {
+	sstr, err := t.SigningString()
+	if err != nil {
 		return "", err
 	}
-	if sig, err = t.Method.Sign(sstr, key); err != nil {
-		return "", err
-	}
-	return strings.Join([]string{sstr, sig}, "."), nil
+
+	sig, err := t.Method.Sign(sstr, key)
+
+	return strings.Join([]string{sstr, sig}, "."), err
 }
 
 // Generate the signing string.  This is the
@@ -54,83 +60,100 @@ func (t *Token) SignedString(key []byte) (string, error) {
 // need this for something special, just go straight for
 // the SignedString.
 func (t *Token) SigningString() (string, error) {
-	var err error
-	parts := make([]string, 2)
-	for i, _ := range parts {
-		var source map[string]interface{}
-		if i == 0 {
-			source = t.Header
-		} else {
-			source = t.Claims
-		}
+	errChan := make(chan error)
+	head := jsonMarshal(errChan, t.Header)
+	claim := jsonMarshal(errChan, t.Claims)
 
-		var jsonValue []byte
-		if jsonValue, err = json.Marshal(source); err != nil {
+	var first, second string
+	for i := 0; i < 2; i++ {
+		select {
+		case first = <-head:
+		case second = <-claim:
+		case err := <-errChan:
 			return "", err
 		}
-
-		parts[i] = EncodeSegment(jsonValue)
 	}
-	return strings.Join(parts, "."), nil
+
+	return strings.Join([]string{first, second}, "."), nil
+}
+
+func jsonMarshal(err chan error, m map[string]interface{}) <-chan string {
+	c := make(chan string)
+	go func() {
+		data, e := json.Marshal(m)
+		if e != nil {
+			err <- e
+			return
+		}
+
+		c <- EncodeSegment(data)
+	}()
+	return c
 }
 
 // Parse, validate, and return a token.
 // keyFunc will receive the parsed token and should return the key for validating.
 // If everything is kosher, err will be nil
-func Parse(tokenString string, keyFunc Keyfunc) (token *Token, err error) {
+func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
+	token := new(Token)
+
 	parts := strings.Split(tokenString, ".")
-	if len(parts) == 3 {
-		token = new(Token)
-		// parse Header
-		var headerBytes []byte
-		if headerBytes, err = DecodeSegment(parts[0]); err != nil {
-			return
-		}
-		if err = json.Unmarshal(headerBytes, &token.Header); err != nil {
-			return
-		}
-
-		// parse Claims
-		var claimBytes []byte
-		if claimBytes, err = DecodeSegment(parts[1]); err != nil {
-			return
-		}
-		if err = json.Unmarshal(claimBytes, &token.Claims); err != nil {
-			return
-		}
-
-		// Lookup signature method
-		if method, ok := token.Header["alg"].(string); ok {
-			if token.Method, err = GetSigningMethod(method); err != nil {
-				return
-			}
-		} else {
-			err = errors.New("Signing method (alg) is unspecified.")
-			return
-		}
-
-		// Check expiry times
-		if exp, ok := token.Claims["exp"].(float64); ok {
-			if time.Now().Unix() > int64(exp) {
-				err = errors.New("Token is expired")
-			}
-		}
-
-		// Lookup key
-		var key []byte
-		if key, err = keyFunc(token); err != nil {
-			return
-		}
-
-		// Perform validation
-		if err = token.Method.Verify(strings.Join(parts[0:2], "."), parts[2], key); err == nil {
-			token.Valid = true
-		}
-
-	} else {
-		err = errors.New("Token contains an invalid number of segments")
+	if len(parts) != 3 {
+		return token, ErrSegment
 	}
-	return
+
+	// parse Header
+	err := decUnmarshal(parts[0], &token.Header)
+	if err != nil {
+		return token, err
+	}
+
+	// parse Claims
+	err = decUnmarshal(parts[1], &token.Claims)
+	if err != nil {
+		return token, err
+	}
+
+	// Lookup signature method
+	method, ok := token.Header["alg"].(string)
+	if !ok {
+		return token, ErrSign
+	}
+
+	if token.Method, err = GetSigningMethod(method); err != nil {
+		return token, err
+	}
+
+	// Check expiry times
+	if exp, ok := token.Claims["exp"].(int64); ok && time.Now().Unix() > exp {
+		return token, ErrExpired
+	}
+
+	// Lookup key
+	key, err := keyFunc(token)
+	if err != nil {
+		return token, err
+	}
+
+	// Perform validation
+	if err = token.Method.Verify(strings.Join(parts[:2], "."), parts[2], key); err != nil {
+		return token, err
+	}
+
+	token.Valid = true
+	return token, nil
+}
+
+func decUnmarshal(data string, m *map[string]interface{}) error {
+	b, err := DecodeSegment(data)
+	if err != nil {
+		return err
+	}
+	if err := json.Unmarshal(b, m); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Try to find the token in an http.Request.
@@ -138,15 +161,11 @@ func Parse(tokenString string, keyFunc Keyfunc) (token *Token, err error) {
 func ParseFromRequest(req *http.Request, keyFunc Keyfunc) (token *Token, err error) {
 
 	// Look for an Authorization header
-	if ah := req.Header.Get("Authorization"); ah != "" {
-		// Should be a bearer token
-		if len(ah) > 6 && strings.ToUpper(ah[0:6]) == "BEARER" {
-			return Parse(ah[7:], keyFunc)
-		}
+	if ah := req.Header.Get("Authorization"); ah != "" && len(ah) > 6 && strings.ToUpper(ah[0:6]) == "BEARER" {
+		return Parse(ah[7:], keyFunc)
 	}
 
-	return nil, errors.New("No token present in request.")
-
+	return nil, ErrNotFound
 }
 
 // Encode JWT specific base64url encoding with padding stripped
@@ -156,12 +175,11 @@ func EncodeSegment(seg []byte) string {
 
 // Decode JWT specific base64url encoding with padding stripped
 func DecodeSegment(seg string) ([]byte, error) {
-	// len % 4
 	switch len(seg) % 4 {
 	case 2:
-		seg = seg + "=="
+		seg += "=="
 	case 3:
-		seg = seg + "==="
+		seg += "==="
 	}
 
 	return base64.URLEncoding.DecodeString(seg)
