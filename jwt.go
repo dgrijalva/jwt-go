@@ -17,6 +17,7 @@ type Keyfunc func(*Token) ([]byte, error)
 
 // A JWT Token
 type Token struct {
+	Raw    string
 	Header map[string]interface{}
 	Claims map[string]interface{}
 	Method SigningMethod
@@ -81,7 +82,7 @@ func (t *Token) SigningString() (string, error) {
 func Parse(tokenString string, keyFunc Keyfunc) (token *Token, err error) {
 	parts := strings.Split(tokenString, ".")
 	if len(parts) == 3 {
-		token = new(Token)
+		token = &Token{Raw: tokenString}
 		// parse Header
 		var headerBytes []byte
 		if headerBytes, err = DecodeSegment(parts[0]); err != nil {
