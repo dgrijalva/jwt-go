@@ -29,13 +29,18 @@ func (m *SigningMethodRS256) Verify(signingString, signature string, key []byte)
 		var block *pem.Block
 		if block, _ = pem.Decode(key); block != nil {
 			var parsedKey interface{}
-			if parsedKey, err = x509.ParsePKIXPublicKey(block.Bytes); err == nil {
+			if parsedKey, err = x509.ParsePKIXPublicKey(block.Bytes); err != nil {
+			        parsedKey, err = x509.ParseCertificate(block.Bytes)
+                        }
+                        if err == nil {
 				if rsaKey, ok := parsedKey.(*rsa.PublicKey); ok {
 					hasher := sha256.New()
 					hasher.Write([]byte(signingString))
 
 					err = rsa.VerifyPKCS1v15(rsaKey, crypto.SHA256, hasher.Sum(nil), sig)
-				} else {
+				} else if cert, ok := parsedKey.(*x509.Certificate); ok {
+                                        err = cert.CheckSignature(x509.SHA256WithRSA, []byte(signingString), sig)
+                                } else {
 					err = errors.New("Key is not a valid RSA public key")
 				}
 			}
