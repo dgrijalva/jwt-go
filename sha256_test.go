@@ -37,7 +37,7 @@ func TestHS256Verify(t *testing.T) {
 	for _, data := range sha256TestData {
 		parts := strings.Split(data.tokenString, ".")
 
-		method, _ := GetSigningMethod("HS256")
+		method := GetSigningMethod("HS256")
 		err := method.Verify(strings.Join(parts[0:2], "."), parts[2], sha256TestKey)
 		if data.valid && err != nil {
 			t.Errorf("[%v] Error while verifying key: %v", data.name, err)
@@ -52,7 +52,7 @@ func TestHS256Sign(t *testing.T) {
 	for _, data := range sha256TestData {
 		if data.valid {
 			parts := strings.Split(data.tokenString, ".")
-			method, _ := GetSigningMethod("HS256")
+			method := GetSigningMethod("HS256")
 			sig, err := method.Sign(strings.Join(parts[0:2], "."), sha256TestKey)
 			if err != nil {
 				t.Errorf("[%v] Error signing token: %v", data.name, err)

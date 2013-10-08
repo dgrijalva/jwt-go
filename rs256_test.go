@@ -38,7 +38,7 @@ func TestRS256Verify(t *testing.T) {
 	for _, data := range rsaTestData {
 		parts := strings.Split(data.tokenString, ".")
 
-		method, _ := GetSigningMethod("RS256")
+		method := GetSigningMethod("RS256")
 		err := method.Verify(strings.Join(parts[0:2], "."), parts[2], key)
 		if data.valid && err != nil {
 			t.Errorf("[%v] Error while verifying key: %v", data.name, err)
@@ -59,7 +59,7 @@ func TestRS256Sign(t *testing.T) {
 	for _, data := range rsaTestData {
 		if data.valid {
 			parts := strings.Split(data.tokenString, ".")
-			method, _ := GetSigningMethod("RS256")
+			method := GetSigningMethod("RS256")
 			sig, err := method.Sign(strings.Join(parts[0:2], "."), key)
 			if err != nil {
 				t.Errorf("[%v] Error signing token: %v", data.name, err)
