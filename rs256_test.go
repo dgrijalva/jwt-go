@@ -1,9 +1,7 @@
 package jwt
 
 import (
-	"bytes"
-	"io"
-	"os"
+	"io/ioutil"
 	"strings"
 	"testing"
 )
@@ -29,11 +27,7 @@ var rsaTestData = []struct {
 }
 
 func TestRS256Verify(t *testing.T) {
-	file, _ := os.Open("test/sample_key.pub")
-	buf := new(bytes.Buffer)
-	io.Copy(buf, file)
-	key := buf.Bytes()
-	file.Close()
+	key, _ := ioutil.ReadFile("test/sample_key.pub")
 
 	for _, data := range rsaTestData {
 		parts := strings.Split(data.tokenString, ".")
@@ -50,11 +44,7 @@ func TestRS256Verify(t *testing.T) {
 }
 
 func TestRS256Sign(t *testing.T) {
-	file, _ := os.Open("test/sample_key")
-	buf := new(bytes.Buffer)
-	io.Copy(buf, file)
-	key := buf.Bytes()
-	file.Close()
+	key, _ := ioutil.ReadFile("test/sample_key")
 
 	for _, data := range rsaTestData {
 		if data.valid {
