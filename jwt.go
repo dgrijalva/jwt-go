@@ -9,6 +9,10 @@ import (
 	"time"
 )
 
+// TimeFunc is used when parsing token to validate "exp" claim (expiration time).
+// You can override it to use another time zone (UTC for example).
+var TimeFunc = time.Now
+
 // Parse methods use this callback function to supply
 // the key for verification.  The function receives the parsed,
 // but unverified Token.  This allows you to use propries in the
@@ -114,7 +118,7 @@ func Parse(tokenString string, keyFunc Keyfunc) (token *Token, err error) {
 
 		// Check expiry times
 		if exp, ok := token.Claims["exp"].(float64); ok {
-			if time.Now().Unix() > int64(exp) {
+			if TimeFunc().Unix() > int64(exp) {
 				err = errors.New("Token is expired")
 			}
 		}
