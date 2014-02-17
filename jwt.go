@@ -117,10 +117,16 @@ func Parse(tokenString string, keyFunc Keyfunc) (token *Token, err error) {
 			return
 		}
 
-		// Check expiry times
+		// Check expiration times
+		now := TimeFunc().Unix()
 		if exp, ok := token.Claims["exp"].(float64); ok {
-			if TimeFunc().Unix() > int64(exp) {
+			if now > int64(exp) {
 				err = errors.New("Token is expired")
+			}
+		}
+		if nbf, ok := token.Claims["nbf"].(float64); ok {
+			if now < int64(nbf) {
+				err = errors.New("Token is not valid yet")
 			}
 		}
 
