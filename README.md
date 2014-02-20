@@ -7,7 +7,7 @@ This library is considered production ready.  Feedback and feature requests are 
 ## Parse and Verify
 
 	token, err := jwt.Parse(myToken, func(token *jwt.Token)([]byte, error){
-		return myLookupKey(token.Head["kid"])
+		return myLookupKey(token.Header["kid"])
 	})
 	
 	if !err && token.Valid {
@@ -18,7 +18,10 @@ This library is considered production ready.  Feedback and feature requests are 
 	
 ## Create a token
 	
-	token := jwt.New(jwt.GetSigningMethod("HS256"))
+	token, _ := jwt.New(jwt.GetSigningMethod("HS256"))
 	token.Claims["foo"] = "bar"
 	token.Claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
 	tokenString, err := token.SignedString(mySigningKey)
+
+
+Documentation can be found [here](http://godoc.org/github.com/dgrijalva/jwt-go)

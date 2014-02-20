@@ -32,8 +32,12 @@ type Token struct {
 	Valid bool
 }
 
-func New(method SigningMethod) *Token {
-	return &Token{
+func New(method SigningMethod) (token *Token, err error) {
+	if method == nil {
+		err = errors.New("Signing method (alg) is unavailable.")
+		return
+	}
+	token = &Token{
 		Header: map[string]interface{}{
 			"typ": "JWT",
 			"alg": method.Alg(),
@@ -41,6 +45,7 @@ func New(method SigningMethod) *Token {
 		Claims: make(map[string]interface{}),
 		Method: method,
 	}
+	return
 }
 
 // Get the complete, signed token
