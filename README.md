@@ -5,23 +5,25 @@ This library supports the parsing and verification as well as the generation and
 This library is considered production ready.  Feedback and feature requests are appreciated.
 
 ## Parse and Verify
-
-	token, err := jwt.Parse(myToken, func(token *jwt.Token)([]byte, error){
+```Go
+	token, err := jwt.Parse(myToken, func(token *jwt.Token) ([]byte, error) {
 		return myLookupKey(token.Header["kid"])
 	})
-	
+
 	if !err && token.Valid {
 		deliverGoodness("!")
 	} else {
 		deliverUtterRejection(":(")
 	}
+```
 	
-## Create a token
-	
+## Creatrna token
+
+```Go
 	token, _ := jwt.New(jwt.GetSigningMethod("HS256"))
 	token.Claims["foo"] = "bar"
 	token.Claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
 	tokenString, err := token.SignedString(mySigningKey)
-
+```	
 
 Documentation can be found [here](http://godoc.org/github.com/dgrijalva/jwt-go)
