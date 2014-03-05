@@ -122,11 +122,13 @@ func Parse(tokenString string, keyFunc Keyfunc) (token *Token, err error) {
 		if exp, ok := token.Claims["exp"].(float64); ok {
 			if now > int64(exp) {
 				err = errors.New("Token is expired")
+				return
 			}
 		}
 		if nbf, ok := token.Claims["nbf"].(float64); ok {
 			if now < int64(nbf) {
 				err = errors.New("Token is not valid yet")
+				return
 			}
 		}
 
@@ -139,10 +141,13 @@ func Parse(tokenString string, keyFunc Keyfunc) (token *Token, err error) {
 		// Perform validation
 		if err = token.Method.Verify(strings.Join(parts[0:2], "."), parts[2], key); err == nil {
 			token.Valid = true
+		} else {
+			return
 		}
 
 	} else {
 		err = errors.New("Token contains an invalid number of segments")
+		return
 	}
 	return
 }
