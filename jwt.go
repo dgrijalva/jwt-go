@@ -144,7 +144,7 @@ func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 			vErr.SignatureInvalid = true
 		}
 
-		if vErr.Valid() {
+		if vErr.valid() {
 			token.Valid = true
 			return token, nil
 		}
@@ -156,6 +156,7 @@ func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	}
 }
 
+// The error from Parse if token is not valid
 type ValidationError struct {
 	err              string
 	Malformed        bool //Token is malformed
@@ -165,6 +166,7 @@ type ValidationError struct {
 	NotValidYet      bool // NBF validation failed
 }
 
+// Validation error is an error type
 func (e *ValidationError) Error() string {
 	if e.err == "" {
 		return "Token is invalid"
@@ -173,7 +175,7 @@ func (e *ValidationError) Error() string {
 }
 
 // No errors
-func (e *ValidationError) Valid() bool {
+func (e *ValidationError) valid() bool {
 	if e.Malformed || e.Unverifiable || e.SignatureInvalid || e.Expired || e.NotValidYet {
 		return false
 	}
