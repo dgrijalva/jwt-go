@@ -156,6 +156,7 @@ func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	}
 }
 
+// The errors that might occur when parsing and validating a token
 const (
 	ValidationErrorMalformed        uint32 = 1 << iota // Token is malformed
 	ValidationErrorUnverifiable                        // Token could not be verified because of signing problems
