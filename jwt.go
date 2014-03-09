@@ -92,34 +92,34 @@ func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 		// parse Header
 		var headerBytes []byte
 		if headerBytes, err = DecodeSegment(parts[0]); err != nil {
-			return token, &ValidationError{err: err.Error(), Malformed: true}
+			return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
 		}
 		if err = json.Unmarshal(headerBytes, &token.Header); err != nil {
-			return token, &ValidationError{err: err.Error(), Malformed: true}
+			return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
 		}
 
 		// parse Claims
 		var claimBytes []byte
 		if claimBytes, err = DecodeSegment(parts[1]); err != nil {
-			return token, &ValidationError{err: err.Error(), Malformed: true}
+			return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
 		}
 		if err = json.Unmarshal(claimBytes, &token.Claims); err != nil {
-			return token, &ValidationError{err: err.Error(), Malformed: true}
+			return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
 		}
 
 		// Lookup signature method
 		if method, ok := token.Header["alg"].(string); ok {
 			if token.Method = GetSigningMethod(method); token.Method == nil {
-				return token, &ValidationError{err: "Signing method (alg) is unavailable.", Unverifiable: true}
+				return token, &ValidationError{err: "Signing method (alg) is unavailable.", Errors: ValidationErrorUnverifiable}
 			}
 		} else {
-			return token, &ValidationError{err: "Signing method (alg) is unspecified.", Unverifiable: true}
+			return token, &ValidationError{err: "Signing method (alg) is unspecified.", Errors: ValidationErrorUnverifiable}
 		}
 
 		// Lookup key
 		var key []byte
 		if key, err = keyFunc(token); err != nil {
-			return token, &ValidationError{err: err.Error(), Unverifiable: true}
+			return token, &ValidationError{err: err.Error(), Errors: ValidationErrorUnverifiable}
 		}
 
 		// Check expiration times
@@ -128,20 +128,20 @@ func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 		if exp, ok := token.Claims["exp"].(float64); ok {
 			if now > int64(exp) {
 				vErr.err = "Token is expired"
-				vErr.Expired = true
+				vErr.Errors |= ValidationErrorExpired
 			}
 		}
 		if nbf, ok := token.Claims["nbf"].(float64); ok {
 			if now < int64(nbf) {
 				vErr.err = "Token is not valid yet"
-				vErr.NotValidYet = true
+				vErr.Errors |= ValidationErrorNotValidYet
 			}
 		}
 
 		// Perform validation
 		if err = token.Method.Verify(strings.Join(parts[0:2], "."), parts[2], key); err != nil {
 			vErr.err = err.Error()
-			vErr.SignatureInvalid = true
+			vErr.Errors |= ValidationErrorSignatureInvalid
 		}
 
 		if vErr.valid() {
@@ -152,18 +152,22 @@ func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 		return token, vErr
 
 	} else {
-		return nil, &ValidationError{err: "Token contains an invalid number of segments", Malformed: true}
+		return nil, &ValidationError{err: "Token contains an invalid number of segments", Errors: ValidationErrorMalformed}
 	}
 }
 
+const (
+	ValidationErrorMalformed        uint32 = 1 << iota // Token is malformed
+	ValidationErrorUnverifiable                        // Token could not be verified because of signing problems
+	ValidationErrorSignatureInvalid                    // Signature validation failed
+	ValidationErrorExpired                             // Exp validation failed
+	ValidationErrorNotValidYet                         // NBF validation failed
+)
+
 // The error from Parse if token is not valid
 type ValidationError struct {
-	err              string
-	Malformed        bool //Token is malformed
-	Unverifiable     bool // Token could not be verified because of signing problems
-	SignatureInvalid bool // Signature validation failed
-	Expired          bool // Exp validation failed
-	NotValidYet      bool // NBF validation failed
+	err    string
+	Errors uint32 // bitfield.  see ValidationError... constants
 }
 
 // Validation error is an error type
@@ -176,7 +180,7 @@ func (e *ValidationError) Error() string {
 
 // No errors
 func (e *ValidationError) valid() bool {
-	if e.Malformed || e.Unverifiable || e.SignatureInvalid || e.Expired || e.NotValidYet {
+	if e.Errors > 0 {
 		return false
 	}
 	return true
