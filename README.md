@@ -20,7 +20,7 @@ This library is considered production ready.  Feedback and feature requests are 
 ## Create a token
 
 ```go
-	token, _ := jwt.New(jwt.GetSigningMethod("HS256"))
+	token := jwt.New(jwt.GetSigningMethod("HS256"))
 	token.Claims["foo"] = "bar"
 	token.Claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
 	tokenString, err := token.SignedString(mySigningKey)
