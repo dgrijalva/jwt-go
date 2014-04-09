@@ -10,7 +10,7 @@ This library is considered production ready.  Feedback and feature requests are 
 		return myLookupKey(token.Header["kid"])
 	})
 
-	if err == null && token.Valid {
+	if err == nil && token.Valid {
 		deliverGoodness("!")
 	} else {
 		deliverUtterRejection(":(")
