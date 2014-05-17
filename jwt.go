@@ -172,7 +172,7 @@ type ValidationError struct {
 }
 
 // Validation error is an error type
-func (e *ValidationError) Error() string {
+func (e ValidationError) Error() string {
 	if e.err == "" {
 		return "Token is invalid"
 	}
