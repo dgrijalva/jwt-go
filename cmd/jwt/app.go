@@ -32,7 +32,6 @@ var (
 
 func main() {
 	// Usage message if you ask for -help or if you mess up inputs.
-	// TODO: make this better
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
 		fmt.Fprintf(os.Stderr, "  One of the following flags is required: sign, verify\n")
@@ -82,6 +81,24 @@ func loadData(p string) ([]byte, error) {
 	return ioutil.ReadAll(rdr)
 }
 
+// Print a json object in accordance with the prophecy (or the command line options)
+func printJSON(j interface{}) error {
+	var out []byte
+	var err error
+
+	if *flagPretty {
+		out, err = json.MarshalIndent(j, "", "    ")
+	} else {
+		out, err = json.Marshal(j)
+	}
+
+	if err == nil {
+		fmt.Println(string(out))
+	}
+
+	return err
+}
+
 // Verify a token and output the claims.  This is a great example
 // of how to verify and view a token.
 func verifyToken() error {
@@ -119,10 +136,7 @@ func verifyToken() error {
 	}
 
 	// Print the token details
-	// TODO: observe the pretty flag
-	if out, err := json.MarshalIndent(token.Claims, "", "    "); err == nil {
-		fmt.Println(string(out))
-	} else {
+	if err := printJSON(token.Claims); err != nil {
 		return fmt.Errorf("Failed to output claims: %v", err)
 	}
 
@@ -137,7 +151,7 @@ func signToken() error {
 	if err != nil {
 		return fmt.Errorf("Couldn't read token: %v", err)
 	} else if *flagDebug {
-		fmt.Println("Token: %v bytes", len(tokData))
+		fmt.Fprintf(os.Stderr, "Token: %v bytes", len(tokData))
 	}
 
 	// parse the JSON of the claims
