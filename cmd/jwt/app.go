@@ -22,6 +22,7 @@ var (
 	flagAlg    = flag.String("alg", "", "signing algorithm identifier")
 	flagKey    = flag.String("key", "", "path to key file or '-' to read from stdin")
 	flagPretty = flag.Bool("pretty", true, "output pretty JSON")
+	flagDebug = flag.Bool("debug", false, "print out all kinds of debug data")
 
 	// Modes - exactly one of these is required
 	flagSign   = flag.String("sign", "", "path to claims object to sign or '-' to read from stdin")
@@ -93,6 +94,12 @@ func verifyToken() error {
 	token, err := jwt.Parse(string(tokData), func(t *jwt.Token) ([]byte, error) {
 		return loadData(*flagKey)
 	})
+
+	// Print some debug data
+	if *flagDebug && token != nil {
+		fmt.Printf("Header:\n%v\n", token.Header)
+		fmt.Printf("Claims:\n%v\n", token.Claims)
+	}
 
 	// Print an error if we can't parse for some reason
 	if err != nil {
