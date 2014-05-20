@@ -42,4 +42,8 @@ Parsing and verifying tokens is pretty straight forward.  You pass in the token 
 	tokenString, err := token.SignedString(mySigningKey)
 ```	
 
-Documentation can be found [here](http://godoc.org/github.com/dgrijalva/jwt-go)
+## More
+
+Documentation can be found [on godoc.org](http://godoc.org/github.com/dgrijalva/jwt-go).
+
+The command line utility included in this project (cmd/jwt) provides a straightforward example of token creation and parsing as well as a useful tool for debugging your own integration.  For a more http centric example, see [this gist](https://gist.github.com/cryptix/45c33ecf0ae54828e63b).
