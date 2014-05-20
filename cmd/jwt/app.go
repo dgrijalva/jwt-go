@@ -13,6 +13,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"regexp"
 
 	"github.com/dgrijalva/jwt-go"
 )
@@ -22,7 +23,7 @@ var (
 	flagAlg    = flag.String("alg", "", "signing algorithm identifier")
 	flagKey    = flag.String("key", "", "path to key file or '-' to read from stdin")
 	flagPretty = flag.Bool("pretty", true, "output pretty JSON")
-	flagDebug = flag.Bool("debug", false, "print out all kinds of debug data")
+	flagDebug  = flag.Bool("debug", false, "print out all kinds of debug data")
 
 	// Modes - exactly one of these is required
 	flagSign   = flag.String("sign", "", "path to claims object to sign or '-' to read from stdin")
@@ -90,6 +91,12 @@ func verifyToken() error {
 		return fmt.Errorf("Couldn't read token: %v", err)
 	}
 
+	// trim possible whitespace from token
+	tokData = regexp.MustCompile(`\s*$`).ReplaceAll(tokData, []byte{})
+	if *flagDebug {
+		fmt.Fprintf(os.Stderr, "Token len: %v bytes\n", len(tokData))
+	}
+
 	// Parse the token.  Load the key from command line option
 	token, err := jwt.Parse(string(tokData), func(t *jwt.Token) ([]byte, error) {
 		return loadData(*flagKey)
@@ -97,8 +104,8 @@ func verifyToken() error {
 
 	// Print some debug data
 	if *flagDebug && token != nil {
-		fmt.Printf("Header:\n%v\n", token.Header)
-		fmt.Printf("Claims:\n%v\n", token.Claims)
+		fmt.Fprintf(os.Stderr, "Header:\n%v\n", token.Header)
+		fmt.Fprintf(os.Stderr, "Claims:\n%v\n", token.Claims)
 	}
 
 	// Print an error if we can't parse for some reason
@@ -129,6 +136,8 @@ func signToken() error {
 	tokData, err := loadData(*flagSign)
 	if err != nil {
 		return fmt.Errorf("Couldn't read token: %v", err)
+	} else if *flagDebug {
+		fmt.Println("Token: %v bytes", len(tokData))
 	}
 
 	// parse the JSON of the claims
