@@ -80,7 +80,8 @@ func loadData(p string) ([]byte, error) {
 	return ioutil.ReadAll(rdr)
 }
 
-// Verify a token and output the claims
+// Verify a token and output the claims.  This is a great example
+// of how to verify and view a token.
 func verifyToken() error {
 	// get the token
 	tokData, err := loadData(*flagVerify)
@@ -95,7 +96,7 @@ func verifyToken() error {
 
 	// Print an error if we can't parse for some reason
 	if err != nil {
-		return err
+		return fmt.Errorf("Couldn't parse token: %v", err)
 	}
 
 	// Is token invalid?
@@ -114,9 +115,10 @@ func verifyToken() error {
 	return nil
 }
 
-// Create, sign, and output a token
+// Create, sign, and output a token.  This is a great, simple example of
+// how to use this library to create and sign a token.
 func signToken() error {
-	// get the token
+	// get the token data from command line arguments
 	tokData, err := loadData(*flagSign)
 	if err != nil {
 		return fmt.Errorf("Couldn't read token: %v", err)
