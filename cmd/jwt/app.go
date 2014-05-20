@@ -1,3 +1,9 @@
+// A useful example app.  You can use this to debug your tokens on the command line.
+// This is also a great place to look at how you might use this library.
+//
+// Example usage:
+// The following will create and sign a token, then verify it and output the original claims.
+//     echo {\"foo\":\"bar\"} | bin/jwt -key test/sample_key -alg RS256 -sign - | bin/jwt -key test/sample_key.pub -verify -
 package main
 
 import (
@@ -42,7 +48,7 @@ func main() {
 	}
 }
 
-// Figure out which thing
+// Figure out which thing to do and then do that
 func start() error {
 	if *flagSign != "" {
 		return signToken()
@@ -54,7 +60,7 @@ func start() error {
 	}
 }
 
-// Read input from specified file or stdin
+// Helper func:  Read input from specified file or stdin
 func loadData(p string) ([]byte, error) {
 	if p == "" {
 		return nil, fmt.Errorf("No path specified")
@@ -74,7 +80,7 @@ func loadData(p string) ([]byte, error) {
 	return ioutil.ReadAll(rdr)
 }
 
-// verify a token and output the claims
+// Verify a token and output the claims
 func verifyToken() error {
 	// get the token
 	tokData, err := loadData(*flagVerify)
