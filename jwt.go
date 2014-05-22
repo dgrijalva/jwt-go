@@ -151,9 +151,8 @@ func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 
 		return token, vErr
 
-	} else {
-		return nil, &ValidationError{err: "Token contains an invalid number of segments", Errors: ValidationErrorMalformed}
 	}
+	return nil, &ValidationError{err: "Token contains an invalid number of segments", Errors: ValidationErrorMalformed}
 }
 
 // The errors that might occur when parsing and validating a token
