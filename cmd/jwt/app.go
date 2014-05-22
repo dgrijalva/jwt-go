@@ -20,10 +20,10 @@ import (
 
 var (
 	// Options
-	flagAlg    = flag.String("alg", "", "signing algorithm identifier")
-	flagKey    = flag.String("key", "", "path to key file or '-' to read from stdin")
-	flagPretty = flag.Bool("pretty", true, "output pretty JSON")
-	flagDebug  = flag.Bool("debug", false, "print out all kinds of debug data")
+	flagAlg     = flag.String("alg", "", "signing algorithm identifier")
+	flagKey     = flag.String("key", "", "path to key file or '-' to read from stdin")
+	flagCompact = flag.Bool("compact", false, "output compact JSON")
+	flagDebug   = flag.Bool("debug", false, "print out all kinds of debug data")
 
 	// Modes - exactly one of these is required
 	flagSign   = flag.String("sign", "", "path to claims object to sign or '-' to read from stdin")
@@ -86,7 +86,7 @@ func printJSON(j interface{}) error {
 	var out []byte
 	var err error
 
-	if *flagPretty {
+	if *flagCompact == false {
 		out, err = json.MarshalIndent(j, "", "    ")
 	} else {
 		out, err = json.Marshal(j)
