@@ -12,8 +12,6 @@ The part in the middle is the interesting bit.  It's called the Claims and conta
 
 This library supports the parsing and verification as well as the generation and signing of JWTs.  Current supported signing algorithms are RSA256 and HMAC SHA256, though hooks are present for adding your own.
 
-This library is considered production ready.  Feedback and feature requests are appreciated.
-
 ## Parse and Verify
 
 Parsing and verifying tokens is pretty straight forward.  You pass in the token and a function for looking up the key.  This is done as a callback since you may need to parse the token to find out what signing method and key was used.
@@ -41,6 +39,12 @@ Parsing and verifying tokens is pretty straight forward.  You pass in the token 
 	// Sign and get the complete encoded token as a string
 	tokenString, err := token.SignedString(mySigningKey)
 ```	
+
+## Project Status & Versioning
+
+This library is considered production ready.  Feedback and feature requests are appreciated.  The API should be considered stable.  There should be very few backwards-incompatible changes outside of major version updates (and only with good reason).
+
+This project uses [Semantic Versioning 2.0.0](http://semver.org).  Accepted pull requests will land on `master`.  Periodically, versions will be tagged from `master`.  You can find all the releases on [the project releases page](https://github.com/dgrijalva/jwt-go/releases).
 
 ## More
 
