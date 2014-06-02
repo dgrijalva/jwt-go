@@ -86,73 +86,73 @@ func (t *Token) SigningString() (string, error) {
 // If everything is kosher, err will be nil
 func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	parts := strings.Split(tokenString, ".")
-	if len(parts) == 3 {
-		var err error
-		token := &Token{Raw: tokenString}
-		// parse Header
-		var headerBytes []byte
-		if headerBytes, err = DecodeSegment(parts[0]); err != nil {
-			return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
-		}
-		if err = json.Unmarshal(headerBytes, &token.Header); err != nil {
-			return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
-		}
-
-		// parse Claims
-		var claimBytes []byte
-		if claimBytes, err = DecodeSegment(parts[1]); err != nil {
-			return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
-		}
-		if err = json.Unmarshal(claimBytes, &token.Claims); err != nil {
-			return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
-		}
-
-		// Lookup signature method
-		if method, ok := token.Header["alg"].(string); ok {
-			if token.Method = GetSigningMethod(method); token.Method == nil {
-				return token, &ValidationError{err: "Signing method (alg) is unavailable.", Errors: ValidationErrorUnverifiable}
-			}
-		} else {
-			return token, &ValidationError{err: "Signing method (alg) is unspecified.", Errors: ValidationErrorUnverifiable}
-		}
-
-		// Lookup key
-		var key []byte
-		if key, err = keyFunc(token); err != nil {
-			return token, &ValidationError{err: err.Error(), Errors: ValidationErrorUnverifiable}
-		}
-
-		// Check expiration times
-		vErr := &ValidationError{}
-		now := TimeFunc().Unix()
-		if exp, ok := token.Claims["exp"].(float64); ok {
-			if now > int64(exp) {
-				vErr.err = "Token is expired"
-				vErr.Errors |= ValidationErrorExpired
-			}
-		}
-		if nbf, ok := token.Claims["nbf"].(float64); ok {
-			if now < int64(nbf) {
-				vErr.err = "Token is not valid yet"
-				vErr.Errors |= ValidationErrorNotValidYet
-			}
-		}
-
-		// Perform validation
-		if err = token.Method.Verify(strings.Join(parts[0:2], "."), parts[2], key); err != nil {
-			vErr.err = err.Error()
-			vErr.Errors |= ValidationErrorSignatureInvalid
-		}
-
-		if vErr.valid() {
-			token.Valid = true
-			return token, nil
-		}
-
-		return token, vErr
-
+	if len(parts) != 3 {
+		return nil, &ValidationError{err: "Token contains an invalid number of segments", Errors: ValidationErrorMalformed}
 	}
-	return nil, &ValidationError{err: "Token contains an invalid number of segments", Errors: ValidationErrorMalformed}
+
+	var err error
+	token := &Token{Raw: tokenString}
+	// parse Header
+	var headerBytes []byte
+	if headerBytes, err = DecodeSegment(parts[0]); err != nil {
+		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
+	}
+	if err = json.Unmarshal(headerBytes, &token.Header); err != nil {
+		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
+	}
+
+	// parse Claims
+	var claimBytes []byte
+	if claimBytes, err = DecodeSegment(parts[1]); err != nil {
+		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
+	}
+	if err = json.Unmarshal(claimBytes, &token.Claims); err != nil {
+		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
+	}
+
+	// Lookup signature method
+	if method, ok := token.Header["alg"].(string); ok {
+		if token.Method = GetSigningMethod(method); token.Method == nil {
+			return token, &ValidationError{err: "Signing method (alg) is unavailable.", Errors: ValidationErrorUnverifiable}
+		}
+	} else {
+		return token, &ValidationError{err: "Signing method (alg) is unspecified.", Errors: ValidationErrorUnverifiable}
+	}
+
+	// Lookup key
+	var key []byte
+	if key, err = keyFunc(token); err != nil {
+		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorUnverifiable}
+	}
+
+	// Check expiration times
+	vErr := &ValidationError{}
+	now := TimeFunc().Unix()
+	if exp, ok := token.Claims["exp"].(float64); ok {
+		if now > int64(exp) {
+			vErr.err = "Token is expired"
+			vErr.Errors |= ValidationErrorExpired
+		}
+	}
+	if nbf, ok := token.Claims["nbf"].(float64); ok {
+		if now < int64(nbf) {
+			vErr.err = "Token is not valid yet"
+			vErr.Errors |= ValidationErrorNotValidYet
+		}
+	}
+
+	// Perform validation
+	if err = token.Method.Verify(strings.Join(parts[0:2], "."), parts[2], key); err != nil {
+		vErr.err = err.Error()
+		vErr.Errors |= ValidationErrorSignatureInvalid
+	}
+
+	if vErr.valid() {
+		token.Valid = true
+		return token, nil
+	}
+
+	return token, vErr
 }
 
 // The errors that might occur when parsing and validating a token
