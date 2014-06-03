@@ -1,11 +1,9 @@
 package jwt
 
 import (
-	"bytes"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"net/http"
-	"os"
 	"reflect"
 	"testing"
 	"time"
@@ -56,11 +54,10 @@ var jwtTestData = []struct {
 }
 
 func makeSample(c map[string]interface{}) string {
-	file, _ := os.Open("test/sample_key")
-	buf := new(bytes.Buffer)
-	io.Copy(buf, file)
-	key := buf.Bytes()
-	file.Close()
+	key, e := ioutil.ReadFile("test/sample_key")
+	if e != nil {
+		panic(e.Error())
+	}
 
 	token := New(GetSigningMethod("RS256"))
 	token.Claims = c
@@ -74,17 +71,15 @@ func makeSample(c map[string]interface{}) string {
 }
 
 func TestJWT(t *testing.T) {
-	file, _ := os.Open("test/sample_key.pub")
-	buf := new(bytes.Buffer)
-	io.Copy(buf, file)
-	key := buf.Bytes()
-	file.Close()
+	key, e := ioutil.ReadFile("test/sample_key.pub")
+	if e != nil {
+		t.Fatal(e)
+	}
 
 	for _, data := range jwtTestData {
 		if data.tokenString == "" {
 			data.tokenString = makeSample(data.claims)
 		}
-
 		token, err := Parse(data.tokenString, func(t *Token) ([]byte, error) { return key, nil })
 
 		if !reflect.DeepEqual(data.claims, token.Claims) {
@@ -112,11 +107,10 @@ func TestJWT(t *testing.T) {
 }
 
 func TestParseRequest(t *testing.T) {
-	file, _ := os.Open("test/sample_key.pub")
-	buf := new(bytes.Buffer)
-	io.Copy(buf, file)
-	key := buf.Bytes()
-	file.Close()
+	key, e := ioutil.ReadFile("test/sample_key.pub")
+	if e != nil {
+		t.Fatal(e)
+	}
 
 	// Bearer token request
 	for _, data := range jwtTestData {
