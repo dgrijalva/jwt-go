@@ -22,16 +22,15 @@ type Keyfunc func(*Token) ([]byte, error)
 
 // A JWT Token
 type Token struct {
-	Raw    string
-	Header map[string]interface{}
-	Claims map[string]interface{}
-	Method SigningMethod
-	// This is only populated when you Parse a token
-	Signature string
-	// This is only populated when you Parse/Verify a token
-	Valid bool
+	Raw       string                 // The raw token.  Populated when you Parse a token
+	Method    SigningMethod          // The signing method used or to be used
+	Header    map[string]interface{} // The first segment of the token
+	Claims    map[string]interface{} // The second segment of the token
+	Signature string                 // The third segment of the token.  Populated when you Parse a token
+	Valid     bool                   // Is the token valid?  Populated when you Parse/Verify a token
 }
 
+// Create a new Token.  Takes a signing method
 func New(method SigningMethod) *Token {
 	return &Token{
 		Header: map[string]interface{}{
