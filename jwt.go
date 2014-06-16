@@ -20,7 +20,8 @@ var TimeFunc = time.Now
 // Header of the token (such as `kid`) to identify which key to use.
 type Keyfunc func(*Token) ([]byte, error)
 
-// A JWT Token
+// A JWT Token.  Different fields will be used depending on whether you're
+// creating or parsing/verifying a token.
 type Token struct {
 	Raw       string                 // The raw token.  Populated when you Parse a token
 	Method    SigningMethod          // The signing method used or to be used
