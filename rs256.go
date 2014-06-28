@@ -79,6 +79,8 @@ func (m *SigningMethodRS256) parsePrivateKey(key []byte) (pkey *rsa.PrivateKey, 
 		if pkey, ok = parsedKey.(*rsa.PrivateKey); !ok {
 			err = errors.New("Key is not a valid RSA private key")
 		}
+	} else {
+		err = errors.New("Invalid Key: Key must be PEM encoded PKCS1 or PKCS8 private key")
 	}
 	return
 }

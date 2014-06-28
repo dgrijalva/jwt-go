@@ -60,3 +60,22 @@ func TestRS256Sign(t *testing.T) {
 		}
 	}
 }
+
+func TestKeyParsing(t *testing.T) {
+	key, _ := ioutil.ReadFile("test/sample_key")
+	pubKey, _ := ioutil.ReadFile("test/sample_key.pub")
+	badKey := []byte("All your base are belong to key")
+	method := GetSigningMethod("RS256").(*SigningMethodRS256)
+
+	if _, e := method.parsePrivateKey(key); e != nil {
+		t.Errorf("Failed to parse valid private key: %v", e)
+	}
+
+	if k, e := method.parsePrivateKey(pubKey); e == nil {
+		t.Errorf("Parsed public key as valid private key: %v", k)
+	}
+
+	if k, e := method.parsePrivateKey(badKey); e == nil {
+		t.Errorf("Parsed invalid key as valid private key: %v", k)
+	}
+}
