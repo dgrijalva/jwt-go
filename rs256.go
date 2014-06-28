@@ -51,6 +51,8 @@ func (m *SigningMethodRS256) Verify(signingString, signature string, key []byte)
 	return
 }
 
+// Implements the Sign method from SigningMethod
+// For this signing method, must be PEM encoded PKCS1 or PKCS8 RSA private key
 func (m *SigningMethodRS256) Sign(signingString string, key []byte) (sig string, err error) {
 	// Key
 	var rsaKey *rsa.PrivateKey
