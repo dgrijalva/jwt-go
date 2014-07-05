@@ -4,25 +4,47 @@ import (
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
-	"crypto/sha256"
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
 )
 
-type SigningMethodRS256 struct{}
+type SigningMethodRSA struct {
+	Name string
+	Hash crypto.Hash
+}
+
+var (
+	SigningMethodRS256 *SigningMethodRSA
+	SigningMethodRS384 *SigningMethodRSA
+	SigningMethodRS512 *SigningMethodRSA
+)
 
 func init() {
-	RegisterSigningMethod("RS256", func() SigningMethod {
-		return new(SigningMethodRS256)
+	// RS256
+	SigningMethodRS256 = &SigningMethodRSA{"RS256", crypto.SHA256}
+	RegisterSigningMethod(SigningMethodRS256.Alg(), func() SigningMethod {
+		return SigningMethodRS256
+	})
+
+	// RS384
+	SigningMethodRS384 = &SigningMethodRSA{"RS384", crypto.SHA384}
+	RegisterSigningMethod(SigningMethodRS384.Alg(), func() SigningMethod {
+		return SigningMethodRS384
+	})
+
+	// RS512
+	SigningMethodRS512 = &SigningMethodRSA{"RS512", crypto.SHA512}
+	RegisterSigningMethod(SigningMethodRS512.Alg(), func() SigningMethod {
+		return SigningMethodRS512
 	})
 }
 
-func (m *SigningMethodRS256) Alg() string {
-	return "RS256"
+func (m *SigningMethodRSA) Alg() string {
+	return m.Name
 }
 
-func (m *SigningMethodRS256) Verify(signingString, signature string, key []byte) error {
+func (m *SigningMethodRSA) Verify(signingString, signature string, key []byte) error {
 	var err error
 
 	// Decode the signature
@@ -38,30 +60,30 @@ func (m *SigningMethodRS256) Verify(signingString, signature string, key []byte)
 	}
 
 	// Create hasher
-	hasher := sha256.New()
+	hasher := m.Hash.New()
 	hasher.Write([]byte(signingString))
 
 	// Verify the signature
-	return rsa.VerifyPKCS1v15(rsaKey, crypto.SHA256, hasher.Sum(nil), sig)
+	return rsa.VerifyPKCS1v15(rsaKey, m.Hash, hasher.Sum(nil), sig)
 }
 
 // Implements the Sign method from SigningMethod
 // For this signing method, must be PEM encoded PKCS1 or PKCS8 RSA private key
-func (m *SigningMethodRS256) Sign(signingString string, key []byte) (string, error) {
+func (m *SigningMethodRSA) Sign(signingString string, key []byte) (string, error) {
 	var err error
 
-	// Key
+	// Parse private key
 	var rsaKey *rsa.PrivateKey
 	if rsaKey, err = m.parsePrivateKey(key); err != nil {
 		return "", err
 	}
 
 	// Create the hasher
-	hasher := sha256.New()
+	hasher := m.Hash.New()
 	hasher.Write([]byte(signingString))
 
 	// Sign the string and return the encoded bytes
-	if sigBytes, err := rsa.SignPKCS1v15(rand.Reader, rsaKey, crypto.SHA256, hasher.Sum(nil)); err == nil {
+	if sigBytes, err := rsa.SignPKCS1v15(rand.Reader, rsaKey, m.Hash, hasher.Sum(nil)); err == nil {
 		return EncodeSegment(sigBytes), nil
 	} else {
 		return "", err
@@ -70,7 +92,7 @@ func (m *SigningMethodRS256) Sign(signingString string, key []byte) (string, err
 }
 
 // Parse PEM encoded PKCS1 or PKCS8 public key
-func (m *SigningMethodRS256) parsePublicKey(key []byte) (*rsa.PublicKey, error) {
+func (m *SigningMethodRSA) parsePublicKey(key []byte) (*rsa.PublicKey, error) {
 	var err error
 
 	// Parse PEM block
@@ -99,7 +121,7 @@ func (m *SigningMethodRS256) parsePublicKey(key []byte) (*rsa.PublicKey, error) 
 }
 
 // Parse PEM encoded PKCS1 or PKCS8 private key
-func (m *SigningMethodRS256) parsePrivateKey(key []byte) (*rsa.PrivateKey, error) {
+func (m *SigningMethodRSA) parsePrivateKey(key []byte) (*rsa.PrivateKey, error) {
 	var err error
 
 	// Parse PEM block
