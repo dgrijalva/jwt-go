@@ -83,9 +83,9 @@ func (m *SigningMethodRS256) parsePublicKey(key []byte) (*rsa.PublicKey, error) 
 	var parsedKey interface{}
 	if parsedKey, err = x509.ParsePKIXPublicKey(block.Bytes); err != nil {
 		if cert, err := x509.ParseCertificate(block.Bytes); err == nil {
-			return nil, err
-		} else {
 			parsedKey = cert.PublicKey
+		} else {
+			return nil, err
 		}
 	}
 
