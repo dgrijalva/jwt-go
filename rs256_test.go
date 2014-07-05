@@ -61,7 +61,7 @@ func TestRS256Sign(t *testing.T) {
 	}
 }
 
-func TestKeyParsing(t *testing.T) {
+func TestRSAKeyParsing(t *testing.T) {
 	key, _ := ioutil.ReadFile("test/sample_key")
 	pubKey, _ := ioutil.ReadFile("test/sample_key.pub")
 	badKey := []byte("All your base are belong to key")
