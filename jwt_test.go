@@ -80,7 +80,7 @@ func TestJWT(t *testing.T) {
 		if data.tokenString == "" {
 			data.tokenString = makeSample(data.claims)
 		}
-		token, err := Parse(data.tokenString, func(t *Token) ([]byte, error) { return key, nil })
+		token, err := Parse(data.tokenString, func(t *Token) (interface{}, error) { return key, nil })
 
 		if !reflect.DeepEqual(data.claims, token.Claims) {
 			t.Errorf("[%v] Claims mismatch. Expecting: %v  Got: %v", data.name, data.claims, token.Claims)
@@ -120,7 +120,7 @@ func TestParseRequest(t *testing.T) {
 
 		r, _ := http.NewRequest("GET", "/", nil)
 		r.Header.Set("Authorization", fmt.Sprintf("Bearer %v", data.tokenString))
-		token, err := ParseFromRequest(r, func(t *Token) ([]byte, error) { return key, nil })
+		token, err := ParseFromRequest(r, func(t *Token) (interface{}, error) { return key, nil })
 
 		if !reflect.DeepEqual(data.claims, token.Claims) {
 			t.Errorf("[%v] Claims mismatch. Expecting: %v  Got: %v", data.name, data.claims, token.Claims)

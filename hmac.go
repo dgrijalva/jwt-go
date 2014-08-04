@@ -42,24 +42,31 @@ func (m *SigningMethodHMAC) Alg() string {
 	return m.Name
 }
 
-func (m *SigningMethodHMAC) Verify(signingString, signature string, key []byte) error {
-	// Key
-	var sig []byte
-	var err error
-	if sig, err = DecodeSegment(signature); err == nil {
-		hasher := hmac.New(m.Hash.New, key)
-		hasher.Write([]byte(signingString))
+func (m *SigningMethodHMAC) Verify(signingString, signature string, key interface{}) error {
+	if keyBytes, ok := key.([]byte); ok {
+		var sig []byte
+		var err error
+		if sig, err = DecodeSegment(signature); err == nil {
+			hasher := hmac.New(m.Hash.New, keyBytes)
+			hasher.Write([]byte(signingString))
 
-		if !bytes.Equal(sig, hasher.Sum(nil)) {
-			err = errors.New("Signature is invalid")
+			if !bytes.Equal(sig, hasher.Sum(nil)) {
+				err = errors.New("Signature is invalid")
+			}
 		}
+		return err
 	}
-	return err
+
+	return ErrInvalidKey
 }
 
-func (m *SigningMethodHMAC) Sign(signingString string, key []byte) (string, error) {
-	hasher := hmac.New(m.Hash.New, key)
-	hasher.Write([]byte(signingString))
+func (m *SigningMethodHMAC) Sign(signingString string, key interface{}) (string, error) {
+	if keyBytes, ok := key.([]byte); ok {
+		hasher := hmac.New(m.Hash.New, keyBytes)
+		hasher.Write([]byte(signingString))
 
-	return EncodeSegment(hasher.Sum(nil)), nil
+		return EncodeSegment(hasher.Sum(nil)), nil
+	}
+
+	return "", ErrInvalidKey
 }
