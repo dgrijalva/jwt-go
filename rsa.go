@@ -18,6 +18,7 @@ var (
 	SigningMethodRS256 *SigningMethodRSA
 	SigningMethodRS384 *SigningMethodRSA
 	SigningMethodRS512 *SigningMethodRSA
+	ErrInvalidKey      = errors.New("An invalid key was passed. Expected a []byte")
 )
 
 func init() {
@@ -44,7 +45,7 @@ func (m *SigningMethodRSA) Alg() string {
 	return m.Name
 }
 
-func (m *SigningMethodRSA) Verify(signingString, signature string, key []byte) error {
+func (m *SigningMethodRSA) Verify(signingString, signature string, key interface{}) error {
 	var err error
 
 	// Decode the signature
@@ -53,42 +54,48 @@ func (m *SigningMethodRSA) Verify(signingString, signature string, key []byte) e
 		return err
 	}
 
-	// Parse public key
-	var rsaKey *rsa.PublicKey
-	if rsaKey, err = m.parsePublicKey(key); err != nil {
-		return err
+	if keyBytes, ok := key.([]byte); ok {
+		var rsaKey *rsa.PublicKey
+		if rsaKey, err = m.parsePublicKey(keyBytes); err != nil {
+			return err
+		}
+
+		// Create hasher
+		hasher := m.Hash.New()
+		hasher.Write([]byte(signingString))
+
+		// Verify the signature
+		return rsa.VerifyPKCS1v15(rsaKey, m.Hash, hasher.Sum(nil), sig)
+	} else {
+		return ErrInvalidKey
 	}
-
-	// Create hasher
-	hasher := m.Hash.New()
-	hasher.Write([]byte(signingString))
-
-	// Verify the signature
-	return rsa.VerifyPKCS1v15(rsaKey, m.Hash, hasher.Sum(nil), sig)
 }
 
 // Implements the Sign method from SigningMethod
 // For this signing method, must be PEM encoded PKCS1 or PKCS8 RSA private key
-func (m *SigningMethodRSA) Sign(signingString string, key []byte) (string, error) {
+func (m *SigningMethodRSA) Sign(signingString string, key interface{}) (string, error) {
 	var err error
 
-	// Parse private key
-	var rsaKey *rsa.PrivateKey
-	if rsaKey, err = m.parsePrivateKey(key); err != nil {
-		return "", err
+	if keyBytes, ok := key.([]byte); ok {
+		// Key
+		var rsaKey *rsa.PrivateKey
+		if rsaKey, err = m.parsePrivateKey(keyBytes); err != nil {
+			return "", err
+		}
+
+		// Create the hasher
+		hasher := m.Hash.New()
+		hasher.Write([]byte(signingString))
+
+		// Sign the string and return the encoded bytes
+		if sigBytes, err := rsa.SignPKCS1v15(rand.Reader, rsaKey, m.Hash, hasher.Sum(nil)); err == nil {
+			return EncodeSegment(sigBytes), nil
+		} else {
+			return "", err
+		}
 	}
 
-	// Create the hasher
-	hasher := m.Hash.New()
-	hasher.Write([]byte(signingString))
-
-	// Sign the string and return the encoded bytes
-	if sigBytes, err := rsa.SignPKCS1v15(rand.Reader, rsaKey, m.Hash, hasher.Sum(nil)); err == nil {
-		return EncodeSegment(sigBytes), nil
-	} else {
-		return "", err
-	}
-
+	return "", ErrInvalidKey
 }
 
 // Parse PEM encoded PKCS1 or PKCS8 public key

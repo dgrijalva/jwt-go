@@ -18,7 +18,7 @@ var TimeFunc = time.Now
 // the key for verification.  The function receives the parsed,
 // but unverified Token.  This allows you to use propries in the
 // Header of the token (such as `kid`) to identify which key to use.
-type Keyfunc func(*Token) ([]byte, error)
+type Keyfunc func(*Token) (interface{}, error)
 
 // A JWT Token.  Different fields will be used depending on whether you're
 // creating or parsing/verifying a token.
@@ -120,7 +120,7 @@ func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	}
 
 	// Lookup key
-	var key []byte
+	var key interface{}
 	if key, err = keyFunc(token); err != nil {
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorUnverifiable}
 	}
