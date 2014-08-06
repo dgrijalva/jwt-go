@@ -78,6 +78,24 @@ func TestRSASign(t *testing.T) {
 	}
 }
 
+func TestRSAWithPreParsedPrivateKey(t *testing.T) {
+	key, _ := ioutil.ReadFile("test/sample_key")
+	method := GetSigningMethod("RS256").(*SigningMethodRSA)
+	parsedKey, err := method.parsePrivateKey(key)
+	if err != nil {
+		t.Fatal(err)
+	}
+	testData := rsaTestData[0]
+	parts := strings.Split(testData.tokenString, ".")
+	sig, err := method.Sign(strings.Join(parts[0:2], "."), parsedKey)
+	if err != nil {
+		t.Errorf("[%v] Error signing token: %v", testData.name, err)
+	}
+	if sig != parts[2] {
+		t.Errorf("[%v] Incorrect signature.\nwas:\n%v\nexpecting:\n%v", testData.name, sig, parts[2])
+	}
+}
+
 func TestRSAKeyParsing(t *testing.T) {
 	key, _ := ioutil.ReadFile("test/sample_key")
 	pubKey, _ := ioutil.ReadFile("test/sample_key.pub")

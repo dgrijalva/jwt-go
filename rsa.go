@@ -71,30 +71,32 @@ func (m *SigningMethodRSA) Verify(signingString, signature string, key interface
 }
 
 // Implements the Sign method from SigningMethod
-// For this signing method, must be PEM encoded PKCS1 or PKCS8 RSA private key
+// For this signing method, must be either a PEM encoded PKCS1 or PKCS8 RSA private key as
+// []byte, or an rsa.PrivateKey structure.
 func (m *SigningMethodRSA) Sign(signingString string, key interface{}) (string, error) {
 	var err error
+	var rsaKey *rsa.PrivateKey
 
-	if keyBytes, ok := key.([]byte); ok {
-		// Key
-		var rsaKey *rsa.PrivateKey
-		if rsaKey, err = m.parsePrivateKey(keyBytes); err != nil {
+	switch k := key.(type) {
+	case []byte:
+		if rsaKey, err = m.parsePrivateKey(k); err != nil {
 			return "", err
 		}
-
-		// Create the hasher
-		hasher := m.Hash.New()
-		hasher.Write([]byte(signingString))
-
-		// Sign the string and return the encoded bytes
-		if sigBytes, err := rsa.SignPKCS1v15(rand.Reader, rsaKey, m.Hash, hasher.Sum(nil)); err == nil {
-			return EncodeSegment(sigBytes), nil
-		} else {
-			return "", err
-		}
+	case *rsa.PrivateKey:
+		rsaKey = k
+	default:
+		return "", ErrInvalidKey
 	}
+	// Create the hasher
+	hasher := m.Hash.New()
+	hasher.Write([]byte(signingString))
 
-	return "", ErrInvalidKey
+	// Sign the string and return the encoded bytes
+	if sigBytes, err := rsa.SignPKCS1v15(rand.Reader, rsaKey, m.Hash, hasher.Sum(nil)); err == nil {
+		return EncodeSegment(sigBytes), nil
+	} else {
+		return "", err
+	}
 }
 
 // Parse PEM encoded PKCS1 or PKCS8 public key
