@@ -81,7 +81,7 @@ func TestRSASign(t *testing.T) {
 func TestRSAVerifyWithPreParsedPrivateKey(t *testing.T) {
 	key, _ := ioutil.ReadFile("test/sample_key.pub")
 	method := GetSigningMethod("RS256").(*SigningMethodRSA)
-	parsedKey, err := method.parsePublicKey(key)
+	parsedKey, err := ParsePublicKeyFromPEM(key)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -96,7 +96,7 @@ func TestRSAVerifyWithPreParsedPrivateKey(t *testing.T) {
 func TestRSAWithPreParsedPrivateKey(t *testing.T) {
 	key, _ := ioutil.ReadFile("test/sample_key")
 	method := GetSigningMethod("RS256").(*SigningMethodRSA)
-	parsedKey, err := method.parsePrivateKey(key)
+	parsedKey, err := ParsePrivateKeyFromPEM(key)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -115,31 +115,30 @@ func TestRSAKeyParsing(t *testing.T) {
 	key, _ := ioutil.ReadFile("test/sample_key")
 	pubKey, _ := ioutil.ReadFile("test/sample_key.pub")
 	badKey := []byte("All your base are belong to key")
-	method := GetSigningMethod("RS256").(*SigningMethodRSA)
 
 	// Test parsePrivateKey
-	if _, e := method.parsePrivateKey(key); e != nil {
+	if _, e := ParsePrivateKeyFromPEM(key); e != nil {
 		t.Errorf("Failed to parse valid private key: %v", e)
 	}
 
-	if k, e := method.parsePrivateKey(pubKey); e == nil {
+	if k, e := ParsePrivateKeyFromPEM(pubKey); e == nil {
 		t.Errorf("Parsed public key as valid private key: %v", k)
 	}
 
-	if k, e := method.parsePrivateKey(badKey); e == nil {
+	if k, e := ParsePrivateKeyFromPEM(badKey); e == nil {
 		t.Errorf("Parsed invalid key as valid private key: %v", k)
 	}
 
 	// Test parsePublicKey
-	if _, e := method.parsePublicKey(pubKey); e != nil {
+	if _, e := ParsePublicKeyFromPEM(pubKey); e != nil {
 		t.Errorf("Failed to parse valid public key: %v", e)
 	}
 
-	if k, e := method.parsePublicKey(key); e == nil {
+	if k, e := ParsePublicKeyFromPEM(key); e == nil {
 		t.Errorf("Parsed private key as valid public key: %v", k)
 	}
 
-	if k, e := method.parsePublicKey(badKey); e == nil {
+	if k, e := ParsePublicKeyFromPEM(badKey); e == nil {
 		t.Errorf("Parsed invalid key as valid private key: %v", k)
 	}
 
