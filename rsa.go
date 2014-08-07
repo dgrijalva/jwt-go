@@ -16,7 +16,7 @@ var (
 	SigningMethodRS256 *SigningMethodRSA
 	SigningMethodRS384 *SigningMethodRSA
 	SigningMethodRS512 *SigningMethodRSA
-	ErrInvalidKey      = errors.New("An invalid key was passed. Expected a []byte or *rsa.PrivateKey")
+	ErrInvalidKey      = errors.New("An invalid key was passed. Expected a []byte, *rsa.PrivateKey (for signing) or *rsa.PublicKey (for verifying).")
 )
 
 func init() {
@@ -44,8 +44,8 @@ func (m *SigningMethodRSA) Alg() string {
 }
 
 // Implements the Verify method from SigningMethod
-// For this signing method, must be either a PEM encoded PKCS1 or PKCS8 RSA private key as
-// []byte, or an rsa.PrivateKey structure.
+// For this signing method, must be either a PEM encoded PKCS1 or PKCS8 RSA public key as
+// []byte, or an rsa.PublicKey structure.
 func (m *SigningMethodRSA) Verify(signingString, signature string, key interface{}) error {
 	var err error
 
