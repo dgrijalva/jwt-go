@@ -45,6 +45,9 @@ func (m *SigningMethodRSA) Alg() string {
 	return m.Name
 }
 
+// Implements the Verify method from SigningMethod
+// For this signing method, must be either a PEM encoded PKCS1 or PKCS8 RSA private key as
+// []byte, or an rsa.PrivateKey structure.
 func (m *SigningMethodRSA) Verify(signingString, signature string, key interface{}) error {
 	var err error
 
@@ -54,21 +57,25 @@ func (m *SigningMethodRSA) Verify(signingString, signature string, key interface
 		return err
 	}
 
-	if keyBytes, ok := key.([]byte); ok {
-		var rsaKey *rsa.PublicKey
-		if rsaKey, err = m.parsePublicKey(keyBytes); err != nil {
+	var rsaKey *rsa.PublicKey
+
+	switch k := key.(type) {
+	case []byte:
+		if rsaKey, err = m.parsePublicKey(k); err != nil {
 			return err
 		}
-
-		// Create hasher
-		hasher := m.Hash.New()
-		hasher.Write([]byte(signingString))
-
-		// Verify the signature
-		return rsa.VerifyPKCS1v15(rsaKey, m.Hash, hasher.Sum(nil), sig)
-	} else {
+	case *rsa.PublicKey:
+		rsaKey = k
+	default:
 		return ErrInvalidKey
 	}
+
+	// Create hasher
+	hasher := m.Hash.New()
+	hasher.Write([]byte(signingString))
+
+	// Verify the signature
+	return rsa.VerifyPKCS1v15(rsaKey, m.Hash, hasher.Sum(nil), sig)
 }
 
 // Implements the Sign method from SigningMethod
