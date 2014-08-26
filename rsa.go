@@ -6,11 +6,13 @@ import (
 	"crypto/rsa"
 )
 
+// Implements the RSA family of signing methods signing methods
 type SigningMethodRSA struct {
 	Name string
 	Hash crypto.Hash
 }
 
+// Specific instances for RS256 and company
 var (
 	SigningMethodRS256 *SigningMethodRSA
 	SigningMethodRS384 *SigningMethodRSA
