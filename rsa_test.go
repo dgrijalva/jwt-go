@@ -9,30 +9,47 @@ import (
 var rsaTestData = []struct {
 	name        string
 	tokenString string
+	alg         string
 	claims      map[string]interface{}
 	valid       bool
 }{
 	{
-		"basic: foo => bar",
+		"Basic RS256",
 		"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.FhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg",
+		"RS256",
+		map[string]interface{}{"foo": "bar"},
+		true,
+	},
+	{
+		"Basic RS384",
+		"eyJhbGciOiJSUzM4NCIsInR5cCI6IkpXVCJ9.eyJmb28iOiJiYXIifQ.W-jEzRfBigtCWsinvVVuldiuilzVdU5ty0MvpLaSaqK9PlAWWlDQ1VIQ_qSKzwL5IXaZkvZFJXT3yL3n7OUVu7zCNJzdwznbC8Z-b0z2lYvcklJYi2VOFRcGbJtXUqgjk2oGsiqUMUMOLP70TTefkpsgqDxbRh9CDUfpOJgW-dU7cmgaoswe3wjUAUi6B6G2YEaiuXC0XScQYSYVKIzgKXJV8Zw-7AN_DBUI4GkTpsvQ9fVVjZM9csQiEXhYekyrKu1nu_POpQonGd8yqkIyXPECNmmqH5jH4sFiF67XhD7_JpkvLziBpI-uh86evBUadmHhb9Otqw3uV3NTaXLzJw",
+		"RS384",
+		map[string]interface{}{"foo": "bar"},
+		true,
+	},
+	{
+		"Basic RS512",
+		"eyJhbGciOiJSUzUxMiIsInR5cCI6IkpXVCJ9.eyJmb28iOiJiYXIifQ.zBlLlmRrUxx4SJPUbV37Q1joRcI9EW13grnKduK3wtYKmDXbgDpF1cZ6B-2Jsm5RB8REmMiLpGms-EjXhgnyh2TSHE-9W2gA_jvshegLWtwRVDX40ODSkTb7OVuaWgiy9y7llvcknFBTIg-FnVPVpXMmeV_pvwQyhaz1SSwSPrDyxEmksz1hq7YONXhXPpGaNbMMeDTNP_1oj8DZaqTIL9TwV8_1wb2Odt_Fy58Ke2RVFijsOLdnyEAjt2n9Mxihu9i3PhNBkkxa2GbnXBfq3kzvZ_xxGGopLdHhJjcGWXO-NiwI9_tiu14NRv4L2xC0ItD9Yz68v2ZIZEp_DuzwRQ",
+		"RS512",
 		map[string]interface{}{"foo": "bar"},
 		true,
 	},
 	{
 		"basic invalid: foo => bar",
 		"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.EhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg",
+		"RS256",
 		map[string]interface{}{"foo": "bar"},
 		false,
 	},
 }
 
-func TestRS256Verify(t *testing.T) {
+func TestRSAVerify(t *testing.T) {
 	key, _ := ioutil.ReadFile("test/sample_key.pub")
 
 	for _, data := range rsaTestData {
 		parts := strings.Split(data.tokenString, ".")
 
-		method := GetSigningMethod("RS256")
+		method := GetSigningMethod(data.alg)
 		err := method.Verify(strings.Join(parts[0:2], "."), parts[2], key)
 		if data.valid && err != nil {
 			t.Errorf("[%v] Error while verifying key: %v", data.name, err)
@@ -43,13 +60,13 @@ func TestRS256Verify(t *testing.T) {
 	}
 }
 
-func TestRS256Sign(t *testing.T) {
+func TestRSASign(t *testing.T) {
 	key, _ := ioutil.ReadFile("test/sample_key")
 
 	for _, data := range rsaTestData {
 		if data.valid {
 			parts := strings.Split(data.tokenString, ".")
-			method := GetSigningMethod("RS256")
+			method := GetSigningMethod(data.alg)
 			sig, err := method.Sign(strings.Join(parts[0:2], "."), key)
 			if err != nil {
 				t.Errorf("[%v] Error signing token: %v", data.name, err)
@@ -65,7 +82,7 @@ func TestRSAKeyParsing(t *testing.T) {
 	key, _ := ioutil.ReadFile("test/sample_key")
 	pubKey, _ := ioutil.ReadFile("test/sample_key.pub")
 	badKey := []byte("All your base are belong to key")
-	method := GetSigningMethod("RS256").(*SigningMethodRS256)
+	method := GetSigningMethod("RS256").(*SigningMethodRSA)
 
 	// Test parsePrivateKey
 	if _, e := method.parsePrivateKey(key); e != nil {

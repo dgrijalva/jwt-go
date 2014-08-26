@@ -1,44 +1,57 @@
 package jwt
 
 import (
+	"io/ioutil"
 	"strings"
 	"testing"
 )
 
-var sha256TestData = []struct {
+var hmacTestData = []struct {
 	name        string
 	tokenString string
+	alg         string
 	claims      map[string]interface{}
 	valid       bool
 }{
 	{
 		"web sample",
 		"eyJ0eXAiOiJKV1QiLA0KICJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ.dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk",
+		"HS256",
+		map[string]interface{}{"iss": "joe", "exp": 1300819380, "http://example.com/is_root": true},
+		true,
+	},
+	{
+		"HS384",
+		"eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9.eyJleHAiOjEuMzAwODE5MzhlKzA5LCJodHRwOi8vZXhhbXBsZS5jb20vaXNfcm9vdCI6dHJ1ZSwiaXNzIjoiam9lIn0.KWZEuOD5lbBxZ34g7F-SlVLAQ_r5KApWNWlZIIMyQVz5Zs58a7XdNzj5_0EcNoOy",
+		"HS384",
+		map[string]interface{}{"iss": "joe", "exp": 1300819380, "http://example.com/is_root": true},
+		true,
+	},
+	{
+		"HS512",
+		"eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJleHAiOjEuMzAwODE5MzhlKzA5LCJodHRwOi8vZXhhbXBsZS5jb20vaXNfcm9vdCI6dHJ1ZSwiaXNzIjoiam9lIn0.CN7YijRX6Aw1n2jyI2Id1w90ja-DEMYiWixhYCyHnrZ1VfJRaFQz1bEbjjA5Fn4CLYaUG432dEYmSbS4Saokmw",
+		"HS512",
 		map[string]interface{}{"iss": "joe", "exp": 1300819380, "http://example.com/is_root": true},
 		true,
 	},
 	{
 		"web sample: invalid",
 		"eyJ0eXAiOiJKV1QiLA0KICJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJqb2UiLA0KICJleHAiOjEzMDA4MTkzODAsDQogImh0dHA6Ly9leGFtcGxlLmNvbS9pc19yb290Ijp0cnVlfQ.dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXo",
+		"HS256",
 		map[string]interface{}{"iss": "joe", "exp": 1300819380, "http://example.com/is_root": true},
 		false,
 	},
 }
 
 // Sample data from http://tools.ietf.org/html/draft-jones-json-web-signature-04#appendix-A.1
-var sha256TestKey = []byte{
-	3, 35, 53, 75, 43, 15, 165, 188, 131, 126, 6, 101, 119, 123, 166,
-	143, 90, 179, 40, 230, 240, 84, 201, 40, 169, 15, 132, 178, 210, 80,
-	46, 191, 211, 251, 90, 146, 210, 6, 71, 239, 150, 138, 180, 195, 119,
-	98, 61, 34, 61, 46, 33, 114, 5, 46, 79, 8, 192, 205, 154, 245, 103,
-	208, 128, 163}
+var hmacTestKey, _ = ioutil.ReadFile("test/hmacTestKey")
 
-func TestHS256Verify(t *testing.T) {
-	for _, data := range sha256TestData {
+func TestHMACVerify(t *testing.T) {
+	for _, data := range hmacTestData {
 		parts := strings.Split(data.tokenString, ".")
 
-		method := GetSigningMethod("HS256")
-		err := method.Verify(strings.Join(parts[0:2], "."), parts[2], sha256TestKey)
+		method := GetSigningMethod(data.alg)
+		err := method.Verify(strings.Join(parts[0:2], "."), parts[2], hmacTestKey)
 		if data.valid && err != nil {
 			t.Errorf("[%v] Error while verifying key: %v", data.name, err)
 		}
@@ -48,12 +61,12 @@ func TestHS256Verify(t *testing.T) {
 	}
 }
 
-func TestHS256Sign(t *testing.T) {
-	for _, data := range sha256TestData {
+func TestHMACSign(t *testing.T) {
+	for _, data := range hmacTestData {
 		if data.valid {
 			parts := strings.Split(data.tokenString, ".")
-			method := GetSigningMethod("HS256")
-			sig, err := method.Sign(strings.Join(parts[0:2], "."), sha256TestKey)
+			method := GetSigningMethod(data.alg)
+			sig, err := method.Sign(strings.Join(parts[0:2], "."), hmacTestKey)
 			if err != nil {
 				t.Errorf("[%v] Error signing token: %v", data.name, err)
 			}
