@@ -5,6 +5,9 @@
 * **Compatibility Breaking Changes**
 	* `SigningMethodHS256` is now `*SigningMethodHMAC` instead of `type struct`
 	* `SigningMethodRS256` is now `*SigningMethodRSA` instead of `type struct`
+	* `KeyFunc` now returns `interface{}` instead of `[]byte`
+	* `SigningMethod.Sign` now takes `interface{}` instead of `[]byte` for the key
+	* `SigningMethod.Verify` now takes `interface{}` instead of `[]byte` for the key
 * Renamed type `SigningMethodHS256` to `SigningMethodHMAC`.  Specific sizes are now just instances of this type.
     * Added public package global `SigningMethodHS256`
     * Added public package global `SigningMethodHS384`

@@ -18,7 +18,6 @@ var (
 	SigningMethodRS256 *SigningMethodRSA
 	SigningMethodRS384 *SigningMethodRSA
 	SigningMethodRS512 *SigningMethodRSA
-	ErrInvalidKey      = errors.New("An invalid key was passed. Expected a []byte")
 )
 
 func init() {

@@ -20,6 +20,11 @@ var TimeFunc = time.Now
 // Header of the token (such as `kid`) to identify which key to use.
 type Keyfunc func(*Token) (interface{}, error)
 
+// Error constants
+var (
+	ErrInvalidKey = errors.New("Key is invalid or of invalid type.")
+)
+
 // A JWT Token.  Different fields will be used depending on whether you're
 // creating or parsing/verifying a token.
 type Token struct {
