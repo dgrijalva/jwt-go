@@ -22,7 +22,8 @@ type Keyfunc func(*Token) (interface{}, error)
 
 // Error constants
 var (
-	ErrInvalidKey = errors.New("Key is invalid or of invalid type.")
+	ErrInvalidKey      = errors.New("Key is invalid or of invalid type.")
+	ErrHashUnavailable = errors.New("The requested Hash function is unavailable")
 )
 
 // A JWT Token.  Different fields will be used depending on whether you're

@@ -47,6 +47,10 @@ func (m *SigningMethodHMAC) Verify(signingString, signature string, key interfac
 		var sig []byte
 		var err error
 		if sig, err = DecodeSegment(signature); err == nil {
+			if !m.Hash.Available() {
+				return ErrHashUnavailable
+			}
+
 			hasher := hmac.New(m.Hash.New, keyBytes)
 			hasher.Write([]byte(signingString))
 
@@ -62,6 +66,10 @@ func (m *SigningMethodHMAC) Verify(signingString, signature string, key interfac
 
 func (m *SigningMethodHMAC) Sign(signingString string, key interface{}) (string, error) {
 	if keyBytes, ok := key.([]byte); ok {
+		if !m.Hash.Available() {
+			return "", ErrHashUnavailable
+		}
+
 		hasher := hmac.New(m.Hash.New, keyBytes)
 		hasher.Write([]byte(signingString))
 

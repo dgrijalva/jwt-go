@@ -67,6 +67,9 @@ func (m *SigningMethodRSA) Verify(signingString, signature string, key interface
 	}
 
 	// Create hasher
+	if !m.Hash.Available() {
+		return ErrHashUnavailable
+	}
 	hasher := m.Hash.New()
 	hasher.Write([]byte(signingString))
 
@@ -91,7 +94,12 @@ func (m *SigningMethodRSA) Sign(signingString string, key interface{}) (string, 
 	default:
 		return "", ErrInvalidKey
 	}
+
 	// Create the hasher
+	if !m.Hash.Available() {
+		return "", ErrHashUnavailable
+	}
+
 	hasher := m.Hash.New()
 	hasher.Write([]byte(signingString))
 
