@@ -42,8 +42,8 @@ func (m *SigningMethodRSA) Alg() string {
 }
 
 // Implements the Verify method from SigningMethod
-// For this signing method, must be either a PEM encoded PKCS1 or PKCS8 RSA private key as
-// []byte, or an rsa.PrivateKey structure.
+// For this signing method, must be either a PEM encoded PKCS1 or PKCS8 RSA public key as
+// []byte, or an rsa.PublicKey structure.
 func (m *SigningMethodRSA) Verify(signingString, signature string, key interface{}) error {
 	var err error
 
