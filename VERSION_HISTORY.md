@@ -1,5 +1,21 @@
 ## `jwt-go` Version History
 
+#### 2.0.0
+
+* Refactored the RSA implementation to be easier to read
+* Renamed type `SigningMethodHS256` to `SigningMethodHMAC`.  Specific sizes are now just instances of this type.
+    * Added public package global `SigningMethodHS256`
+    * Added public package global `SigningMethodHS384`
+    * Added public package global `SigningMethodHS512`
+* Renamed type `SigningMethodRS256` to `SigningMethodRSA`.  Specific sizes are now just instances of this type.
+    * Added public package global `SigningMethodRS256`
+    * Added public package global `SigningMethodRS384`
+    * Added public package global `SigningMethodRS512`
+* Moved sample private key for HMAC tests from an inline value to a file on disk.  Value is unchanged.
+* **Compatibility Breaking Changes**
+	* `SigningMethodHS256` is now `*SigningMethodHMAC` instead of `type struct`
+	* `SigningMethodRS256` is now `*SigningMethodRSA` instead of `type struct`
+
 #### 1.0.2
 
 * Fixed bug in parsing public keys from certificates
