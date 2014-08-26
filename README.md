@@ -1,11 +1,5 @@
 A [go](http://www.golang.org) (or 'golang' for search engine friendliness) implementation of [JSON Web Tokens](http://self-issued.info/docs/draft-jones-json-web-token.html)
 
-## 2.0.0 is coming!
-
-There are a couple open pull requests that contain breaking changes I believe are essential for moving this project forward.  We will try to make upgrading as painless as possible (and the 1.x.x versions will remain available).  If you believe this will effect you, please review the open pull requests and comment as soon as possible.  I'm planning to land these changes **Friday, Aug 22, 2014**.
-
-The changes are very small modifications to the API, but in keeping with the spirit of semantic versioning, I'm taking any breaking change seriously.
-
 ## What the heck is a JWT?
 
 In short, it's a signed JSON object that does something useful (for example, authentication).  It's commonly used for `Bearer` tokens in Oauth 2.  A token is made of three parts, separated by `.`'s.  The first two parts are JSON objects, that have been [base64url](http://tools.ietf.org/html/rfc4648) encoded.  The last part is the signature, encoded the same way.
