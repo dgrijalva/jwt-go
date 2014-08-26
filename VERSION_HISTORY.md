@@ -18,6 +18,7 @@
     * Added public package global `SigningMethodRS512`
 * Moved sample private key for HMAC tests from an inline value to a file on disk.  Value is unchanged.
 * Refactored the RSA implementation to be easier to read
+* Exposed helper methods `ParseRSAPrivateKeyFromPEM` and `ParseRSAPublicKeyFromPEM`
 
 #### 1.0.2
 

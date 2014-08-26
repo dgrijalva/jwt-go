@@ -4,7 +4,6 @@ import (
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
-	"errors"
 )
 
 type SigningMethodRSA struct {
@@ -58,7 +57,7 @@ func (m *SigningMethodRSA) Verify(signingString, signature string, key interface
 
 	switch k := key.(type) {
 	case []byte:
-		if rsaKey, err = ParsePublicKeyFromPEM(k); err != nil {
+		if rsaKey, err = ParseRSAPublicKeyFromPEM(k); err != nil {
 			return err
 		}
 	case *rsa.PublicKey:
@@ -84,7 +83,7 @@ func (m *SigningMethodRSA) Sign(signingString string, key interface{}) (string, 
 
 	switch k := key.(type) {
 	case []byte:
-		if rsaKey, err = ParsePrivateKeyFromPEM(k); err != nil {
+		if rsaKey, err = ParseRSAPrivateKeyFromPEM(k); err != nil {
 			return "", err
 		}
 	case *rsa.PrivateKey:

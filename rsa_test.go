@@ -81,7 +81,7 @@ func TestRSASign(t *testing.T) {
 func TestRSAVerifyWithPreParsedPrivateKey(t *testing.T) {
 	key, _ := ioutil.ReadFile("test/sample_key.pub")
 	method := GetSigningMethod("RS256").(*SigningMethodRSA)
-	parsedKey, err := ParsePublicKeyFromPEM(key)
+	parsedKey, err := ParseRSAPublicKeyFromPEM(key)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -96,7 +96,7 @@ func TestRSAVerifyWithPreParsedPrivateKey(t *testing.T) {
 func TestRSAWithPreParsedPrivateKey(t *testing.T) {
 	key, _ := ioutil.ReadFile("test/sample_key")
 	method := GetSigningMethod("RS256").(*SigningMethodRSA)
-	parsedKey, err := ParsePrivateKeyFromPEM(key)
+	parsedKey, err := ParseRSAPrivateKeyFromPEM(key)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,28 +117,28 @@ func TestRSAKeyParsing(t *testing.T) {
 	badKey := []byte("All your base are belong to key")
 
 	// Test parsePrivateKey
-	if _, e := ParsePrivateKeyFromPEM(key); e != nil {
+	if _, e := ParseRSAPrivateKeyFromPEM(key); e != nil {
 		t.Errorf("Failed to parse valid private key: %v", e)
 	}
 
-	if k, e := ParsePrivateKeyFromPEM(pubKey); e == nil {
+	if k, e := ParseRSAPrivateKeyFromPEM(pubKey); e == nil {
 		t.Errorf("Parsed public key as valid private key: %v", k)
 	}
 
-	if k, e := ParsePrivateKeyFromPEM(badKey); e == nil {
+	if k, e := ParseRSAPrivateKeyFromPEM(badKey); e == nil {
 		t.Errorf("Parsed invalid key as valid private key: %v", k)
 	}
 
 	// Test parsePublicKey
-	if _, e := ParsePublicKeyFromPEM(pubKey); e != nil {
+	if _, e := ParseRSAPublicKeyFromPEM(pubKey); e != nil {
 		t.Errorf("Failed to parse valid public key: %v", e)
 	}
 
-	if k, e := ParsePublicKeyFromPEM(key); e == nil {
+	if k, e := ParseRSAPublicKeyFromPEM(key); e == nil {
 		t.Errorf("Parsed private key as valid public key: %v", k)
 	}
 
-	if k, e := ParsePublicKeyFromPEM(badKey); e == nil {
+	if k, e := ParseRSAPublicKeyFromPEM(badKey); e == nil {
 		t.Errorf("Parsed invalid key as valid private key: %v", k)
 	}
 

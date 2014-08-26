@@ -8,7 +8,7 @@ import (
 )
 
 // Parse PEM encoded PKCS1 or PKCS8 private key
-func ParsePrivateKeyFromPEM(key []byte) (*rsa.PrivateKey, error) {
+func ParseRSAPrivateKeyFromPEM(key []byte) (*rsa.PrivateKey, error) {
 	var err error
 
 	// Parse PEM block
@@ -34,7 +34,7 @@ func ParsePrivateKeyFromPEM(key []byte) (*rsa.PrivateKey, error) {
 }
 
 // Parse PEM encoded PKCS1 or PKCS8 public key
-func ParsePublicKeyFromPEM(key []byte) (*rsa.PublicKey, error) {
+func ParseRSAPublicKeyFromPEM(key []byte) (*rsa.PublicKey, error) {
 	var err error
 
 	// Parse PEM block
