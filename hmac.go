@@ -57,7 +57,7 @@ func (m *SigningMethodHMAC) Verify(signingString, signature string, key interfac
 			hasher.Write([]byte(signingString))
 
 			if !bytes.Equal(sig, hasher.Sum(nil)) {
-				err = errors.New("Signature is invalid")
+				err = errors.New("signature is invalid")
 			}
 		}
 		return err

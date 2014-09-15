@@ -22,8 +22,8 @@ type Keyfunc func(*Token) (interface{}, error)
 
 // Error constants
 var (
-	ErrInvalidKey      = errors.New("Key is invalid or of invalid type.")
-	ErrHashUnavailable = errors.New("The requested Hash function is unavailable")
+	ErrInvalidKey      = errors.New("key is invalid or of invalid type.")
+	ErrHashUnavailable = errors.New("the requested hash function is unavailable")
 )
 
 // A JWT Token.  Different fields will be used depending on whether you're
@@ -93,7 +93,7 @@ func (t *Token) SigningString() (string, error) {
 func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	parts := strings.Split(tokenString, ".")
 	if len(parts) != 3 {
-		return nil, &ValidationError{err: "Token contains an invalid number of segments", Errors: ValidationErrorMalformed}
+		return nil, &ValidationError{err: "token contains an invalid number of segments", Errors: ValidationErrorMalformed}
 	}
 
 	var err error
@@ -119,10 +119,10 @@ func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	// Lookup signature method
 	if method, ok := token.Header["alg"].(string); ok {
 		if token.Method = GetSigningMethod(method); token.Method == nil {
-			return token, &ValidationError{err: "Signing method (alg) is unavailable.", Errors: ValidationErrorUnverifiable}
+			return token, &ValidationError{err: "signing method (alg) is unavailable.", Errors: ValidationErrorUnverifiable}
 		}
 	} else {
-		return token, &ValidationError{err: "Signing method (alg) is unspecified.", Errors: ValidationErrorUnverifiable}
+		return token, &ValidationError{err: "signing method (alg) is unspecified.", Errors: ValidationErrorUnverifiable}
 	}
 
 	// Lookup key
@@ -136,13 +136,13 @@ func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	now := TimeFunc().Unix()
 	if exp, ok := token.Claims["exp"].(float64); ok {
 		if now > int64(exp) {
-			vErr.err = "Token is expired"
+			vErr.err = "token is expired"
 			vErr.Errors |= ValidationErrorExpired
 		}
 	}
 	if nbf, ok := token.Claims["nbf"].(float64); ok {
 		if now < int64(nbf) {
-			vErr.err = "Token is not valid yet"
+			vErr.err = "token is not valid yet"
 			vErr.Errors |= ValidationErrorNotValidYet
 		}
 	}
@@ -179,7 +179,7 @@ type ValidationError struct {
 // Validation error is an error type
 func (e ValidationError) Error() string {
 	if e.err == "" {
-		return "Token is invalid"
+		return "token is invalid"
 	}
 	return e.err
 }
@@ -212,7 +212,7 @@ func ParseFromRequest(req *http.Request, keyFunc Keyfunc) (token *Token, err err
 		return Parse(tokStr, keyFunc)
 	}
 
-	return nil, errors.New("No token present in request.")
+	return nil, errors.New("no token present in request.")
 
 }
 
