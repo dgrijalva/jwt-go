@@ -50,7 +50,7 @@ func New(method SigningMethod) *Token {
 }
 
 // Get the complete, signed token
-func (t *Token) SignedString(key []byte) (string, error) {
+func (t *Token) SignedString(key interface{}) (string, error) {
 	var sig, sstr string
 	var err error
 	if sstr, err = t.SigningString(); err != nil {
