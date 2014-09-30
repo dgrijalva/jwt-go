@@ -1,5 +1,11 @@
 ## `jwt-go` Version History
 
+#### 2.1.0
+
+Backwards compatible API change that was missed in 2.0.0.
+
+* The `SignedString` method on `Token` now takes `interface{}` instead of `[]byte`
+
 #### 2.0.0
 
 There were two major reasons for breaking backwards compatibility with this update.  The first was a refactor required to expand the width of the RSA and HMAC-SHA signing implementations.  There will likely be no required code changes to support this change.
