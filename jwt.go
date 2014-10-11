@@ -127,7 +127,12 @@ func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 
 	// Lookup key
 	var key interface{}
+	if keyFunc == nil {
+		// keyFunc was not provided.  short circuiting validation
+		return token, &ValidationError{err: "no Keyfunc was provided.", Errors: ValidationErrorUnverifiable}
+	}
 	if key, err = keyFunc(token); err != nil {
+		// keyFunc returned an error
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorUnverifiable}
 	}
 
