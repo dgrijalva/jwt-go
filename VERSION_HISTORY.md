@@ -1,5 +1,9 @@
 ## `jwt-go` Version History
 
+#### 2.2.0
+
+* Gracefully handle a `nil` `Keyfunc` being passed to `Parse`.  Result will now be the parsed token and an error, instead of a panic.
+
 #### 2.1.0
 
 Backwards compatible API change that was missed in 2.0.0.
