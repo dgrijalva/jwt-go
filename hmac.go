@@ -15,9 +15,10 @@ type SigningMethodHMAC struct {
 
 // Specific instances for HS256 and company
 var (
-	SigningMethodHS256 *SigningMethodHMAC
-	SigningMethodHS384 *SigningMethodHMAC
-	SigningMethodHS512 *SigningMethodHMAC
+	SigningMethodHS256  *SigningMethodHMAC
+	SigningMethodHS384  *SigningMethodHMAC
+	SigningMethodHS512  *SigningMethodHMAC
+	ErrSignatureInvalid = errors.New("signature is invalid")
 )
 
 func init() {
@@ -57,7 +58,7 @@ func (m *SigningMethodHMAC) Verify(signingString, signature string, key interfac
 			hasher.Write([]byte(signingString))
 
 			if !bytes.Equal(sig, hasher.Sum(nil)) {
-				err = errors.New("signature is invalid")
+				err = ErrSignatureInvalid
 			}
 		}
 		return err

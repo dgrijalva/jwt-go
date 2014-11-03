@@ -22,8 +22,9 @@ type Keyfunc func(*Token) (interface{}, error)
 
 // Error constants
 var (
-	ErrInvalidKey      = errors.New("key is invalid or of invalid type.")
-	ErrHashUnavailable = errors.New("the requested hash function is unavailable")
+	ErrInvalidKey       = errors.New("key is invalid or of invalid type")
+	ErrHashUnavailable  = errors.New("the requested hash function is unavailable")
+	ErrNoTokenInRequest = errors.New("no token present in request")
 )
 
 // A JWT Token.  Different fields will be used depending on whether you're
@@ -217,7 +218,7 @@ func ParseFromRequest(req *http.Request, keyFunc Keyfunc) (token *Token, err err
 		return Parse(tokStr, keyFunc)
 	}
 
-	return nil, errors.New("no token present in request.")
+	return nil, ErrNoTokenInRequest
 
 }
 
