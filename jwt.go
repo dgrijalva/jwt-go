@@ -217,6 +217,12 @@ func ParseFromRequest(req *http.Request, keyFunc Keyfunc) (token *Token, err err
 	if tokStr := req.Form.Get("access_token"); tokStr != "" {
 		return Parse(tokStr, keyFunc)
 	}
+	
+	// Look for "token=" url parameter
+	param := req.URL.Query()
+	if tokStr := param.Get("token"); tokStr != "" {
+		return Parse(tokStr, keyFunc)
+	}
 
 	return nil, ErrNoTokenInRequest
 
