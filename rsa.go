@@ -4,6 +4,8 @@ import (
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
+	"io"
+	"strings"
 )
 
 // Implements the RSA family of signing methods signing methods
@@ -73,7 +75,10 @@ func (m *SigningMethodRSA) Verify(signingString, signature string, key interface
 		return ErrHashUnavailable
 	}
 	hasher := m.Hash.New()
-	hasher.Write([]byte(signingString))
+	_, err = io.Copy(hasher, strings.NewReader(signingString))
+	if err != nil {
+		return err
+	}
 
 	// Verify the signature
 	return rsa.VerifyPKCS1v15(rsaKey, m.Hash, hasher.Sum(nil), sig)
@@ -103,7 +108,10 @@ func (m *SigningMethodRSA) Sign(signingString string, key interface{}) (string, 
 	}
 
 	hasher := m.Hash.New()
-	hasher.Write([]byte(signingString))
+	_, err = io.Copy(hasher, strings.NewReader(signingString))
+	if err != nil {
+		return "", err
+	}
 
 	// Sign the string and return the encoded bytes
 	if sigBytes, err := rsa.SignPKCS1v15(rand.Reader, rsaKey, m.Hash, hasher.Sum(nil)); err == nil {
