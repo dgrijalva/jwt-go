@@ -5,6 +5,8 @@ import (
 	"crypto"
 	"crypto/hmac"
 	"errors"
+	"io"
+	"strings"
 )
 
 // Implements the HMAC-SHA family of signing methods signing methods
@@ -55,7 +57,10 @@ func (m *SigningMethodHMAC) Verify(signingString, signature string, key interfac
 			}
 
 			hasher := hmac.New(m.Hash.New, keyBytes)
-			hasher.Write([]byte(signingString))
+			_, err = io.Copy(hasher, strings.NewReader(signingString))
+			if err != nil {
+				return err
+			}
 
 			if !bytes.Equal(sig, hasher.Sum(nil)) {
 				err = ErrSignatureInvalid
@@ -74,7 +79,10 @@ func (m *SigningMethodHMAC) Sign(signingString string, key interface{}) (string,
 		}
 
 		hasher := hmac.New(m.Hash.New, keyBytes)
-		hasher.Write([]byte(signingString))
+		_, err := io.Copy(hasher, strings.NewReader(signingString))
+		if err != nil {
+			return "", err
+		}
 
 		return EncodeSegment(hasher.Sum(nil)), nil
 	}
