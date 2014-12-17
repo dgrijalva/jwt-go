@@ -2,6 +2,15 @@ package jwt
 
 var signingMethods = map[string]func() SigningMethod{}
 
+const (
+	RS256 = "RS256"
+	RS384 = "RS384"
+	RS512 = "RS512"
+	HS256 = "HS256"
+	HS384 = "HS384"
+	HS512 = "HS512"
+)
+
 // Signing method
 type SigningMethod interface {
 	Verify(signingString, signature string, key interface{}) error
