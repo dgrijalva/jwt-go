@@ -1,6 +1,7 @@
-package jwt
+package jwt_test
 
 import (
+	"github.com/dgrijalva/jwt-go"
 	"io/ioutil"
 	"strings"
 	"testing"
@@ -49,7 +50,7 @@ func TestRSAVerify(t *testing.T) {
 	for _, data := range rsaTestData {
 		parts := strings.Split(data.tokenString, ".")
 
-		method := GetSigningMethod(data.alg)
+		method := jwt.GetSigningMethod(data.alg)
 		err := method.Verify(strings.Join(parts[0:2], "."), parts[2], key)
 		if data.valid && err != nil {
 			t.Errorf("[%v] Error while verifying key: %v", data.name, err)
@@ -66,7 +67,7 @@ func TestRSASign(t *testing.T) {
 	for _, data := range rsaTestData {
 		if data.valid {
 			parts := strings.Split(data.tokenString, ".")
-			method := GetSigningMethod(data.alg)
+			method := jwt.GetSigningMethod(data.alg)
 			sig, err := method.Sign(strings.Join(parts[0:2], "."), key)
 			if err != nil {
 				t.Errorf("[%v] Error signing token: %v", data.name, err)
@@ -80,13 +81,13 @@ func TestRSASign(t *testing.T) {
 
 func TestRSAVerifyWithPreParsedPrivateKey(t *testing.T) {
 	key, _ := ioutil.ReadFile("test/sample_key.pub")
-	parsedKey, err := ParseRSAPublicKeyFromPEM(key)
+	parsedKey, err := jwt.ParseRSAPublicKeyFromPEM(key)
 	if err != nil {
 		t.Fatal(err)
 	}
 	testData := rsaTestData[0]
 	parts := strings.Split(testData.tokenString, ".")
-	err = SigningMethodRS256.Verify(strings.Join(parts[0:2], "."), parts[2], parsedKey)
+	err = jwt.SigningMethodRS256.Verify(strings.Join(parts[0:2], "."), parts[2], parsedKey)
 	if err != nil {
 		t.Errorf("[%v] Error while verifying key: %v", testData.name, err)
 	}
@@ -94,13 +95,13 @@ func TestRSAVerifyWithPreParsedPrivateKey(t *testing.T) {
 
 func TestRSAWithPreParsedPrivateKey(t *testing.T) {
 	key, _ := ioutil.ReadFile("test/sample_key")
-	parsedKey, err := ParseRSAPrivateKeyFromPEM(key)
+	parsedKey, err := jwt.ParseRSAPrivateKeyFromPEM(key)
 	if err != nil {
 		t.Fatal(err)
 	}
 	testData := rsaTestData[0]
 	parts := strings.Split(testData.tokenString, ".")
-	sig, err := SigningMethodRS256.Sign(strings.Join(parts[0:2], "."), parsedKey)
+	sig, err := jwt.SigningMethodRS256.Sign(strings.Join(parts[0:2], "."), parsedKey)
 	if err != nil {
 		t.Errorf("[%v] Error signing token: %v", testData.name, err)
 	}
@@ -115,28 +116,28 @@ func TestRSAKeyParsing(t *testing.T) {
 	badKey := []byte("All your base are belong to key")
 
 	// Test parsePrivateKey
-	if _, e := ParseRSAPrivateKeyFromPEM(key); e != nil {
+	if _, e := jwt.ParseRSAPrivateKeyFromPEM(key); e != nil {
 		t.Errorf("Failed to parse valid private key: %v", e)
 	}
 
-	if k, e := ParseRSAPrivateKeyFromPEM(pubKey); e == nil {
+	if k, e := jwt.ParseRSAPrivateKeyFromPEM(pubKey); e == nil {
 		t.Errorf("Parsed public key as valid private key: %v", k)
 	}
 
-	if k, e := ParseRSAPrivateKeyFromPEM(badKey); e == nil {
+	if k, e := jwt.ParseRSAPrivateKeyFromPEM(badKey); e == nil {
 		t.Errorf("Parsed invalid key as valid private key: %v", k)
 	}
 
 	// Test parsePublicKey
-	if _, e := ParseRSAPublicKeyFromPEM(pubKey); e != nil {
+	if _, e := jwt.ParseRSAPublicKeyFromPEM(pubKey); e != nil {
 		t.Errorf("Failed to parse valid public key: %v", e)
 	}
 
-	if k, e := ParseRSAPublicKeyFromPEM(key); e == nil {
+	if k, e := jwt.ParseRSAPublicKeyFromPEM(key); e == nil {
 		t.Errorf("Parsed private key as valid public key: %v", k)
 	}
 
-	if k, e := ParseRSAPublicKeyFromPEM(badKey); e == nil {
+	if k, e := jwt.ParseRSAPublicKeyFromPEM(badKey); e == nil {
 		t.Errorf("Parsed invalid key as valid private key: %v", k)
 	}
 
