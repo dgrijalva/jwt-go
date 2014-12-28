@@ -104,7 +104,7 @@ func makeSample(c map[string]interface{}) string {
 		panic(e.Error())
 	}
 
-	token := New(GetSigningMethod("RS256"))
+	token := New(SigningMethodRS256)
 	token.Claims = c
 	s, e := token.SignedString(key)
 

@@ -80,14 +80,13 @@ func TestRSASign(t *testing.T) {
 
 func TestRSAVerifyWithPreParsedPrivateKey(t *testing.T) {
 	key, _ := ioutil.ReadFile("test/sample_key.pub")
-	method := GetSigningMethod("RS256").(*SigningMethodRSA)
 	parsedKey, err := ParseRSAPublicKeyFromPEM(key)
 	if err != nil {
 		t.Fatal(err)
 	}
 	testData := rsaTestData[0]
 	parts := strings.Split(testData.tokenString, ".")
-	err = method.Verify(strings.Join(parts[0:2], "."), parts[2], parsedKey)
+	err = SigningMethodRS256.Verify(strings.Join(parts[0:2], "."), parts[2], parsedKey)
 	if err != nil {
 		t.Errorf("[%v] Error while verifying key: %v", testData.name, err)
 	}
@@ -95,14 +94,13 @@ func TestRSAVerifyWithPreParsedPrivateKey(t *testing.T) {
 
 func TestRSAWithPreParsedPrivateKey(t *testing.T) {
 	key, _ := ioutil.ReadFile("test/sample_key")
-	method := GetSigningMethod("RS256").(*SigningMethodRSA)
 	parsedKey, err := ParseRSAPrivateKeyFromPEM(key)
 	if err != nil {
 		t.Fatal(err)
 	}
 	testData := rsaTestData[0]
 	parts := strings.Split(testData.tokenString, ".")
-	sig, err := method.Sign(strings.Join(parts[0:2], "."), parsedKey)
+	sig, err := SigningMethodRS256.Sign(strings.Join(parts[0:2], "."), parsedKey)
 	if err != nil {
 		t.Errorf("[%v] Error signing token: %v", testData.name, err)
 	}
