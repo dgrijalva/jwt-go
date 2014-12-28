@@ -28,3 +28,25 @@ func ExampleNew(mySigningKey string) (string, error) {
 	tokenString, err := token.SignedString(mySigningKey)
 	return tokenString, err
 }
+
+func ExampleParse_errorChecking(myToken string, myLookupKey func(interface{}) (interface{}, error)) {
+	token, err := jwt.Parse(myToken, func(token *jwt.Token) (interface{}, error) {
+		return myLookupKey(token.Header["kid"])
+	})
+
+	if token.Valid {
+		fmt.Println("You look nice today")
+	} else if ve, ok := err.(*jwt.ValidationError); ok {
+		if ve.Errors&jwt.ValidationErrorMalformed != 0 {
+			fmt.Println("That's not even a token")
+		} else if ve.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
+			// Token is either expired or not active yet
+			fmt.Println("Timing is everything")
+		} else {
+			fmt.Println("Couldn't handle this token:", err)
+		}
+	} else {
+		fmt.Println("Couldn't handle this token:", err)
+	}
+
+}
