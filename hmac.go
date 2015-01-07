@@ -1,7 +1,6 @@
 package jwt
 
 import (
-	"bytes"
 	"crypto"
 	"crypto/hmac"
 	"errors"
@@ -57,7 +56,7 @@ func (m *SigningMethodHMAC) Verify(signingString, signature string, key interfac
 			hasher := hmac.New(m.Hash.New, keyBytes)
 			hasher.Write([]byte(signingString))
 
-			if !bytes.Equal(sig, hasher.Sum(nil)) {
+			if !hmac.Equal(sig, hasher.Sum(nil)) {
 				err = ErrSignatureInvalid
 			}
 		}
