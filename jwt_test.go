@@ -157,6 +157,10 @@ func TestParseRequest(t *testing.T) {
 		r.Header.Set("Authorization", fmt.Sprintf("Bearer %v", data.tokenString))
 		token, err := jwt.ParseFromRequest(r, data.keyfunc)
 
+		if token == nil {
+			t.Errorf("[%v] Token was not found: %v", data.name, err)
+			continue
+		}
 		if !reflect.DeepEqual(data.claims, token.Claims) {
 			t.Errorf("[%v] Claims mismatch. Expecting: %v  Got: %v", data.name, data.claims, token.Claims)
 		}
