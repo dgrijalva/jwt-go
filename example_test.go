@@ -18,7 +18,7 @@ func ExampleParse(myToken string, myLookupKey func(interface{}) (interface{}, er
 	}
 }
 
-func ExampleNew(mySigningKey string) (string, error) {
+func ExampleNew(mySigningKey []byte) (string, error) {
 	// Create the token
 	token := jwt.New(jwt.SigningMethodHS256)
 	// Set some claims
