@@ -34,7 +34,7 @@ Parsing and verifying tokens is pretty straight forward.  You pass in the token 
 
 ```go
 	// Create the token
-	token := jwt.New(SigningMethodHS256)
+	token := jwt.New(jwt.SigningMethodHS256)
 	// Set some claims
 	token.Claims["foo"] = "bar"
 	token.Claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
