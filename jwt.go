@@ -15,6 +15,11 @@ type JWT struct {
 	SigningMethod SigningMethod
 }
 
+// New create a token use JWT's signing method
+func (j JWT) New() *Token {
+	return New(j.SigningMethod)
+}
+
 // Signing a token use JWT's keyfunc and signing method
 func (j JWT) Signing(tok *Token) (string, error) {
 	if j.Keyfunc == nil {
