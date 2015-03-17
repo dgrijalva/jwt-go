@@ -9,6 +9,35 @@ import (
 	"time"
 )
 
+// JWT provide some convience for signing a token and verify a token string
+type JWT struct {
+	Keyfunc       Keyfunc
+	SigningMethod SigningMethod
+}
+
+// New create a token use JWT's signing method
+func (j JWT) New() *Token {
+	return New(j.SigningMethod)
+}
+
+// Signing a token use JWT's keyfunc and signing method
+func (j JWT) Signing(tok *Token) (string, error) {
+	if j.Keyfunc == nil {
+		// keyFunc was not provided.  short circuiting validation
+		return "", &ValidationError{err: "no Keyfunc was provided.", Errors: ValidationErrorUnverifiable}
+	}
+	key, err := j.Keyfunc(tok)
+	if err == nil {
+		return tok.SignedString(key)
+	}
+	return "", err
+}
+
+// Parse, validate, and return a token
+func (j JWT) Parse(tokenString string) (*Token, error) {
+	return parse(tokenString, j.Keyfunc, j.SigningMethod)
+}
+
 // TimeFunc provides the current time when parsing token to validate "exp" claim (expiration time).
 // You can override it to use another time value.  This is useful for testing or if your
 // server uses a different time zone than your tokens.
@@ -92,6 +121,18 @@ func (t *Token) SigningString() (string, error) {
 // keyFunc will receive the parsed token and should return the key for validating.
 // If everything is kosher, err will be nil
 func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
+	return parse(tokenString, keyFunc, nil)
+}
+
+// parse, validate, and return a token.
+// keyFunc will receive the parsed token and should return the key for validating.
+//
+// method will validate the parsed token signature, if it's not nil, first check
+// whether the algorithm is matched with parsed token header, otherwise,
+// use the method token header specified.
+//
+// If everything is kosher, err will be nil
+func parse(tokenString string, keyFunc Keyfunc, method SigningMethod) (*Token, error) {
 	parts := strings.Split(tokenString, ".")
 	if len(parts) != 3 {
 		return nil, &ValidationError{err: "token contains an invalid number of segments", Errors: ValidationErrorMalformed}
@@ -107,6 +148,16 @@ func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	if err = json.Unmarshal(headerBytes, &token.Header); err != nil {
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
 	}
+	if alg, ok := token.Header["alg"].(string); !ok {
+		return token, &ValidationError{err: "signing method (alg) is unspecified.", Errors: ValidationErrorUnverifiable}
+	} else if method != nil {
+		if alg != method.Alg() {
+			return token, &ValidationError{err: "signing method (alg) is not match.", Errors: ValidationErrorSigningMethodNotMatch}
+		}
+		token.Method = method
+	} else if token.Method = GetSigningMethod(alg); token.Method == nil {
+		return token, &ValidationError{err: "signing method (alg) is unavailable.", Errors: ValidationErrorUnverifiable}
+	}
 
 	// parse Claims
 	var claimBytes []byte
@@ -115,26 +166,6 @@ func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	}
 	if err = json.Unmarshal(claimBytes, &token.Claims); err != nil {
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
-	}
-
-	// Lookup signature method
-	if method, ok := token.Header["alg"].(string); ok {
-		if token.Method = GetSigningMethod(method); token.Method == nil {
-			return token, &ValidationError{err: "signing method (alg) is unavailable.", Errors: ValidationErrorUnverifiable}
-		}
-	} else {
-		return token, &ValidationError{err: "signing method (alg) is unspecified.", Errors: ValidationErrorUnverifiable}
-	}
-
-	// Lookup key
-	var key interface{}
-	if keyFunc == nil {
-		// keyFunc was not provided.  short circuiting validation
-		return token, &ValidationError{err: "no Keyfunc was provided.", Errors: ValidationErrorUnverifiable}
-	}
-	if key, err = keyFunc(token); err != nil {
-		// keyFunc returned an error
-		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorUnverifiable}
 	}
 
 	// Check expiration times
@@ -153,6 +184,17 @@ func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 		}
 	}
 
+	// Lookup key
+	var key interface{}
+	if keyFunc == nil {
+		// keyFunc was not provided.  short circuiting validation
+		return token, &ValidationError{err: "no Keyfunc was provided.", Errors: ValidationErrorUnverifiable}
+	}
+	if key, err = keyFunc(token); err != nil {
+		// keyFunc returned an error
+		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorUnverifiable}
+	}
+
 	// Perform validation
 	if err = token.Method.Verify(strings.Join(parts[0:2], "."), parts[2], key); err != nil {
 		vErr.err = err.Error()
@@ -169,11 +211,12 @@ func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 
 // The errors that might occur when parsing and validating a token
 const (
-	ValidationErrorMalformed        uint32 = 1 << iota // Token is malformed
-	ValidationErrorUnverifiable                        // Token could not be verified because of signing problems
-	ValidationErrorSignatureInvalid                    // Signature validation failed
-	ValidationErrorExpired                             // Exp validation failed
-	ValidationErrorNotValidYet                         // NBF validation failed
+	ValidationErrorMalformed             uint32 = 1 << iota // Token is malformed
+	ValidationErrorUnverifiable                             // Token could not be verified because of signing problems
+	ValidationErrorSignatureInvalid                         // Signature validation failed
+	ValidationErrorExpired                                  // Exp validation failed
+	ValidationErrorNotValidYet                              // NBF validation failed
+	ValidationErrorSigningMethodNotMatch                    // Signing method don't match
 )
 
 // The error from Parse if token is not valid
