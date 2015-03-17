@@ -15,8 +15,8 @@ type JWT struct {
 	SigningMethod SigningMethod
 }
 
-// Sign signing a token use JWT's keyfunc and signing method
-func (j JWT) Sign(tok *Token) (string, error) {
+// Signing a token use JWT's keyfunc and signing method
+func (j JWT) Signing(tok *Token) (string, error) {
 	if j.Keyfunc == nil {
 		// keyFunc was not provided.  short circuiting validation
 		return "", &ValidationError{err: "no Keyfunc was provided.", Errors: ValidationErrorUnverifiable}
@@ -147,7 +147,7 @@ func parse(tokenString string, keyFunc Keyfunc, method SigningMethod) (*Token, e
 		return token, &ValidationError{err: "signing method (alg) is unspecified.", Errors: ValidationErrorUnverifiable}
 	} else if method != nil {
 		if alg != method.Alg() {
-			return token, &ValidationError{err: "signing method (alg) is not match.", Errors: ValidationErrorMethodNotMatch}
+			return token, &ValidationError{err: "signing method (alg) is not match.", Errors: ValidationErrorSigningMethodNotMatch}
 		}
 		token.Method = method
 	} else if token.Method = GetSigningMethod(alg); token.Method == nil {
