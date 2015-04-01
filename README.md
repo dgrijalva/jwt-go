@@ -1,6 +1,6 @@
 A [go](http://www.golang.org) (or 'golang' for search engine friendliness) implementation of [JSON Web Tokens](http://self-issued.info/docs/draft-jones-json-web-token.html)
 
-**NOTICE:** We recently introduced a breaking change in the API. Please refer to [VERSION_HISTORY.md](VERSION_HISTORY.md) for details.
+**NOTICE:** A vulnerability in JWT was [recently published](https://auth0.com/blog/2015/03/31/critical-vulnerabilities-in-json-web-token-libraries/).  As this library doesn't force users to validate the `alg` is what they expected, it's possible your usage is effected.  There will be an update soon to remedy this, and it will likey require backwards-incompatible changes to the API.  In the short term, please make sure your implementation verifies the `alg` is what you expect.
 
 ## What the heck is a JWT?
 
@@ -20,6 +20,10 @@ Parsing and verifying tokens is pretty straight forward.  You pass in the token 
 
 ```go
 	token, err := jwt.Parse(myToken, func(token *jwt.Token) (interface{}, error) {
+		// Don't forget to validate the alg is what you expect:
+		if _, ok := t.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, fmt.Errorf("Unexpected signing method: %v", t.Header["alg"])
+		}
 		return myLookupKey(token.Header["kid"])
 	})
 
