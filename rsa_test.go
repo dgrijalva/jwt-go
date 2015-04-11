@@ -142,3 +142,15 @@ func TestRSAKeyParsing(t *testing.T) {
 	}
 
 }
+
+func BenchmarkRS256Signing(b *testing.B) {
+	benchmarkSigning(b, jwt.SigningMethodRS256, hmacTestKey)
+}
+
+func BenchmarkRS384Signing(b *testing.B) {
+	benchmarkSigning(b, jwt.SigningMethodRS384, hmacTestKey)
+}
+
+func BenchmarkRS512Signing(b *testing.B) {
+	benchmarkSigning(b, jwt.SigningMethodRS512, hmacTestKey)
+}
