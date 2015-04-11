@@ -178,7 +178,9 @@ func benchmarkSigning(b *testing.B, method jwt.SigningMethod, key interface{}) {
 	t := jwt.New(method)
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			t.SignedString(key)
+			if _, err := t.SignedString(key); err != nil {
+				b.Fatal(err)
+			}
 		}
 	})
 

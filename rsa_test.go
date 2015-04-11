@@ -144,13 +144,31 @@ func TestRSAKeyParsing(t *testing.T) {
 }
 
 func BenchmarkRS256Signing(b *testing.B) {
-	benchmarkSigning(b, jwt.SigningMethodRS256, hmacTestKey)
+	key, _ := ioutil.ReadFile("test/sample_key")
+	parsedKey, err := jwt.ParseRSAPrivateKeyFromPEM(key)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	benchmarkSigning(b, jwt.SigningMethodRS256, parsedKey)
 }
 
 func BenchmarkRS384Signing(b *testing.B) {
-	benchmarkSigning(b, jwt.SigningMethodRS384, hmacTestKey)
+	key, _ := ioutil.ReadFile("test/sample_key")
+	parsedKey, err := jwt.ParseRSAPrivateKeyFromPEM(key)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	benchmarkSigning(b, jwt.SigningMethodRS384, parsedKey)
 }
 
 func BenchmarkRS512Signing(b *testing.B) {
-	benchmarkSigning(b, jwt.SigningMethodRS512, hmacTestKey)
+	key, _ := ioutil.ReadFile("test/sample_key")
+	parsedKey, err := jwt.ParseRSAPrivateKeyFromPEM(key)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	benchmarkSigning(b, jwt.SigningMethodRS512, parsedKey)
 }
