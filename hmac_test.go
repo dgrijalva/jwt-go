@@ -77,3 +77,26 @@ func TestHMACSign(t *testing.T) {
 		}
 	}
 }
+
+func BenchmarkHMACSigning(b *testing.B) {
+
+	var preppedData = make([]struct {
+		t      *jwt.Token
+		method jwt.SigningMethod
+		k      interface{}
+	}, len(hmacTestData))
+
+	for i, data := range hmacTestData {
+		preppedData[i].t, _ = jwt.Parse(data.tokenString, func(*jwt.Token) (interface{}, error) { return nil, nil })
+		preppedData[i].method = jwt.GetSigningMethod(data.alg)
+	}
+
+	for _, data := range preppedData {
+		b.RunParallel(func(pb *testing.PB) {
+			for pb.Next() {
+				data.t.SignedString(hmacTestKey)
+			}
+		})
+	}
+
+}
