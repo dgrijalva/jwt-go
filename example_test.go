@@ -1,7 +1,6 @@
 package jwt_test
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 	"testing"
@@ -38,12 +37,12 @@ type TestClaim struct {
 	Expiration int64  `json:"exp"`
 }
 
-func (c *TestClaim) ExpiresAt() (int64, error) {
-	return c.Expiration, nil
+func (c *TestClaim) ExpiresAt() (int64, bool) {
+	return c.Expiration, true
 }
 
-func (c *TestClaim) ValidNotBefore() (int64, error) {
-	return 0, errors.New("not implemented")
+func (c *TestClaim) ValidNotBefore() (int64, bool) {
+	return 0, false
 }
 
 func ExampleNewInterface(mySigningKey []byte) (string, error) {
@@ -75,10 +74,9 @@ func TestNewInterface(t *testing.T) {
 		t.Error(err)
 	}
 
-	var claim TestClaim
 	token, err := jwt.ParseInterface(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return "yes", nil
-	}, &claim)
+	}, &TestClaim{})
 
 	if !reflect.DeepEqual(goal, token.Claims) {
 		t.Errorf("expected %s to be %s\n", goal, token.Claims)

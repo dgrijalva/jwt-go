@@ -3,7 +3,6 @@ package jwt
 import (
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -88,23 +87,23 @@ func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 
 type MapClaim map[string]interface{}
 
-func (m MapClaim) ExpiresAt() (int64, error) {
+func (m MapClaim) ExpiresAt() (int64, bool) {
 	if exp, ok := m["exp"].(float64); ok {
-		return int64(exp), nil
+		return int64(exp), true
 	}
-	return 0, errors.New("expiration not found")
+	return 0, false
 }
 
-func (m MapClaim) ValidNotBefore() (int64, error) {
+func (m MapClaim) ValidNotBefore() (int64, bool) {
 	if nbf, ok := m["nbf"].(float64); ok {
-		return int64(nbf), nil
+		return int64(nbf), true
 	}
-	return 0, errors.New("not before not found")
+	return 0, false
 }
 
 type Claims interface {
-	ExpiresAt() (int64, error)
-	ValidNotBefore() (int64, error)
+	ExpiresAt() (int64, bool)
+	ValidNotBefore() (int64, bool)
 }
 
 // Parse, validate, and return a token.
@@ -160,13 +159,13 @@ func ParseInterface(tokenString string, keyFunc Keyfunc, claim Claims) (*Token, 
 	// Check expiration times
 	vErr := &ValidationError{}
 	now := TimeFunc().Unix()
-	if exp, err := token.Claims.ExpiresAt(); err == nil {
+	if exp, ok := token.Claims.ExpiresAt(); ok {
 		if now > exp {
 			vErr.err = "token is expired"
 			vErr.Errors |= ValidationErrorExpired
 		}
 	}
-	if nbf, err := token.Claims.ValidNotBefore(); err == nil {
+	if nbf, ok := token.Claims.ValidNotBefore(); ok {
 		if now < nbf {
 			vErr.err = "token is not valid yet"
 			vErr.Errors |= ValidationErrorNotValidYet
