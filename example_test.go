@@ -3,6 +3,8 @@ package jwt_test
 import (
 	"errors"
 	"fmt"
+	"reflect"
+	"testing"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -55,6 +57,32 @@ func ExampleNewInterface(mySigningKey []byte) (string, error) {
 	// Sign and get the complete encoded token as a string
 	tokenString, err := token.SignedString(mySigningKey)
 	return tokenString, err
+}
+
+func TestNewInterface(t *testing.T) {
+	key := []byte("test")
+	goal := &TestClaim{
+		Foo:        "bar",
+		Expiration: time.Now().Add(time.Hour * 72).Unix(),
+	}
+
+	myToken := jwt.New(jwt.SigningMethodHS256)
+	// Set some claims
+	myToken.Claims = goal
+	// Sign and get the complete encoded token as a string
+	tokenString, err := myToken.SignedString(key)
+	if err != nil {
+		t.Error(err)
+	}
+
+	var claim TestClaim
+	token, err := jwt.ParseInterface(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return "yes", nil
+	}, &claim)
+
+	if !reflect.DeepEqual(goal, token.Claims) {
+		t.Errorf("expected %s to be %s\n", goal, token.Claims)
+	}
 }
 
 func ExampleParse_errorChecking(myToken string, myLookupKey func(interface{}) (interface{}, error)) {
