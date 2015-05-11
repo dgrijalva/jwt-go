@@ -1,6 +1,7 @@
 package jwt_test
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -25,6 +26,32 @@ func ExampleNew(mySigningKey []byte) (string, error) {
 	// Set some claims
 	token.Claims.(jwt.MapClaim)["foo"] = "bar"
 	token.Claims.(jwt.MapClaim)["exp"] = time.Now().Add(time.Hour * 72).Unix()
+	// Sign and get the complete encoded token as a string
+	tokenString, err := token.SignedString(mySigningKey)
+	return tokenString, err
+}
+
+type TestClaim struct {
+	Foo        string `json:"foo"`
+	Expiration int64  `json:"exp"`
+}
+
+func (c *TestClaim) ExpiresAt() (int64, error) {
+	return c.Expiration, nil
+}
+
+func (c *TestClaim) ValidNotBefore() (int64, error) {
+	return 0, errors.New("not implemented")
+}
+
+func ExampleNewInterface(mySigningKey []byte) (string, error) {
+	// Create the token
+	token := jwt.New(jwt.SigningMethodHS256)
+	// Set some claims
+	token.Claims = &TestClaim{
+		Foo:        "bar",
+		Expiration: time.Now().Add(time.Hour * 72).Unix(),
+	}
 	// Sign and get the complete encoded token as a string
 	tokenString, err := token.SignedString(mySigningKey)
 	return tokenString, err
