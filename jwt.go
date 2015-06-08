@@ -1,6 +1,7 @@
 package jwt
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
@@ -12,6 +13,9 @@ import (
 // You can override it to use another time value.  This is useful for testing or if your
 // server uses a different time zone than your tokens.
 var TimeFunc = time.Now
+
+// Force json to use number type instead of float.
+var UseNumber = false
 
 // Parse methods use this callback function to supply
 // the key for verification.  The function receives the parsed,
@@ -96,7 +100,12 @@ func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	if headerBytes, err = DecodeSegment(parts[0]); err != nil {
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
 	}
-	if err = json.Unmarshal(headerBytes, &token.Header); err != nil {
+
+	d := json.NewDecoder(bytes.NewReader(headerBytes))
+	if UseNumber {
+		d.UseNumber()
+	}
+	if err = d.Decode(&token.Header); err != nil {
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
 	}
 
@@ -105,7 +114,12 @@ func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	if claimBytes, err = DecodeSegment(parts[1]); err != nil {
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
 	}
-	if err = json.Unmarshal(claimBytes, &token.Claims); err != nil {
+
+	d = json.NewDecoder(bytes.NewReader(claimBytes))
+	if UseNumber {
+		d.UseNumber()
+	}
+	if err = d.Decode(&token.Claims); err != nil {
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
 	}
 
@@ -132,16 +146,31 @@ func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	// Check expiration times
 	vErr := &ValidationError{}
 	now := TimeFunc().Unix()
-	if exp, ok := token.Claims["exp"].(float64); ok {
-		if now > int64(exp) {
-			vErr.err = "token is expired"
-			vErr.Errors |= ValidationErrorExpired
+	if UseNumber {
+		if exp, ok := token.Claims["exp"].(float64); ok {
+			if now > int64(exp) {
+				vErr.err = "token is expired"
+				vErr.Errors |= ValidationErrorExpired
+			}
 		}
-	}
-	if nbf, ok := token.Claims["nbf"].(float64); ok {
-		if now < int64(nbf) {
-			vErr.err = "token is not valid yet"
-			vErr.Errors |= ValidationErrorNotValidYet
+		if nbf, ok := token.Claims["nbf"].(float64); ok {
+			if now < int64(nbf) {
+				vErr.err = "token is not valid yet"
+				vErr.Errors |= ValidationErrorNotValidYet
+			}
+		}
+	} else {
+		if exp, ok := token.Claims["exp"].(int64); ok {
+			if now > exp {
+				vErr.err = "token is expired"
+				vErr.Errors |= ValidationErrorExpired
+			}
+		}
+		if nbf, ok := token.Claims["nbf"].(int64); ok {
+			if now < nbf {
+				vErr.err = "token is not valid yet"
+				vErr.Errors |= ValidationErrorNotValidYet
+			}
 		}
 	}
 
