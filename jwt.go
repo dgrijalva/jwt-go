@@ -75,6 +75,17 @@ func New(method SigningMethod) *Token {
 	}
 }
 
+func NewWithClaims(method SigningMethod, claims Claims) *Token {
+	return &Token{
+		Header: map[string]interface{}{
+			"typ": "JWT",
+			"alg": method.Alg(),
+		},
+		Claims: claims,
+		Method: method,
+	}
+}
+
 // Get the complete, signed token
 func (t *Token) SignedString(key interface{}) (string, error) {
 	var sig, sstr string
@@ -116,13 +127,20 @@ func (t *Token) SigningString() (string, error) {
 // keyFunc will receive the parsed token and should return the key for validating.
 // If everything is kosher, err will be nil
 func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
+	return ParseWithClaims(tokenString, keyFunc, make(MapClaim))
+}
+
+func ParseWithClaims(tokenString string, keyFunc Keyfunc, claims Claims) (*Token, error) {
 	parts := strings.Split(tokenString, ".")
 	if len(parts) != 3 {
 		return nil, &ValidationError{err: "token contains an invalid number of segments", Errors: ValidationErrorMalformed}
 	}
 
 	var err error
-	token := &Token{Raw: tokenString}
+	token := &Token{
+		Raw: tokenString,
+	}
+
 	// parse Header
 	var headerBytes []byte
 	if headerBytes, err = DecodeSegment(parts[0]); err != nil {
@@ -134,12 +152,15 @@ func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 
 	// parse Claims
 	var claimBytes []byte
+
 	if claimBytes, err = DecodeSegment(parts[1]); err != nil {
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
 	}
-	if err = json.Unmarshal(claimBytes, &token.Claims); err != nil {
+
+	if err = json.Unmarshal(claimBytes, &claims); err != nil {
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
 	}
+	token.Claims = claims
 
 	// Lookup signature method
 	if method, ok := token.Header["alg"].(string); ok {
@@ -163,7 +184,17 @@ func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 
 	// Check expiration times
 	err = token.Claims.Valid()
-	vErr := err.(ValidationError)
+	var vErr *ValidationError
+
+	// If the Claims Valid returned an error, check if it is a validation error,
+	// if not, convert it into one with a generic ClaimsInvalid flag set
+	if err != nil {
+		if e, ok := err.(*ValidationError); !ok {
+			vErr = &ValidationError{err: err.Error(), Errors: ValidationErrorClaimsInvalid}
+		} else {
+			vErr = e
+		}
+	}
 
 	// Perform validation
 	if err = token.Method.Verify(strings.Join(parts[0:2], "."), parts[2], key); err != nil {
@@ -171,7 +202,7 @@ func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 		vErr.Errors |= ValidationErrorSignatureInvalid
 	}
 
-	if vErr.valid() {
+	if vErr == nil || vErr.valid() {
 		token.Valid = true
 		return token, nil
 	}
