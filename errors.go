@@ -16,10 +16,15 @@ const (
 	ValidationErrorMalformed        uint32 = 1 << iota // Token is malformed
 	ValidationErrorUnverifiable                        // Token could not be verified because of signing problems
 	ValidationErrorSignatureInvalid                    // Signature validation failed
-	ValidationErrorExpired                             // Exp validation failed
-	ValidationErrorNotValidYet                         // NBF validation failed
-	ValidationErrorIssuedAt                            // IAT validation failed
-	ValidationErrorClaimsInvalid                       // Generic claims validation error
+
+	// Standard Claim validation errors
+	ValidationErrorAudience      // AUD validation failed
+	ValidationErrorExpired       // EXP validation failed
+	ValidationErrorIssuedAt      // IAT validation failed
+	ValidationErrorIssuer        // ISS validation failed
+	ValidationErrorNotValidYet   // NBF validation failed
+	ValidationErrorId            // JTI validation failed
+	ValidationErrorClaimsInvalid // Generic claims validation error
 )
 
 // The error from Parse if token is not valid
