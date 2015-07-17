@@ -2,8 +2,11 @@ package jwt_test
 
 import (
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
+	"reflect"
+	"testing"
 	"time"
+
+	"github.com/dgrijalva/jwt-go"
 )
 
 func ExampleParse(myToken string, myLookupKey func(interface{}) (interface{}, error)) {
@@ -22,11 +25,62 @@ func ExampleNew(mySigningKey []byte) (string, error) {
 	// Create the token
 	token := jwt.New(jwt.SigningMethodHS256)
 	// Set some claims
-	token.Claims["foo"] = "bar"
-	token.Claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
+	token.Claims.(jwt.MapClaim)["foo"] = "bar"
+	token.Claims.(jwt.MapClaim)["exp"] = time.Now().Add(time.Hour * 72).Unix()
 	// Sign and get the complete encoded token as a string
 	tokenString, err := token.SignedString(mySigningKey)
 	return tokenString, err
+}
+
+type TestClaim struct {
+	Foo        string `json:"foo"`
+	Expiration int64  `json:"exp"`
+}
+
+func (c *TestClaim) ExpiresAt() (int64, bool) {
+	return c.Expiration, true
+}
+
+func (c *TestClaim) ValidNotBefore() (int64, bool) {
+	return 0, false
+}
+
+func ExampleNewInterface(mySigningKey []byte) (string, error) {
+	// Create the token
+	token := jwt.New(jwt.SigningMethodHS256)
+	// Set some claims
+	token.Claims = &TestClaim{
+		Foo:        "bar",
+		Expiration: time.Now().Add(time.Hour * 72).Unix(),
+	}
+	// Sign and get the complete encoded token as a string
+	tokenString, err := token.SignedString(mySigningKey)
+	return tokenString, err
+}
+
+func TestNewInterface(t *testing.T) {
+	key := []byte("test")
+	goal := &TestClaim{
+		Foo:        "bar",
+		Expiration: time.Now().Add(time.Hour * 72).Unix(),
+	}
+
+	myToken := jwt.New(jwt.SigningMethodHS256)
+	// Set some claims
+	myToken.Claims = goal
+	// Sign and get the complete encoded token as a string
+	tokenString, err := myToken.SignedString(key)
+	if err != nil {
+		t.Error(err)
+	}
+
+	token, err := jwt.ParseInterface(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return "yes", nil
+	}, &TestClaim{})
+
+	if !reflect.DeepEqual(goal, token.Claims) {
+		t.Errorf("expected %s to be %s\n", goal, token.Claims)
+	}
 }
 
 func ExampleParse_errorChecking(myToken string, myLookupKey func(interface{}) (interface{}, error)) {

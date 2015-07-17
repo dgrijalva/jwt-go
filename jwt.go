@@ -25,7 +25,7 @@ type Token struct {
 	Raw       string                 // The raw token.  Populated when you Parse a token
 	Method    SigningMethod          // The signing method used or to be used
 	Header    map[string]interface{} // The first segment of the token
-	Claims    map[string]interface{} // The second segment of the token
+	Claims    Claims                 // The second segment of the token
 	Signature string                 // The third segment of the token.  Populated when you Parse a token
 	Valid     bool                   // Is the token valid?  Populated when you Parse/Verify a token
 }
@@ -37,7 +37,7 @@ func New(method SigningMethod) *Token {
 			"typ": "JWT",
 			"alg": method.Alg(),
 		},
-		Claims: make(map[string]interface{}),
+		Claims: make(MapClaim),
 		Method: method,
 	}
 }
@@ -63,7 +63,7 @@ func (t *Token) SigningString() (string, error) {
 	var err error
 	parts := make([]string, 2)
 	for i, _ := range parts {
-		var source map[string]interface{}
+		var source interface{}
 		if i == 0 {
 			source = t.Header
 		} else {
@@ -80,10 +80,36 @@ func (t *Token) SigningString() (string, error) {
 	return strings.Join(parts, "."), nil
 }
 
+func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
+	claim := make(MapClaim)
+	return ParseInterface(tokenString, keyFunc, &claim)
+}
+
+type MapClaim map[string]interface{}
+
+func (m MapClaim) ExpiresAt() (int64, bool) {
+	if exp, ok := m["exp"].(float64); ok {
+		return int64(exp), true
+	}
+	return 0, false
+}
+
+func (m MapClaim) ValidNotBefore() (int64, bool) {
+	if nbf, ok := m["nbf"].(float64); ok {
+		return int64(nbf), true
+	}
+	return 0, false
+}
+
+type Claims interface {
+	ExpiresAt() (int64, bool)
+	ValidNotBefore() (int64, bool)
+}
+
 // Parse, validate, and return a token.
 // keyFunc will receive the parsed token and should return the key for validating.
 // If everything is kosher, err will be nil
-func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
+func ParseInterface(tokenString string, keyFunc Keyfunc, claim Claims) (*Token, error) {
 	parts := strings.Split(tokenString, ".")
 	if len(parts) != 3 {
 		return nil, &ValidationError{err: "token contains an invalid number of segments", Errors: ValidationErrorMalformed}
@@ -105,9 +131,10 @@ func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	if claimBytes, err = DecodeSegment(parts[1]); err != nil {
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
 	}
-	if err = json.Unmarshal(claimBytes, &token.Claims); err != nil {
+	if err = json.Unmarshal(claimBytes, &claim); err != nil {
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
 	}
+	token.Claims = claim
 
 	// Lookup signature method
 	if method, ok := token.Header["alg"].(string); ok {
@@ -132,14 +159,14 @@ func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	// Check expiration times
 	vErr := &ValidationError{}
 	now := TimeFunc().Unix()
-	if exp, ok := token.Claims["exp"].(float64); ok {
-		if now > int64(exp) {
+	if exp, ok := token.Claims.ExpiresAt(); ok {
+		if now > exp {
 			vErr.err = "token is expired"
 			vErr.Errors |= ValidationErrorExpired
 		}
 	}
-	if nbf, ok := token.Claims["nbf"].(float64); ok {
-		if now < int64(nbf) {
+	if nbf, ok := token.Claims.ValidNotBefore(); ok {
+		if now < nbf {
 			vErr.err = "token is not valid yet"
 			vErr.Errors |= ValidationErrorNotValidYet
 		}
