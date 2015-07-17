@@ -217,7 +217,7 @@ func New(method SigningMethod) *Token {
 			"typ": "JWT",
 			"alg": method.Alg(),
 		},
-		Claims: Claims{},
+		Claims: MapClaim{},
 		Method: method,
 	}
 }
@@ -274,7 +274,7 @@ func (t *Token) SigningString() (string, error) {
 // keyFunc will receive the parsed token and should return the key for validating.
 // If everything is kosher, err will be nil
 func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
-	return ParseWithClaims(tokenString, keyFunc, &Claims{})
+	return ParseWithClaims(tokenString, keyFunc, &MapClaim{})
 }
 
 func ParseWithClaims(tokenString string, keyFunc Keyfunc, claims Claimer) (*Token, error) {
