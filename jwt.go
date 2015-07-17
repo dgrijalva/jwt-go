@@ -21,12 +21,12 @@ type Keyfunc func(*Token) (interface{}, error)
 
 // For a type to be a Claims object, it must just have a Valid method that determines
 // if the token is invalid for any supported reason
-type Claimer interface {
+type Claims interface {
 	Valid() error
 }
 
 // Structured version of Claims Section, as referenced at https://tools.ietf.org/html/rfc7519#section-4.1
-type Claims struct {
+type StandardClaims struct {
 	Audience  string `json:"aud,omitempty"`
 	ExpiresAt int64  `json:"exp,omitempty"`
 	Id        string `json:"jti,omitempty"`
@@ -36,7 +36,7 @@ type Claims struct {
 	Subject   string `json:"sub,omitempty"`
 }
 
-func (c Claims) Valid() error {
+func (c StandardClaims) Valid() error {
 	vErr := new(ValidationError)
 	now := TimeFunc().Unix()
 
@@ -71,23 +71,23 @@ func (c Claims) Valid() error {
 	return vErr
 }
 
-func (c *Claims) VerifyAudience(cmp string) bool {
+func (c *StandardClaims) VerifyAudience(cmp string) bool {
 	return verifyAud(c.Audience, cmp)
 }
 
-func (c *Claims) VerifyExpiresAt(cmp int64) bool {
+func (c *StandardClaims) VerifyExpiresAt(cmp int64) bool {
 	return verifyExp(c.ExpiresAt, cmp)
 }
 
-func (c *Claims) VerifyIssuedAt(cmp int64) bool {
+func (c *StandardClaims) VerifyIssuedAt(cmp int64) bool {
 	return verifyIat(c.IssuedAt, cmp)
 }
 
-func (c *Claims) VerifyIssuer(cmp string) bool {
+func (c *StandardClaims) VerifyIssuer(cmp string) bool {
 	return verifyIss(c.Issuer, cmp)
 }
 
-func (c *Claims) VerifyNotBefore(cmp int64) bool {
+func (c *StandardClaims) VerifyNotBefore(cmp int64) bool {
 	return verifyNbf(c.NotBefore, cmp)
 }
 
@@ -205,7 +205,7 @@ type Token struct {
 	Raw       string                 // The raw token.  Populated when you Parse a token
 	Method    SigningMethod          // The signing method used or to be used
 	Header    map[string]interface{} // The first segment of the token
-	Claims    Claimer                // The second segment of the token
+	Claims    Claims                 // The second segment of the token
 	Signature string                 // The third segment of the token.  Populated when you Parse a token
 	Valid     bool                   // Is the token valid?  Populated when you Parse/Verify a token
 }
@@ -222,7 +222,7 @@ func New(method SigningMethod) *Token {
 	}
 }
 
-func NewWithClaims(method SigningMethod, claims Claimer) *Token {
+func NewWithClaims(method SigningMethod, claims Claims) *Token {
 	return &Token{
 		Header: map[string]interface{}{
 			"typ": "JWT",
@@ -277,7 +277,7 @@ func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	return ParseWithClaims(tokenString, keyFunc, &MapClaim{})
 }
 
-func ParseWithClaims(tokenString string, keyFunc Keyfunc, claims Claimer) (*Token, error) {
+func ParseWithClaims(tokenString string, keyFunc Keyfunc, claims Claims) (*Token, error) {
 	parts := strings.Split(tokenString, ".")
 	if len(parts) != 3 {
 		return nil, &ValidationError{err: "token contains an invalid number of segments", Errors: ValidationErrorMalformed}
@@ -363,10 +363,10 @@ func ParseWithClaims(tokenString string, keyFunc Keyfunc, claims Claimer) (*Toke
 // Currently, it looks in the Authorization header as well as
 // looking for an 'access_token' request parameter in req.Form.
 func ParseFromRequest(req *http.Request, keyFunc Keyfunc) (token *Token, err error) {
-	return ParseFromRequestWithClaims(req, keyFunc, &Claims{})
+	return ParseFromRequestWithClaims(req, keyFunc, &MapClaim{})
 }
 
-func ParseFromRequestWithClaims(req *http.Request, keyFunc Keyfunc, claims Claimer) (token *Token, err error) {
+func ParseFromRequestWithClaims(req *http.Request, keyFunc Keyfunc, claims Claims) (token *Token, err error) {
 	// Look for an Authorization header
 	if ah := req.Header.Get("Authorization"); ah != "" {
 		// Should be a bearer token
