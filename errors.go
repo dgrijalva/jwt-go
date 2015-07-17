@@ -18,6 +18,7 @@ const (
 	ValidationErrorSignatureInvalid                    // Signature validation failed
 	ValidationErrorExpired                             // Exp validation failed
 	ValidationErrorNotValidYet                         // NBF validation failed
+	ValidationErrorIssuedAt                            // IAT validation failed
 	ValidationErrorClaimsInvalid                       // Generic claims validation error
 )
 
