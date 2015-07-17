@@ -2,8 +2,9 @@ package jwt_test
 
 import (
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
 	"time"
+
+	"github.com/dgrijalva/jwt-go"
 )
 
 func ExampleParse(myToken string, myLookupKey func(interface{}) (interface{}, error)) {
@@ -19,11 +20,15 @@ func ExampleParse(myToken string, myLookupKey func(interface{}) (interface{}, er
 }
 
 func ExampleNew(mySigningKey []byte) (string, error) {
-	// Create the token
-	token := jwt.New(jwt.SigningMethodHS256)
 	// Set some claims
-	token.Claims["foo"] = "bar"
-	token.Claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
+	claim := jwt.MapClaim{
+		"foo": "bar",
+		"exp": time.Now().Add(time.Hour * 72).Unix(),
+	}
+
+	// Create the token
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
+
 	// Sign and get the complete encoded token as a string
 	tokenString, err := token.SignedString(mySigningKey)
 	return tokenString, err

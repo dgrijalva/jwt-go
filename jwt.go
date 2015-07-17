@@ -307,6 +307,7 @@ func ParseWithClaims(tokenString string, keyFunc Keyfunc, claims Claimer) (*Toke
 	if err = json.Unmarshal(claimBytes, &claims); err != nil {
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
 	}
+
 	token.Claims = claims
 
 	// Lookup signature method
@@ -329,7 +330,7 @@ func ParseWithClaims(tokenString string, keyFunc Keyfunc, claims Claimer) (*Toke
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorUnverifiable}
 	}
 
-	var vErr *ValidationError
+	vErr := &ValidationError{}
 
 	// Validate Claims
 	if err := token.Claims.Valid(); err != nil {
@@ -349,7 +350,7 @@ func ParseWithClaims(tokenString string, keyFunc Keyfunc, claims Claimer) (*Toke
 		vErr.Errors |= ValidationErrorSignatureInvalid
 	}
 
-	if vErr == nil || vErr.valid() {
+	if vErr.valid() {
 		token.Valid = true
 		return token, nil
 	}
@@ -362,23 +363,25 @@ func ParseWithClaims(tokenString string, keyFunc Keyfunc, claims Claimer) (*Toke
 // Currently, it looks in the Authorization header as well as
 // looking for an 'access_token' request parameter in req.Form.
 func ParseFromRequest(req *http.Request, keyFunc Keyfunc) (token *Token, err error) {
+	return ParseFromRequestWithClaims(req, keyFunc, &Claims{})
+}
 
+func ParseFromRequestWithClaims(req *http.Request, keyFunc Keyfunc, claims Claimer) (token *Token, err error) {
 	// Look for an Authorization header
 	if ah := req.Header.Get("Authorization"); ah != "" {
 		// Should be a bearer token
 		if len(ah) > 6 && strings.ToUpper(ah[0:6]) == "BEARER" {
-			return Parse(ah[7:], keyFunc)
+			return ParseWithClaims(ah[7:], keyFunc, claims)
 		}
 	}
 
 	// Look for "access_token" parameter
 	req.ParseMultipartForm(10e6)
 	if tokStr := req.Form.Get("access_token"); tokStr != "" {
-		return Parse(tokStr, keyFunc)
+		return ParseWithClaims(tokStr, keyFunc, claims)
 	}
 
 	return nil, ErrNoTokenInRequest
-
 }
 
 // Encode JWT specific base64url encoding with padding stripped
