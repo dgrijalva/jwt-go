@@ -1,6 +1,7 @@
 package jwt_test
 
 import (
+	"crypto/rsa"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"io/ioutil"
@@ -11,7 +12,7 @@ import (
 )
 
 var (
-	jwtTestDefaultKey []byte
+	jwtTestDefaultKey *rsa.PublicKey
 	defaultKeyFunc    jwt.Keyfunc = func(t *jwt.Token) (interface{}, error) { return jwtTestDefaultKey, nil }
 	emptyKeyFunc      jwt.Keyfunc = func(t *jwt.Token) (interface{}, error) { return nil, nil }
 	errorKeyFunc      jwt.Keyfunc = func(t *jwt.Token) (interface{}, error) { return nil, fmt.Errorf("error loading key") }
@@ -93,14 +94,21 @@ var jwtTestData = []struct {
 }
 
 func init() {
-	var e error
-	if jwtTestDefaultKey, e = ioutil.ReadFile("test/sample_key.pub"); e != nil {
+	if keyData, e := ioutil.ReadFile("test/sample_key.pub"); e == nil {
+		if jwtTestDefaultKey, e = jwt.ParseRSAPublicKeyFromPEM(keyData); e != nil {
+			panic(e)
+		}
+	} else {
 		panic(e)
 	}
 }
 
 func makeSample(c map[string]interface{}) string {
-	key, e := ioutil.ReadFile("test/sample_key")
+	keyData, e := ioutil.ReadFile("test/sample_key")
+	if e != nil {
+		panic(e.Error())
+	}
+	key, e := jwt.ParseRSAPrivateKeyFromPEM(keyData)
 	if e != nil {
 		panic(e.Error())
 	}

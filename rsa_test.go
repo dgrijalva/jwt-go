@@ -45,7 +45,8 @@ var rsaTestData = []struct {
 }
 
 func TestRSAVerify(t *testing.T) {
-	key, _ := ioutil.ReadFile("test/sample_key.pub")
+	keyData, _ := ioutil.ReadFile("test/sample_key.pub")
+	key, _ := jwt.ParseRSAPublicKeyFromPEM(keyData)
 
 	for _, data := range rsaTestData {
 		parts := strings.Split(data.tokenString, ".")
@@ -62,7 +63,8 @@ func TestRSAVerify(t *testing.T) {
 }
 
 func TestRSASign(t *testing.T) {
-	key, _ := ioutil.ReadFile("test/sample_key")
+	keyData, _ := ioutil.ReadFile("test/sample_key")
+	key, _ := jwt.ParseRSAPrivateKeyFromPEM(keyData)
 
 	for _, data := range rsaTestData {
 		if data.valid {
