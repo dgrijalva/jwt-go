@@ -2,7 +2,6 @@ package jwt_test
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/dgrijalva/jwt-go"
 )
@@ -20,18 +19,28 @@ func ExampleParse(myToken string, myLookupKey func(interface{}) (interface{}, er
 }
 
 func ExampleNew(mySigningKey []byte) (string, error) {
-	// Set some claims
-	claim := jwt.MapClaim{
-		"foo": "bar",
-		"exp": time.Now().Add(time.Hour * 72).Unix(),
-	}
-
 	// Create the token
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claim)
+	token := jwt.New(jwt.SigningMethodRS256)
+
+	// Set some claims
+	claims := token.Claims.(jwt.MapClaim)
+	claims["foo"] = "bar"
+	claims["exp"] = 15000
 
 	// Sign and get the complete encoded token as a string
 	tokenString, err := token.SignedString(mySigningKey)
 	return tokenString, err
+}
+
+func ExampleNewWithClaims(mySigningKey []byte) (string, error) {
+	// Create the Claims
+	claims := jwt.StandardClaims{
+		ExpiresAt: 15000,
+		Issuer:    "test",
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+	return token.SignedString(mySigningKey)
 }
 
 func ExampleParse_errorChecking(myToken string, myLookupKey func(interface{}) (interface{}, error)) {
