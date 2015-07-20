@@ -46,6 +46,21 @@ and includes a few helper functions for verifying the claims defined [here](http
 
 On the other end of usage all of the `jwt.Parse` and friends got a `WithClaims` suffix added to them.
 
+```go
+	token, err := jwt.Parse(token, keyFunc)
+	claims := token.Claims.(jwt.MapClaim)
+	//like you used to..
+	claims["foo"]
+	claims["bar"]
+```
+
+New method usage:
+```go
+	token, err := jwt.ParseWithClaims(token, keyFunc, &jwt.StandardClaims{})
+	claims := token.Claims.(jwt.StandardClaims)
+	fmt.Println(claims.IssuedAt)
+```
+
 ## What the heck is a JWT?
 
 In short, it's a signed JSON object that does something useful (for example, authentication).  It's commonly used for `Bearer` tokens in Oauth 2.  A token is made of three parts, separated by `.`'s.  The first two parts are JSON objects, that have been [base64url](http://tools.ietf.org/html/rfc4648) encoded.  The last part is the signature, encoded the same way.
