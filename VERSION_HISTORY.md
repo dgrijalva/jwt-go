@@ -1,5 +1,9 @@
 ## `jwt-go` Version History
 
+#### 3.0.0
+
+* Dropped support for `[]byte` keys when using RSA signing methods.  This convenience feature could contribute to security vulnerabilities involving mismatched key types with signing methods.
+
 #### 2.3.0
 
 * Added support for ECDSA signing methods
