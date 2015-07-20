@@ -32,14 +32,7 @@ type Token struct {
 
 // Create a new Token.  Takes a signing method
 func New(method SigningMethod) *Token {
-	return &Token{
-		Header: map[string]interface{}{
-			"typ": "JWT",
-			"alg": method.Alg(),
-		},
-		Claims: MapClaim{},
-		Method: method,
-	}
+	return NewWithClaims(method, MapClaim{})
 }
 
 func NewWithClaims(method SigningMethod, claims Claims) *Token {
