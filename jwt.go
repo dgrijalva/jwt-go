@@ -180,7 +180,23 @@ func ParseFromRequest(req *http.Request, keyFunc Keyfunc) (token *Token, err err
 	}
 
 	return nil, ErrNoTokenInRequest
+}
 
+// ParseFromRequestHeader performs the same function as ParseFromRequest, but
+// limits the check to the header.  This is done because the call to
+// req.ParseMultipartForm() can change the body of the request, which affects
+// other functions that read in the request body later on.
+func ParseFromRequestHeader(req *http.Request, keyFunc Keyfunc) (token *Token, err error) {
+
+	// Look for an Authorization header.
+	if ah := req.Header.Get("Authorization"); ah != "" {
+		// Check if it's not a bearer token
+		if len(ah) <= 6 || strings.ToUpper(ah[0:6]) != "BEARER" {
+			return nil, ErrNoTokenInRequestHeader
+		}
+	}
+	// Is a bearer token, so parse it.
+	return Parse(ah[7:], keyFunc)
 }
 
 // Encode JWT specific base64url encoding with padding stripped
