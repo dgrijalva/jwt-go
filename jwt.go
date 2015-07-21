@@ -188,15 +188,15 @@ func ParseFromRequest(req *http.Request, keyFunc Keyfunc) (token *Token, err err
 // other functions that read in the request body later on.
 func ParseFromRequestHeader(req *http.Request, keyFunc Keyfunc) (token *Token, err error) {
 
-	// Look for an Authorization header.
+	// Look for an Authorization header
 	if ah := req.Header.Get("Authorization"); ah != "" {
-		// Check if it's not a bearer token
-		if len(ah) <= 6 || strings.ToUpper(ah[0:6]) != "BEARER" {
-			return nil, ErrNoTokenInRequestHeader
+		// Check if it's a bearer token
+		if len(ah) > 6 && strings.ToUpper(ah[0:6]) == "BEARER" {
+			return Parse(ah[7:], keyFunc)
 		}
 	}
-	// Is a bearer token, so parse it.
-	return Parse(ah[7:], keyFunc)
+
+	return nil, ErrNoTokenInRequestHeader
 }
 
 // Encode JWT specific base64url encoding with padding stripped
