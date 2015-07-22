@@ -28,7 +28,7 @@ func ExampleNew() {
 	claims["foo"] = "bar"
 	claims["exp"] = time.Unix(0, 0).Add(time.Hour * 1).Unix()
 
-	fmt.Printf("%v\n", claims)
+	fmt.Printf("%v\n", token.Claims)
 	//Output: map[foo:bar exp:3600]
 }
 
