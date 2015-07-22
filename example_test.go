@@ -2,8 +2,9 @@ package jwt_test
 
 import (
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
 	"time"
+
+	"github.com/dgrijalva/jwt-go"
 )
 
 func ExampleParse(myToken string, myLookupKey func(interface{}) (interface{}, error)) {
@@ -18,15 +19,28 @@ func ExampleParse(myToken string, myLookupKey func(interface{}) (interface{}, er
 	}
 }
 
-func ExampleNew(mySigningKey []byte) (string, error) {
+func ExampleNew() {
 	// Create the token
-	token := jwt.New(jwt.SigningMethodHS256)
+	token := jwt.New(jwt.SigningMethodRS256)
+
 	// Set some claims
-	token.Claims["foo"] = "bar"
-	token.Claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
-	// Sign and get the complete encoded token as a string
-	tokenString, err := token.SignedString(mySigningKey)
-	return tokenString, err
+	claims := token.Claims.(jwt.MapClaim)
+	claims["foo"] = "bar"
+	claims["exp"] = time.Unix(0, 0).Add(time.Hour * 1).Unix()
+
+	fmt.Printf("%v\n", token.Claims)
+	//Output: map[foo:bar exp:3600]
+}
+
+func ExampleNewWithClaims(mySigningKey []byte) (string, error) {
+	// Create the Claims
+	claims := jwt.StandardClaims{
+		ExpiresAt: 15000,
+		Issuer:    "test",
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+	return token.SignedString(mySigningKey)
 }
 
 func ExampleParse_errorChecking(myToken string, myLookupKey func(interface{}) (interface{}, error)) {
