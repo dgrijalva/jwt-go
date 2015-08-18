@@ -87,7 +87,7 @@ func (t *Token) SigningString() (string, error) {
 // keyFunc will receive the parsed token and should return the key for validating.
 // If everything is kosher, err will be nil
 func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
-	return ParseWithClaims(tokenString, keyFunc, &MapClaims{})
+	return ParseWithClaims(tokenString, keyFunc, MapClaims{})
 }
 
 func ParseWithClaims(tokenString string, keyFunc Keyfunc, claims Claims) (*Token, error) {
@@ -176,7 +176,7 @@ func ParseWithClaims(tokenString string, keyFunc Keyfunc, claims Claims) (*Token
 // Currently, it looks in the Authorization header as well as
 // looking for an 'access_token' request parameter in req.Form.
 func ParseFromRequest(req *http.Request, keyFunc Keyfunc) (token *Token, err error) {
-	return ParseFromRequestWithClaims(req, keyFunc, &MapClaims{})
+	return ParseFromRequestWithClaims(req, keyFunc, MapClaims{})
 }
 
 func ParseFromRequestWithClaims(req *http.Request, keyFunc Keyfunc, claims Claims) (token *Token, err error) {
