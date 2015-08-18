@@ -82,39 +82,39 @@ func (c *StandardClaims) VerifyNotBefore(cmp int64, req bool) bool {
 	return verifyNbf(c.NotBefore, cmp, req)
 }
 
-type MapClaim map[string]interface{}
+type MapClaims map[string]interface{}
 
 // Compares the aud claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
-func (m MapClaim) VerifyAudience(cmp string, req bool) bool {
+func (m MapClaims) VerifyAudience(cmp string, req bool) bool {
 	aud, _ := m["aud"].(string)
 	return verifyAud(aud, cmp, req)
 }
 
 // Compares the exp claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
-func (m MapClaim) VerifyExpiresAt(cmp int64, req bool) bool {
+func (m MapClaims) VerifyExpiresAt(cmp int64, req bool) bool {
 	exp, _ := m["exp"].(float64)
 	return verifyExp(int64(exp), cmp, req)
 }
 
 // Compares the iat claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
-func (m MapClaim) VerifyIssuedAt(cmp int64, req bool) bool {
+func (m MapClaims) VerifyIssuedAt(cmp int64, req bool) bool {
 	iat, _ := m["iat"].(float64)
 	return verifyIat(int64(iat), cmp, req)
 }
 
 // Compares the iss claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
-func (m MapClaim) VerifyIssuer(cmp string, req bool) bool {
+func (m MapClaims) VerifyIssuer(cmp string, req bool) bool {
 	iss, _ := m["iss"].(string)
 	return verifyIss(iss, cmp, req)
 }
 
 // Compares the nbf claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
-func (m MapClaim) VerifyNotBefore(cmp int64, req bool) bool {
+func (m MapClaims) VerifyNotBefore(cmp int64, req bool) bool {
 	nbf, _ := m["nbf"].(float64)
 	return verifyNbf(int64(nbf), cmp, req)
 }
@@ -123,7 +123,7 @@ func (m MapClaim) VerifyNotBefore(cmp int64, req bool) bool {
 // There is no accounting for clock skew.
 // As well, if any of the above claims are not in the token, it will still
 // be considered a valid claim.
-func (m MapClaim) Valid() error {
+func (m MapClaims) Valid() error {
 	vErr := new(ValidationError)
 	now := TimeFunc().Unix()
 

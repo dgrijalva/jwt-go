@@ -24,7 +24,7 @@ var jwtTestData = []struct {
 	name        string
 	tokenString string
 	keyfunc     jwt.Keyfunc
-	claims      jwt.MapClaim
+	claims      jwt.MapClaims
 	valid       bool
 	errors      uint32
 }{
@@ -32,7 +32,7 @@ var jwtTestData = []struct {
 		"basic",
 		"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.FhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg",
 		defaultKeyFunc,
-		jwt.MapClaim{"foo": "bar"},
+		jwt.MapClaims{"foo": "bar"},
 		true,
 		0,
 	},
@@ -40,7 +40,7 @@ var jwtTestData = []struct {
 		"basic expired",
 		"", // autogen
 		defaultKeyFunc,
-		jwt.MapClaim{"foo": "bar", "exp": float64(time.Now().Unix() - 100)},
+		jwt.MapClaims{"foo": "bar", "exp": float64(time.Now().Unix() - 100)},
 		false,
 		jwt.ValidationErrorExpired,
 	},
@@ -48,7 +48,7 @@ var jwtTestData = []struct {
 		"basic nbf",
 		"", // autogen
 		defaultKeyFunc,
-		jwt.MapClaim{"foo": "bar", "nbf": float64(time.Now().Unix() + 100)},
+		jwt.MapClaims{"foo": "bar", "nbf": float64(time.Now().Unix() + 100)},
 		false,
 		jwt.ValidationErrorNotValidYet,
 	},
@@ -56,7 +56,7 @@ var jwtTestData = []struct {
 		"expired and nbf",
 		"", // autogen
 		defaultKeyFunc,
-		jwt.MapClaim{"foo": "bar", "nbf": float64(time.Now().Unix() + 100), "exp": float64(time.Now().Unix() - 100)},
+		jwt.MapClaims{"foo": "bar", "nbf": float64(time.Now().Unix() + 100), "exp": float64(time.Now().Unix() - 100)},
 		false,
 		jwt.ValidationErrorNotValidYet | jwt.ValidationErrorExpired,
 	},
@@ -64,7 +64,7 @@ var jwtTestData = []struct {
 		"basic invalid",
 		"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.EhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg",
 		defaultKeyFunc,
-		jwt.MapClaim{"foo": "bar"},
+		jwt.MapClaims{"foo": "bar"},
 		false,
 		jwt.ValidationErrorSignatureInvalid,
 	},
@@ -72,7 +72,7 @@ var jwtTestData = []struct {
 		"basic nokeyfunc",
 		"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.FhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg",
 		nilKeyFunc,
-		jwt.MapClaim{"foo": "bar"},
+		jwt.MapClaims{"foo": "bar"},
 		false,
 		jwt.ValidationErrorUnverifiable,
 	},
@@ -80,7 +80,7 @@ var jwtTestData = []struct {
 		"basic nokey",
 		"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.FhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg",
 		emptyKeyFunc,
-		jwt.MapClaim{"foo": "bar"},
+		jwt.MapClaims{"foo": "bar"},
 		false,
 		jwt.ValidationErrorSignatureInvalid,
 	},
@@ -88,7 +88,7 @@ var jwtTestData = []struct {
 		"basic errorkey",
 		"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.FhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg",
 		errorKeyFunc,
-		jwt.MapClaim{"foo": "bar"},
+		jwt.MapClaims{"foo": "bar"},
 		false,
 		jwt.ValidationErrorUnverifiable,
 	},
@@ -104,7 +104,7 @@ func init() {
 	}
 }
 
-func makeSample(c jwt.MapClaim) string {
+func makeSample(c jwt.MapClaims) string {
 	keyData, e := ioutil.ReadFile("test/sample_key")
 	if e != nil {
 		panic(e.Error())
@@ -130,7 +130,7 @@ func TestJWT(t *testing.T) {
 			data.tokenString = makeSample(data.claims)
 		}
 
-		token, err := jwt.ParseWithClaims(data.tokenString, data.keyfunc, &jwt.MapClaim{})
+		token, err := jwt.ParseWithClaims(data.tokenString, data.keyfunc, &jwt.MapClaims{})
 
 		if !reflect.DeepEqual(&data.claims, token.Claims) {
 			t.Errorf("[%v] Claims mismatch. Expecting: %v  Got: %v", data.name, data.claims, token.Claims)
@@ -167,7 +167,7 @@ func TestParseRequest(t *testing.T) {
 
 		r, _ := http.NewRequest("GET", "/", nil)
 		r.Header.Set("Authorization", fmt.Sprintf("Bearer %v", data.tokenString))
-		token, err := jwt.ParseFromRequestWithClaims(r, data.keyfunc, &jwt.MapClaim{})
+		token, err := jwt.ParseFromRequestWithClaims(r, data.keyfunc, &jwt.MapClaims{})
 
 		if token == nil {
 			t.Errorf("[%v] Token was not found: %v", data.name, err)

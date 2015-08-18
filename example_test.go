@@ -24,12 +24,12 @@ func ExampleNew() {
 	token := jwt.New(jwt.SigningMethodRS256)
 
 	// Set some claims
-	claims := token.Claims.(jwt.MapClaim)
+	claims := token.Claims.(jwt.MapClaims)
 	claims["foo"] = "bar"
 	claims["exp"] = time.Unix(0, 0).Add(time.Hour * 1).Unix()
 
 	fmt.Printf("<%T> foo:%v exp:%v\n", token.Claims, claims["foo"], claims["exp"])
-	//Output: <jwt.MapClaim> foo:bar exp:3600
+	//Output: <jwt.MapClaims> foo:bar exp:3600
 }
 
 func ExampleNewWithClaims(mySigningKey []byte) (string, error) {
