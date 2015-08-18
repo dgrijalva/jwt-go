@@ -155,7 +155,7 @@ func signToken() error {
 	}
 
 	// parse the JSON of the claims
-	var claims map[string]interface{}
+	var claims jwt.MapClaim
 	if err := json.Unmarshal(tokData, &claims); err != nil {
 		return fmt.Errorf("Couldn't parse claims JSON: %v", err)
 	}
@@ -173,8 +173,7 @@ func signToken() error {
 	}
 
 	// create a new token
-	token := jwt.New(alg)
-	token.Claims = claims
+	token := jwt.NewWithClaims(alg, claims)
 
 	if out, err := token.SignedString(keyData); err == nil {
 		fmt.Println(out)
