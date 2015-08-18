@@ -28,8 +28,8 @@ func ExampleNew() {
 	claims["foo"] = "bar"
 	claims["exp"] = time.Unix(0, 0).Add(time.Hour * 1).Unix()
 
-	fmt.Printf("%v\n", token.Claims)
-	//Output: map[foo:bar exp:3600]
+	fmt.Printf("<%T> foo:%v exp:%v\n", token.Claims, claims["foo"], claims["exp"])
+	//Output: <jwt.MapClaim> foo:bar exp:3600
 }
 
 func ExampleNewWithClaims(mySigningKey []byte) (string, error) {
