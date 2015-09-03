@@ -26,7 +26,7 @@ func init() {
 }
 
 func (s *SigningMethodAppEngine) Alg() string {
-	return "AppEngine"
+	return "RS256"
 }
 
 // Implements the Sign method from SigningMethod
