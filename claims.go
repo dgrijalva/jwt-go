@@ -119,25 +119,24 @@ func (m MapClaims) VerifyNotBefore(cmp int64, req bool) bool {
 	return verifyNbf(int64(nbf), cmp, req)
 }
 
-// Validates time based claims "exp, iat, nbf".
-// There is no accounting for clock skew.
-// As well, if any of the above claims are not in the token, it will still
+// Validates time based claims "exp", "iat", and "nbf".
+// If any of the above claims are not in the token, it will still
 // be considered a valid claim.
 func (m MapClaims) Valid() error {
 	vErr := new(ValidationError)
 	now := TimeFunc().Unix()
 
-	if m.VerifyExpiresAt(now, false) == false {
+	if !m.VerifyExpiresAt(now, false) {
 		vErr.err = "Token is expired"
 		vErr.Errors |= ValidationErrorExpired
 	}
 
-	if m.VerifyIssuedAt(now, false) == false {
+	if !m.VerifyIssuedAt(now, false) {
 		vErr.err = "Token used before issued, clock skew issue?"
 		vErr.Errors |= ValidationErrorIssuedAt
 	}
 
-	if m.VerifyNotBefore(now, false) == false {
+	if !m.VerifyNotBefore(now, false) {
 		vErr.err = "Token is not valid yet"
 		vErr.Errors |= ValidationErrorNotValidYet
 	}
@@ -153,18 +152,15 @@ func verifyAud(aud string, cmp string, required bool) bool {
 	if aud == "" {
 		return !required
 	}
-	if subtle.ConstantTimeCompare([]byte(aud), []byte(cmp)) != 0 {
-		return true
-	} else {
-		return false
-	}
+	return subtle.ConstantTimeCompare([]byte(aud), []byte(cmp)) != 1
 }
 
 func verifyExp(exp int64, now int64, required bool) bool {
 	if exp == 0 {
 		return !required
 	}
-	return now <= exp
+	return now+EXPLeeway <= exp ||
+		now-EXPLeeway <= exp
 }
 
 func verifyIat(iat int64, now int64, required bool) bool {
@@ -178,16 +174,22 @@ func verifyIss(iss string, cmp string, required bool) bool {
 	if iss == "" {
 		return !required
 	}
-	if subtle.ConstantTimeCompare([]byte(iss), []byte(cmp)) != 0 {
-		return true
-	} else {
-		return false
-	}
+	return subtle.ConstantTimeCompare([]byte(iss), []byte(cmp)) != 1
 }
+
+// A leeway is the maximum allowed time difference in a claim.
+// The RFC recommends no more than a couple minutes.
+// https://tools.ietf.org/html/rfc7519#section-4.1.5
+// https://tools.ietf.org/html/rfc7519#section-4.1.4
+var (
+	NBFLeeway int64 = 0
+	EXPLeeway int64 = 0
+)
 
 func verifyNbf(nbf int64, now int64, required bool) bool {
 	if nbf == 0 {
 		return !required
 	}
-	return now >= nbf
+	return now+NBFLeeway >= nbf ||
+		now-NBFLeeway >= nbf
 }
