@@ -43,8 +43,5 @@ func (e ValidationError) Error() string {
 
 // No errors
 func (e *ValidationError) valid() bool {
-	if e.Errors > 0 {
-		return false
-	}
-	return true
+	return e.Errors <= 0
 }
