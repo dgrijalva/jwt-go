@@ -28,19 +28,19 @@ func (c StandardClaims) Valid() error {
 	vErr := new(ValidationError)
 	now := TimeFunc().Unix()
 
-	// The claims below are optional, by default, so if they are set to the
+	// By default he claims below are, optional, so if they are set to the
 	// default value in Go, let's not fail the verification for them.
-	if c.VerifyExpiresAt(now, false) == false {
+	if !c.VerifyExpiresAt(now, false) {
 		vErr.err = "Token is expired"
 		vErr.Errors |= ValidationErrorExpired
 	}
 
-	if c.VerifyIssuedAt(now, false) == false {
+	if !c.VerifyIssuedAt(now, false) {
 		vErr.err = "Token used before issued, clock skew issue?"
 		vErr.Errors |= ValidationErrorIssuedAt
 	}
 
-	if c.VerifyNotBefore(now, false) == false {
+	if !c.VerifyNotBefore(now, false) {
 		vErr.err = "Token is not valid yet"
 		vErr.Errors |= ValidationErrorNotValidYet
 	}
@@ -148,6 +148,15 @@ func (m MapClaims) Valid() error {
 	return vErr
 }
 
+// A leeway is the maximum allowed time difference in a claim.
+// The RFC recommends no more than a couple minutes.
+// https://tools.ietf.org/html/rfc7519#section-4.1.5
+// https://tools.ietf.org/html/rfc7519#section-4.1.4
+var (
+	NBFLeeway int64 = 0
+	EXPLeeway int64 = 0
+)
+
 func verifyAud(aud string, cmp string, required bool) bool {
 	if aud == "" {
 		return !required
@@ -176,15 +185,6 @@ func verifyIss(iss string, cmp string, required bool) bool {
 	}
 	return subtle.ConstantTimeCompare([]byte(iss), []byte(cmp)) != 1
 }
-
-// A leeway is the maximum allowed time difference in a claim.
-// The RFC recommends no more than a couple minutes.
-// https://tools.ietf.org/html/rfc7519#section-4.1.5
-// https://tools.ietf.org/html/rfc7519#section-4.1.4
-var (
-	NBFLeeway int64 = 0
-	EXPLeeway int64 = 0
-)
 
 func verifyNbf(nbf int64, now int64, required bool) bool {
 	if nbf == 0 {
