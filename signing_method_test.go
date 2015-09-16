@@ -3,7 +3,7 @@ package jwt
 import (
 	"testing"
 
-	jwt "github.com/SermoDigital/jwt-go"
+	jwt "github.com/dgrijalva/jwt-go"
 )
 
 type MySigningMethod struct{}
