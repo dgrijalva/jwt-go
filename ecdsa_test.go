@@ -20,7 +20,7 @@ var ecdsaTestData = []struct {
 	{
 		"Basic ES256",
 		map[string]string{"private": "test/ec256-private.pem", "public": "test/ec256-public.pem"},
-		"eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJmb28iOiJiYXIifQ.MEQCIHoSJnmGlPaVQDqacx_2XlXEhhqtWceVopjomc2PJLtdAiAUTeGPoNYxZw0z8mgOnnIcjoxRuNDVZvybRZF3wR1l8w",
+		"eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NiJ9.eyJmb28iOiJiYXIifQ.feG39E-bn8HXAKhzDZq7yEAPWYDhZlwTn3sePJnU9VrGMmwdXAIEyoOnrjreYlVM_Z4N13eK9-TmMTWyfKJtHQ",
 		"ES256",
 		map[string]interface{}{"foo": "bar"},
 		true,
@@ -28,7 +28,7 @@ var ecdsaTestData = []struct {
 	{
 		"Basic ES384",
 		map[string]string{"private": "test/ec384-private.pem", "public": "test/ec384-public.pem"},
-		"eyJhbGciOiJFUzM4NCIsInR5cCI6IkpXVCJ9.eyJmb28iOiJiYXIifQ.MGUCMQCHBr61FXDuFY9xUhyp8iWQAuBIaSgaf1z2j_8XrKcCfzTPzoSa3SZKq-m3L492xe8CMG3kafRMeuaN5Aw8ZJxmOLhkTo4D3-LaGzcaUWINvWvkwFMl7dMC863s0gov6xvXuA",
+		"eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzM4NCJ9.eyJmb28iOiJiYXIifQ.ngAfKMbJUh0WWubSIYe5GMsA-aHNKwFbJk_wq3lq23aPp8H2anb1rRILIzVR0gUf4a8WzDtrzmiikuPWyCS6CN4-PwdgTk-5nehC7JXqlaBZU05p3toM3nWCwm_LXcld",
 		"ES384",
 		map[string]interface{}{"foo": "bar"},
 		true,
@@ -36,7 +36,7 @@ var ecdsaTestData = []struct {
 	{
 		"Basic ES512",
 		map[string]string{"private": "test/ec512-private.pem", "public": "test/ec512-public.pem"},
-		"eyJhbGciOiJFUzUxMiIsInR5cCI6IkpXVCJ9.eyJmb28iOiJiYXIifQ.MIGIAkIAmVKjdJE5lG1byOFgZZVTeNDRp6E7SNvUj0UrvpzoBH6nrleWVTcwfHzbwWuooNpPADDSFR_Ql3ze-Vwwi8hBqQsCQgHn-ZooL8zegkOVeEEsqd7WHWdhb8UekFCYw3X8JnNP-D3wvZQ1-tkkHakt5gZ2-xO29TxfSPun4ViGkMYa7Q4N-Q",
+		"eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzUxMiJ9.eyJmb28iOiJiYXIifQ.AAU0TvGQOcdg2OvrwY73NHKgfk26UDekh9Prz-L_iWuTBIBqOFCWwwLsRiHB1JOddfKAls5do1W0jR_F30JpVd-6AJeTjGKA4C1A1H6gIKwRY0o_tFDIydZCl_lMBMeG5VNFAjO86-WCSKwc3hqaGkq1MugPRq_qrF9AVbuEB4JPLyL5",
 		"ES512",
 		map[string]interface{}{"foo": "bar"},
 		true,
