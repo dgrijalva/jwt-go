@@ -41,7 +41,7 @@ Parsing and verifying tokens is pretty straight forward.  You pass in the token 
 
 ```go
 	// Create the token
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaim{
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"foo": "bar",
 		"exp": time.Now().Add(time.Hour * 72).Unix(),
 	})
@@ -62,7 +62,7 @@ While we try to make it obvious when we make breaking changes, there isn't a gre
 Added the ability to supply a typed object for the claims section of the token.
 
 Unfortunately this requires a breaking change. A few new methods were added to support this,
-and the old default of `map[string]interface{}` was changed to `jwt.MapClaim`.
+and the old default of `map[string]interface{}` was changed to `jwt.MapClaims`.
 
 The old example for creating a token looked like this..
 
@@ -76,7 +76,7 @@ is now directly mapped to...
 
 ```go
 	token := jwt.New(jwt.SigningMethodHS256)
-	claims := token.Claims.(jwt.MapClaim)
+	claims := token.Claims.(jwt.MapClaims)
 	claims["foo"] = "bar"
 	claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
 ```
