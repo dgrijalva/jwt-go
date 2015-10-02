@@ -6,6 +6,7 @@
 * Added `Claims` interface type to allow users to decode the claims into a custom type
 * The `Claims` property on `Token` is now type `Claims` instead of `map[string]interface{}`.  The default value is type `MapClaims`, which is an alias to `map[string]interface{}`.  This makes it possible to use a custom type when decoding claims.
 * Added `ParseWithClaims`, which takes a third argument of type `Claims`.  Use this function instead of `Parse` if you have a custom type you'd like to decode into.
+* Added "leeway" to both "nbf" and "exp" claims.
 
 #### 2.3.0
 
