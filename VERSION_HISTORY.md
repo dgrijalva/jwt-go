@@ -5,7 +5,9 @@
 * Dropped support for `[]byte` keys when using RSA signing methods.  This convenience feature could contribute to security vulnerabilities involving mismatched key types with signing methods.
 * Added `Claims` interface type to allow users to decode the claims into a custom type
 * The `Claims` property on `Token` is now type `Claims` instead of `map[string]interface{}`.  The default value is type `MapClaims`, which is an alias to `map[string]interface{}`.  This makes it possible to use a custom type when decoding claims.
-* Added `ParseWithClaims`, which takes a third argument of type `Claims`.  Use this function instead of `Parse` if you have a custom type you'd like to decode into.
+* Parameters are passed in jwt.ParseParam structure. This allows for variable number of parameters
+* Checking for specific Method in headers as part of Vulnerability Fix highlighted by Tim McClean in the article below
+* https://auth0.com/blog/2015/03/31/critical-vulnerabilities-in-json-web-token-libraries/
 
 #### 2.3.0
 

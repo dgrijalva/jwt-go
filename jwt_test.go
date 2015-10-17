@@ -23,6 +23,7 @@ var (
 var jwtTestData = []struct {
 	name        string
 	tokenString string
+	method 		jwt.SigningMethod
 	keyfunc     jwt.Keyfunc
 	claims      jwt.MapClaims
 	valid       bool
@@ -31,6 +32,16 @@ var jwtTestData = []struct {
 	{
 		"basic",
 		"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.FhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg",
+		jwt.SigningMethodRS256,
+		defaultKeyFunc,
+		jwt.MapClaims{"foo": "bar"},
+		true,
+		0,
+	},
+	{
+		"basic",
+		"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.FhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg",
+		jwt.SigningMethodRS256,
 		defaultKeyFunc,
 		jwt.MapClaims{"foo": "bar"},
 		true,
@@ -39,6 +50,7 @@ var jwtTestData = []struct {
 	{
 		"basic expired",
 		"", // autogen
+		jwt.SigningMethodRS256,
 		defaultKeyFunc,
 		jwt.MapClaims{"foo": "bar", "exp": float64(time.Now().Unix() - 100)},
 		false,
@@ -47,6 +59,7 @@ var jwtTestData = []struct {
 	{
 		"basic nbf",
 		"", // autogen
+		jwt.SigningMethodRS256,
 		defaultKeyFunc,
 		jwt.MapClaims{"foo": "bar", "nbf": float64(time.Now().Unix() + 100)},
 		false,
@@ -55,6 +68,7 @@ var jwtTestData = []struct {
 	{
 		"expired and nbf",
 		"", // autogen
+		jwt.SigningMethodRS256,
 		defaultKeyFunc,
 		jwt.MapClaims{"foo": "bar", "nbf": float64(time.Now().Unix() + 100), "exp": float64(time.Now().Unix() - 100)},
 		false,
@@ -63,6 +77,7 @@ var jwtTestData = []struct {
 	{
 		"basic invalid",
 		"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.EhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg",
+		jwt.SigningMethodRS256,
 		defaultKeyFunc,
 		jwt.MapClaims{"foo": "bar"},
 		false,
@@ -71,6 +86,7 @@ var jwtTestData = []struct {
 	{
 		"basic nokeyfunc",
 		"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.FhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg",
+		jwt.SigningMethodRS256,
 		nilKeyFunc,
 		jwt.MapClaims{"foo": "bar"},
 		false,
@@ -79,6 +95,7 @@ var jwtTestData = []struct {
 	{
 		"basic nokey",
 		"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.FhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg",
+		jwt.SigningMethodRS256,
 		emptyKeyFunc,
 		jwt.MapClaims{"foo": "bar"},
 		false,
@@ -87,6 +104,7 @@ var jwtTestData = []struct {
 	{
 		"basic errorkey",
 		"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.FhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg",
+		jwt.SigningMethodRS256,
 		errorKeyFunc,
 		jwt.MapClaims{"foo": "bar"},
 		false,
@@ -130,7 +148,9 @@ func TestJWT(t *testing.T) {
 			data.tokenString = makeSample(data.claims)
 		}
 
-		token, err := jwt.ParseWithClaims(data.tokenString, data.keyfunc, &jwt.MapClaims{})
+		token, err := jwt.Parse(jwt.ParseParam{TokenString: data.tokenString, Method: data.method,
+			KeyFunc: data.keyfunc,
+			Claims: &jwt.MapClaims{}})
 
 		if !reflect.DeepEqual(&data.claims, token.Claims) {
 			t.Errorf("[%v] Claims mismatch. Expecting: %v  Got: %v", data.name, data.claims, token.Claims)
@@ -167,7 +187,11 @@ func TestParseRequest(t *testing.T) {
 
 		r, _ := http.NewRequest("GET", "/", nil)
 		r.Header.Set("Authorization", fmt.Sprintf("Bearer %v", data.tokenString))
-		token, err := jwt.ParseFromRequestWithClaims(r, data.keyfunc, &jwt.MapClaims{})
+		token, err := jwt.ParseFromRequest(jwt.ParseParam{
+			Req: r,
+			Method: data.method,
+			KeyFunc: data.keyfunc,
+			Claims: &jwt.MapClaims{}})
 
 		if token == nil {
 			t.Errorf("[%v] Token was not found: %v", data.name, err)

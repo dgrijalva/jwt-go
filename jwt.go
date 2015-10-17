@@ -19,6 +19,18 @@ var TimeFunc = time.Now
 // Header of the token (such as `kid`) to identify which key to use.
 type Keyfunc func(*Token) (interface{}, error)
 
+// Variable Number of Parameters
+// Introducing variable number of parameters to accommodate fixes for vulnerability
+// Using this feature to fix a vulnerability raised by Tim McClean in his article dated 31 March 2015
+// https://auth0.com/blog/2015/03/31/critical-vulnerabilities-in-json-web-token-libraries/
+type ParseParam struct {
+	TokenString string
+	KeyFunc Keyfunc
+	Method SigningMethod
+	Req *http.Request
+	Claims Claims
+}
+
 // A JWT Token.  Different fields will be used depending on whether you're
 // creating or parsing/verifying a token.
 type Token struct {
@@ -86,19 +98,19 @@ func (t *Token) SigningString() (string, error) {
 // Parse, validate, and return a token.
 // keyFunc will receive the parsed token and should return the key for validating.
 // If everything is kosher, err will be nil
-func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
-	return ParseWithClaims(tokenString, keyFunc, MapClaims{})
-}
 
-func ParseWithClaims(tokenString string, keyFunc Keyfunc, claims Claims) (*Token, error) {
-	parts := strings.Split(tokenString, ".")
+func Parse(parseParam ParseParam) (*Token, error) {
+	if parseParam.Method == nil {
+		return nil, &ValidationError{err: "Must pass verification method (alg).", Errors: ValidationErrorUnverifiable}
+	}
+	parts := strings.Split(parseParam.TokenString, ".")
 	if len(parts) != 3 {
 		return nil, &ValidationError{err: "token contains an invalid number of segments", Errors: ValidationErrorMalformed}
 	}
 
 	var err error
 	token := &Token{
-		Raw: tokenString,
+		Raw: parseParam.TokenString,
 	}
 
 	// parse Header
@@ -117,16 +129,18 @@ func ParseWithClaims(tokenString string, keyFunc Keyfunc, claims Claims) (*Token
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
 	}
 
-	if err = json.Unmarshal(claimBytes, &claims); err != nil {
+	if err = json.Unmarshal(claimBytes, &parseParam.Claims); err != nil {
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
 	}
 
-	token.Claims = claims
+	token.Claims = parseParam.Claims
 
 	// Lookup signature method
 	if method, ok := token.Header["alg"].(string); ok {
 		if token.Method = GetSigningMethod(method); token.Method == nil {
 			return token, &ValidationError{err: "signing method (alg) is unavailable.", Errors: ValidationErrorUnverifiable}
+		} else if token.Method.Alg() != parseParam.Method.Alg() {
+			return token, &ValidationError{err: "Header contains invalid method (alg).", Errors: ValidationErrorAlgInvalid}
 		}
 	} else {
 		return token, &ValidationError{err: "signing method (alg) is unspecified.", Errors: ValidationErrorUnverifiable}
@@ -134,11 +148,11 @@ func ParseWithClaims(tokenString string, keyFunc Keyfunc, claims Claims) (*Token
 
 	// Lookup key
 	var key interface{}
-	if keyFunc == nil {
+	if parseParam.KeyFunc == nil {
 		// keyFunc was not provided.  short circuiting validation
 		return token, &ValidationError{err: "no Keyfunc was provided.", Errors: ValidationErrorUnverifiable}
 	}
-	if key, err = keyFunc(token); err != nil {
+	if key, err = parseParam.KeyFunc(token); err != nil {
 		// keyFunc returned an error
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorUnverifiable}
 	}
@@ -175,23 +189,20 @@ func ParseWithClaims(tokenString string, keyFunc Keyfunc, claims Claims) (*Token
 // This method will call ParseMultipartForm if there's no token in the header.
 // Currently, it looks in the Authorization header as well as
 // looking for an 'access_token' request parameter in req.Form.
-func ParseFromRequest(req *http.Request, keyFunc Keyfunc) (token *Token, err error) {
-	return ParseFromRequestWithClaims(req, keyFunc, MapClaims{})
-}
 
-func ParseFromRequestWithClaims(req *http.Request, keyFunc Keyfunc, claims Claims) (token *Token, err error) {
+func ParseFromRequest(parseParam ParseParam) (token *Token, err error) {
 	// Look for an Authorization header
-	if ah := req.Header.Get("Authorization"); ah != "" {
+	if ah := parseParam.Req.Header.Get("Authorization"); ah != "" {
 		// Should be a bearer token
 		if len(ah) > 6 && strings.ToUpper(ah[0:6]) == "BEARER" {
-			return ParseWithClaims(ah[7:], keyFunc, claims)
+			return Parse(ParseParam{TokenString: ah[7:], Method: parseParam.Method, KeyFunc: parseParam.KeyFunc, Claims: parseParam.Claims})
 		}
 	}
 
 	// Look for "access_token" parameter
-	req.ParseMultipartForm(10e6)
-	if tokStr := req.Form.Get("access_token"); tokStr != "" {
-		return ParseWithClaims(tokStr, keyFunc, claims)
+	parseParam.Req.ParseMultipartForm(10e6)
+	if tokStr := parseParam.Req.Form.Get("access_token"); tokStr != "" {
+		return Parse(ParseParam{TokenString: tokStr, Method: parseParam.Method, KeyFunc: parseParam.KeyFunc, Claims: parseParam.Claims})
 	}
 
 	return nil, ErrNoTokenInRequest

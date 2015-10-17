@@ -115,9 +115,10 @@ func verifyToken() error {
 	}
 
 	// Parse the token.  Load the key from command line option
-	token, err := jwt.Parse(string(tokData), func(t *jwt.Token) (interface{}, error) {
+	token, err := jwt.Parse(jwt.ParseParam{TokenString: string(tokData), Method: jwt.SigningMethodRS256,
+		KeyFunc: func(t *jwt.Token) (interface{}, error) {
 		return loadData(*flagKey)
-	})
+	}})
 
 	// Print some debug data
 	if *flagDebug && token != nil {

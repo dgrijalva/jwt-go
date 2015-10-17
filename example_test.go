@@ -8,9 +8,12 @@ import (
 )
 
 func ExampleParse(myToken string, myLookupKey func(interface{}) (interface{}, error)) {
-	token, err := jwt.Parse(myToken, func(token *jwt.Token) (interface{}, error) {
-		return myLookupKey(token.Header["kid"])
-	})
+	token, err := jwt.Parse(jwt.ParseParam{
+		TokenString: myToken,
+		Method: jwt.SigningMethodRS256,
+		KeyFunc: func(token *jwt.Token) (interface{}, error) {
+			return myLookupKey(token.Header["kid"])
+		}})
 
 	if err == nil && token.Valid {
 		fmt.Println("Your token is valid.  I like your style.")
@@ -71,9 +74,12 @@ func ExampleNewWithClaims_customType() {
 }
 
 func ExampleParse_errorChecking(myToken string, myLookupKey func(interface{}) (interface{}, error)) {
-	token, err := jwt.Parse(myToken, func(token *jwt.Token) (interface{}, error) {
-		return myLookupKey(token.Header["kid"])
-	})
+	token, err := jwt.Parse(jwt.ParseParam{
+		TokenString: myToken,
+		Method: jwt.SigningMethodRS256,
+		KeyFunc: func(token *jwt.Token) (interface{}, error) {
+			return myLookupKey(token.Header["kid"])
+		}})
 
 	if token.Valid {
 		fmt.Println("You look nice today")

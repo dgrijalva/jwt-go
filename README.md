@@ -2,7 +2,6 @@ A [go](http://www.golang.org) (or 'golang' for search engine friendliness) imple
 
 [![Build Status](https://travis-ci.org/dgrijalva/jwt-go.svg?branch=master)](https://travis-ci.org/dgrijalva/jwt-go)
 
-**NOTICE:** A vulnerability in JWT was [recently published](https://auth0.com/blog/2015/03/31/critical-vulnerabilities-in-json-web-token-libraries/).  As this library doesn't force users to validate the `alg` is what they expected, it's possible your usage is effected.  There will be an update soon to remedy this, and it will likey require backwards-incompatible changes to the API.  In the short term, please make sure your implementation verifies the `alg` is what you expect.
 
 
 ## What the heck is a JWT?
@@ -22,13 +21,15 @@ This library supports the parsing and verification as well as the generation and
 Parsing and verifying tokens is pretty straight forward.  You pass in the token and a function for looking up the key.  This is done as a callback since you may need to parse the token to find out what signing method and key was used.
 
 ```go
-	token, err := jwt.Parse(myToken, func(token *jwt.Token) (interface{}, error) {
-		// Don't forget to validate the alg is what you expect:
-		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
-		}
-		return myLookupKey(token.Header["kid"])
-	})
+	token, err := jwt.Parse(jwt.ParseParam{	TokenString: myToken,
+											Method: SigningMethodRS256,
+										 	KeyFunc: func(token *jwt.Token) (interface{}, error) {
+                                                        		// Don't forget to validate the alg is what you expect:
+                                                        		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+                                                        			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+                                                        		}
+                                                        		return myLookupKey(token.Header["kid"])
+                                                        	}})
 
 	if err == nil && token.Valid {
 		deliverGoodness("!")
@@ -97,22 +98,16 @@ and includes a few helper functions for verifying the claims defined [here](http
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 ```
 
-On the other end of usage all of the `jwt.Parse` and friends got a `WithClaims` suffix added to them.
+On the other end of usage all of the `jwt.Parse` can be passed with Claims.
 
 ```go
-	token, err := jwt.Parse(token, keyFunc)
+	token, err := jwt.Parse(jwt.ParseParam{TokenString: token, Method: jwt.SigningMethodRS256, KeyFunc: keyFunc, Claims: &jwt.StandardClaims{}})
 	claims := token.Claims.(jwt.MapClaim)
 	//like you used to..
 	claims["foo"]
 	claims["bar"]
 ```
 
-New method usage:
-```go
-	token, err := jwt.ParseWithClaims(token, keyFunc, &jwt.StandardClaims{})
-	claims := token.Claims.(jwt.StandardClaims)
-	fmt.Println(claims.IssuedAt)
-```
 
 ## More
 
