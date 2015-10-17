@@ -25,6 +25,7 @@ const (
 	ValidationErrorNotValidYet   // NBF validation failed
 	ValidationErrorId            // JTI validation failed
 	ValidationErrorClaimsInvalid // Generic claims validation error
+	ValidationErrorAlgInvalid // Alg validation error
 )
 
 // The error from Parse if token is not valid

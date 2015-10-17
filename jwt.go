@@ -140,7 +140,7 @@ func Parse(parseParam ParseParam) (*Token, error) {
 		if token.Method = GetSigningMethod(method); token.Method == nil {
 			return token, &ValidationError{err: "signing method (alg) is unavailable.", Errors: ValidationErrorUnverifiable}
 		} else if token.Method.Alg() != parseParam.Method.Alg() {
-			return token, &ValidationError{err: "Header contains invalid method (alg).", Errors: ValidationErrorUnverifiable}
+			return token, &ValidationError{err: "Header contains invalid method (alg).", Errors: ValidationErrorAlgInvalid}
 		}
 	} else {
 		return token, &ValidationError{err: "signing method (alg) is unspecified.", Errors: ValidationErrorUnverifiable}
