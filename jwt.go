@@ -1,6 +1,7 @@
 package jwt
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
@@ -96,7 +97,10 @@ func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	if headerBytes, err = DecodeSegment(parts[0]); err != nil {
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
 	}
-	if err = json.Unmarshal(headerBytes, &token.Header); err != nil {
+
+	var d = json.NewDecoder(bytes.NewReader(headerBytes))
+	d.UseNumber()
+	if err = d.Decode(&token.Header); err != nil {
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
 	}
 
@@ -105,7 +109,10 @@ func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	if claimBytes, err = DecodeSegment(parts[1]); err != nil {
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
 	}
-	if err = json.Unmarshal(claimBytes, &token.Claims); err != nil {
+
+	d = json.NewDecoder(bytes.NewReader(claimBytes))
+	d.UseNumber()
+	if err = d.Decode(&token.Claims); err != nil {
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
 	}
 
@@ -130,16 +137,20 @@ func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	}
 
 	// Check expiration times
-	vErr := &ValidationError{}
-	now := TimeFunc().Unix()
-	if exp, ok := token.Claims["exp"].(float64); ok {
-		if now > int64(exp) {
+	var (
+		vErr = &ValidationError{}
+		now  = TimeFunc().Unix()
+		i    int64
+	)
+
+	if exp, ok := token.Claims["exp"].(json.Number); ok {
+		if i, err = exp.Int64(); err != nil || now > i {
 			vErr.err = "token is expired"
 			vErr.Errors |= ValidationErrorExpired
 		}
 	}
-	if nbf, ok := token.Claims["nbf"].(float64); ok {
-		if now < int64(nbf) {
+	if nbf, ok := token.Claims["nbf"].(json.Number); ok {
+		if i, err = nbf.Int64(); err != nil || now < i {
 			vErr.err = "token is not valid yet"
 			vErr.Errors |= ValidationErrorNotValidYet
 		}
