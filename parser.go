@@ -32,21 +32,6 @@ func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
 	}
 
-	// Verify signing method is in the required set
-	if p.ValidMethods != nil {
-		var signingMethodValid = false
-		var alg = token.Method.Alg()
-		for _, m := range p.ValidMethods {
-			if m == alg {
-				signingMethodValid = true
-				break
-			}
-		}
-		if !signingMethodValid {
-			return nil, &ValidationError{err: fmt.Sprintf("signing method %v is invalid", alg), Errors: ValidationErrorSignatureInvalid}
-		}
-	}
-
 	// parse Claims
 	var claimBytes []byte
 	if claimBytes, err = DecodeSegment(parts[1]); err != nil {
@@ -67,6 +52,22 @@ func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 		}
 	} else {
 		return token, &ValidationError{err: "signing method (alg) is unspecified.", Errors: ValidationErrorUnverifiable}
+	}
+
+	// Verify signing method is in the required set
+	if p.ValidMethods != nil {
+		var signingMethodValid = false
+		var alg = token.Method.Alg()
+		for _, m := range p.ValidMethods {
+			if m == alg {
+				signingMethodValid = true
+				break
+			}
+		}
+		if !signingMethodValid {
+			// signing method is not in the listed set
+			return token, &ValidationError{err: fmt.Sprintf("signing method %v is invalid", alg), Errors: ValidationErrorSignatureInvalid}
+		}
 	}
 
 	// Lookup key
