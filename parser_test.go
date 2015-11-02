@@ -110,6 +110,15 @@ var jwtTestData = []struct {
 		&jwt.Parser{ValidMethods: []string{"HS256"}},
 	},
 	{
+		"valid signing method",
+		"",
+		defaultKeyFunc,
+		map[string]interface{}{"foo": "bar"},
+		true,
+		0,
+		&jwt.Parser{ValidMethods: []string{"RS256", "HS256"}},
+	},
+	{
 		"JSON Number",
 		"",
 		defaultKeyFunc,
