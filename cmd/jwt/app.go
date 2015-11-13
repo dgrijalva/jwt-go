@@ -14,6 +14,7 @@ import (
 	"io/ioutil"
 	"os"
 	"regexp"
+	"strings"
 
 	"github.com/dgrijalva/jwt-go"
 )
@@ -205,8 +206,5 @@ func signToken() error {
 }
 
 func isEs() bool {
-	if alg := *flagAlg; len(alg) >= 2 && alg[0:2] == "ES" {
-		return true
-	}
-	return false
+	return strings.HasPrefix(*flagAlg, "ES")
 }
