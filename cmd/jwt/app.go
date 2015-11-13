@@ -205,5 +205,8 @@ func signToken() error {
 }
 
 func isEs() bool {
-	return (*flagAlg)[0:2] == "ES"
+	if alg := *flagAlg; len(alg) >= 2 && alg[0:2] == "ES" {
+		return true
+	}
+	return false
 }
