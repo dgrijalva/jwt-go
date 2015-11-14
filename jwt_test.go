@@ -1,17 +1,19 @@
 package jwt_test
 
 import (
+	"crypto/rsa"
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
 	"io/ioutil"
 	"net/http"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/dgrijalva/jwt-go"
 )
 
 var (
-	jwtTestDefaultKey []byte
+	jwtTestDefaultKey *rsa.PublicKey
 	defaultKeyFunc    jwt.Keyfunc = func(t *jwt.Token) (interface{}, error) { return jwtTestDefaultKey, nil }
 	emptyKeyFunc      jwt.Keyfunc = func(t *jwt.Token) (interface{}, error) { return nil, nil }
 	errorKeyFunc      jwt.Keyfunc = func(t *jwt.Token) (interface{}, error) { return nil, fmt.Errorf("error loading key") }
@@ -22,7 +24,7 @@ var jwtTestData = []struct {
 	name        string
 	tokenString string
 	keyfunc     jwt.Keyfunc
-	claims      map[string]interface{}
+	claims      jwt.MapClaims
 	valid       bool
 	errors      uint32
 }{
@@ -30,7 +32,7 @@ var jwtTestData = []struct {
 		"basic",
 		"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.FhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg",
 		defaultKeyFunc,
-		map[string]interface{}{"foo": "bar"},
+		jwt.MapClaims{"foo": "bar"},
 		true,
 		0,
 	},
@@ -38,7 +40,7 @@ var jwtTestData = []struct {
 		"basic expired",
 		"", // autogen
 		defaultKeyFunc,
-		map[string]interface{}{"foo": "bar", "exp": float64(time.Now().Unix() - 100)},
+		jwt.MapClaims{"foo": "bar", "exp": float64(time.Now().Unix() - 100)},
 		false,
 		jwt.ValidationErrorExpired,
 	},
@@ -46,7 +48,7 @@ var jwtTestData = []struct {
 		"basic nbf",
 		"", // autogen
 		defaultKeyFunc,
-		map[string]interface{}{"foo": "bar", "nbf": float64(time.Now().Unix() + 100)},
+		jwt.MapClaims{"foo": "bar", "nbf": float64(time.Now().Unix() + 100)},
 		false,
 		jwt.ValidationErrorNotValidYet,
 	},
@@ -54,7 +56,7 @@ var jwtTestData = []struct {
 		"expired and nbf",
 		"", // autogen
 		defaultKeyFunc,
-		map[string]interface{}{"foo": "bar", "nbf": float64(time.Now().Unix() + 100), "exp": float64(time.Now().Unix() - 100)},
+		jwt.MapClaims{"foo": "bar", "nbf": float64(time.Now().Unix() + 100), "exp": float64(time.Now().Unix() - 100)},
 		false,
 		jwt.ValidationErrorNotValidYet | jwt.ValidationErrorExpired,
 	},
@@ -62,7 +64,7 @@ var jwtTestData = []struct {
 		"basic invalid",
 		"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.EhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg",
 		defaultKeyFunc,
-		map[string]interface{}{"foo": "bar"},
+		jwt.MapClaims{"foo": "bar"},
 		false,
 		jwt.ValidationErrorSignatureInvalid,
 	},
@@ -70,7 +72,7 @@ var jwtTestData = []struct {
 		"basic nokeyfunc",
 		"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.FhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg",
 		nilKeyFunc,
-		map[string]interface{}{"foo": "bar"},
+		jwt.MapClaims{"foo": "bar"},
 		false,
 		jwt.ValidationErrorUnverifiable,
 	},
@@ -78,7 +80,7 @@ var jwtTestData = []struct {
 		"basic nokey",
 		"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.FhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg",
 		emptyKeyFunc,
-		map[string]interface{}{"foo": "bar"},
+		jwt.MapClaims{"foo": "bar"},
 		false,
 		jwt.ValidationErrorSignatureInvalid,
 	},
@@ -86,27 +88,33 @@ var jwtTestData = []struct {
 		"basic errorkey",
 		"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.FhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg",
 		errorKeyFunc,
-		map[string]interface{}{"foo": "bar"},
+		jwt.MapClaims{"foo": "bar"},
 		false,
 		jwt.ValidationErrorUnverifiable,
 	},
 }
 
 func init() {
-	var e error
-	if jwtTestDefaultKey, e = ioutil.ReadFile("test/sample_key.pub"); e != nil {
+	if keyData, e := ioutil.ReadFile("test/sample_key.pub"); e == nil {
+		if jwtTestDefaultKey, e = jwt.ParseRSAPublicKeyFromPEM(keyData); e != nil {
+			panic(e)
+		}
+	} else {
 		panic(e)
 	}
 }
 
-func makeSample(c map[string]interface{}) string {
-	key, e := ioutil.ReadFile("test/sample_key")
+func makeSample(c jwt.MapClaims) string {
+	keyData, e := ioutil.ReadFile("test/sample_key")
+	if e != nil {
+		panic(e.Error())
+	}
+	key, e := jwt.ParseRSAPrivateKeyFromPEM(keyData)
 	if e != nil {
 		panic(e.Error())
 	}
 
-	token := jwt.New(jwt.SigningMethodRS256)
-	token.Claims = c
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, c)
 	s, e := token.SignedString(key)
 
 	if e != nil {
@@ -121,17 +129,21 @@ func TestJWT(t *testing.T) {
 		if data.tokenString == "" {
 			data.tokenString = makeSample(data.claims)
 		}
-		token, err := jwt.Parse(data.tokenString, data.keyfunc)
 
-		if !reflect.DeepEqual(data.claims, token.Claims) {
+		token, err := jwt.ParseWithClaims(data.tokenString, data.keyfunc, &jwt.MapClaims{})
+
+		if !reflect.DeepEqual(&data.claims, token.Claims) {
 			t.Errorf("[%v] Claims mismatch. Expecting: %v  Got: %v", data.name, data.claims, token.Claims)
 		}
+
 		if data.valid && err != nil {
 			t.Errorf("[%v] Error while verifying token: %T:%v", data.name, err, err)
 		}
+
 		if !data.valid && err == nil {
 			t.Errorf("[%v] Invalid token passed validation", data.name)
 		}
+
 		if data.errors != 0 {
 			if err == nil {
 				t.Errorf("[%v] Expecting error.  Didn't get one.", data.name)
@@ -155,13 +167,13 @@ func TestParseRequest(t *testing.T) {
 
 		r, _ := http.NewRequest("GET", "/", nil)
 		r.Header.Set("Authorization", fmt.Sprintf("Bearer %v", data.tokenString))
-		token, err := jwt.ParseFromRequest(r, data.keyfunc)
+		token, err := jwt.ParseFromRequestWithClaims(r, data.keyfunc, &jwt.MapClaims{})
 
 		if token == nil {
 			t.Errorf("[%v] Token was not found: %v", data.name, err)
 			continue
 		}
-		if !reflect.DeepEqual(data.claims, token.Claims) {
+		if !reflect.DeepEqual(&data.claims, token.Claims) {
 			t.Errorf("[%v] Claims mismatch. Expecting: %v  Got: %v", data.name, data.claims, token.Claims)
 		}
 		if data.valid && err != nil {
