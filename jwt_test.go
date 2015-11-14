@@ -1,11 +1,13 @@
 package jwt_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/dgrijalva/jwt-go"
 	"io/ioutil"
 	"net/http"
 	"reflect"
+	"strconv"
 	"testing"
 	"time"
 )
@@ -38,7 +40,7 @@ var jwtTestData = []struct {
 		"basic expired",
 		"", // autogen
 		defaultKeyFunc,
-		map[string]interface{}{"foo": "bar", "exp": float64(time.Now().Unix() - 100)},
+		map[string]interface{}{"foo": "bar", "exp": json.Number(strconv.FormatInt(time.Now().Unix()-100, 10))},
 		false,
 		jwt.ValidationErrorExpired,
 	},
@@ -46,7 +48,7 @@ var jwtTestData = []struct {
 		"basic nbf",
 		"", // autogen
 		defaultKeyFunc,
-		map[string]interface{}{"foo": "bar", "nbf": float64(time.Now().Unix() + 100)},
+		map[string]interface{}{"foo": "bar", "nbf": json.Number(strconv.FormatInt(time.Now().Unix()+100, 10))},
 		false,
 		jwt.ValidationErrorNotValidYet,
 	},
@@ -54,7 +56,7 @@ var jwtTestData = []struct {
 		"expired and nbf",
 		"", // autogen
 		defaultKeyFunc,
-		map[string]interface{}{"foo": "bar", "nbf": float64(time.Now().Unix() + 100), "exp": float64(time.Now().Unix() - 100)},
+		map[string]interface{}{"foo": "bar", "nbf": json.Number(strconv.FormatInt(time.Now().Unix()+100, 10)), "exp": json.Number(strconv.FormatInt(time.Now().Unix()-100, 10))},
 		false,
 		jwt.ValidationErrorNotValidYet | jwt.ValidationErrorExpired,
 	},

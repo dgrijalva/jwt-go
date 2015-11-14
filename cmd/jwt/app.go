@@ -17,6 +17,7 @@ import (
 	"strings"
 
 	"github.com/dgrijalva/jwt-go"
+	"bytes"
 )
 
 var (
@@ -163,8 +164,12 @@ func signToken() error {
 	}
 
 	// parse the JSON of the claims
-	var claims map[string]interface{}
-	if err := json.Unmarshal(tokData, &claims); err != nil {
+	var (
+		d = json.NewDecoder(bytes.NewReader(tokData))
+		claims map[string]interface{}
+	)
+	d.UseNumber()
+	if err := d.Decode(&claims); err != nil {
 		return fmt.Errorf("Couldn't parse claims JSON: %v", err)
 	}
 
