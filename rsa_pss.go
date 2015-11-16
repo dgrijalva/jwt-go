@@ -69,7 +69,7 @@ func init() {
 }
 
 // Implements the Verify method from SigningMethod
-// For this verify method, key must be an rsa.PrivateKey struct
+// For this verify method, key must be an rsa.PublicKey struct
 func (m *SigningMethodRSAPSS) Verify(signingString, signature string, key interface{}) error {
 	var err error
 
@@ -98,7 +98,7 @@ func (m *SigningMethodRSAPSS) Verify(signingString, signature string, key interf
 }
 
 // Implements the Sign method from SigningMethod
-// For this signing method, key must be an rsa.PublicKey struct
+// For this signing method, key must be an rsa.PrivateKey struct
 func (m *SigningMethodRSAPSS) Sign(signingString string, key interface{}) (string, error) {
 	var rsaKey *rsa.PrivateKey
 

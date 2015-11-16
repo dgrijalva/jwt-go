@@ -87,88 +87,11 @@ func (t *Token) SigningString() (string, error) {
 // keyFunc will receive the parsed token and should return the key for validating.
 // If everything is kosher, err will be nil
 func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
-	return ParseWithClaims(tokenString, keyFunc, MapClaims{})
+	return new(Parser).Parse(tokenString, keyFunc)
 }
 
 func ParseWithClaims(tokenString string, keyFunc Keyfunc, claims Claims) (*Token, error) {
-	parts := strings.Split(tokenString, ".")
-	if len(parts) != 3 {
-		return nil, &ValidationError{err: "token contains an invalid number of segments", Errors: ValidationErrorMalformed}
-	}
-
-	var err error
-	token := &Token{
-		Raw: tokenString,
-	}
-
-	// parse Header
-	var headerBytes []byte
-	if headerBytes, err = DecodeSegment(parts[0]); err != nil {
-		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
-	}
-	if err = json.Unmarshal(headerBytes, &token.Header); err != nil {
-		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
-	}
-
-	// parse Claims
-	var claimBytes []byte
-
-	if claimBytes, err = DecodeSegment(parts[1]); err != nil {
-		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
-	}
-
-	if err = json.Unmarshal(claimBytes, &claims); err != nil {
-		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
-	}
-
-	token.Claims = claims
-
-	// Lookup signature method
-	if method, ok := token.Header["alg"].(string); ok {
-		if token.Method = GetSigningMethod(method); token.Method == nil {
-			return token, &ValidationError{err: "signing method (alg) is unavailable.", Errors: ValidationErrorUnverifiable}
-		}
-	} else {
-		return token, &ValidationError{err: "signing method (alg) is unspecified.", Errors: ValidationErrorUnverifiable}
-	}
-
-	// Lookup key
-	var key interface{}
-	if keyFunc == nil {
-		// keyFunc was not provided.  short circuiting validation
-		return token, &ValidationError{err: "no Keyfunc was provided.", Errors: ValidationErrorUnverifiable}
-	}
-	if key, err = keyFunc(token); err != nil {
-		// keyFunc returned an error
-		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorUnverifiable}
-	}
-
-	vErr := &ValidationError{}
-
-	// Validate Claims
-	if err := token.Claims.Valid(); err != nil {
-
-		// If the Claims Valid returned an error, check if it is a validation error,
-		// If it was another error type, create a ValidationError with a generic ClaimsInvalid flag set
-		if e, ok := err.(*ValidationError); !ok {
-			vErr = &ValidationError{err: err.Error(), Errors: ValidationErrorClaimsInvalid}
-		} else {
-			vErr = e
-		}
-	}
-
-	// Perform validation
-	if err = token.Method.Verify(strings.Join(parts[0:2], "."), parts[2], key); err != nil {
-		vErr.err = err.Error()
-		vErr.Errors |= ValidationErrorSignatureInvalid
-	}
-
-	if vErr.valid() {
-		token.Valid = true
-		return token, nil
-	}
-
-	return token, vErr
+	return new(Parser).ParseWithClaims(tokenString, keyFunc, claims)
 }
 
 // Try to find the token in an http.Request.
@@ -176,7 +99,7 @@ func ParseWithClaims(tokenString string, keyFunc Keyfunc, claims Claims) (*Token
 // Currently, it looks in the Authorization header as well as
 // looking for an 'access_token' request parameter in req.Form.
 func ParseFromRequest(req *http.Request, keyFunc Keyfunc) (token *Token, err error) {
-	return ParseFromRequestWithClaims(req, keyFunc, MapClaims{})
+	return ParseFromRequestWithClaims(req, keyFunc, &MapClaims{})
 }
 
 func ParseFromRequestWithClaims(req *http.Request, keyFunc Keyfunc, claims Claims) (token *Token, err error) {
