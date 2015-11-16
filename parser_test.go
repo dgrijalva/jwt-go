@@ -184,8 +184,10 @@ func TestParser_Parse(t *testing.T) {
 				if e := err.(*jwt.ValidationError).Errors; e != data.errors {
 					t.Errorf("[%v] Errors don't match expectation.  %v != %v", data.name, e, data.errors)
 				}
-
 			}
+		}
+		if data.valid && token.Signature == "" {
+			t.Errorf("[%v] Signature is left unpopulated after parsing", data.name)
 		}
 	}
 }

@@ -98,7 +98,8 @@ func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	}
 
 	// Perform validation
-	if err = token.Method.Verify(strings.Join(parts[0:2], "."), parts[2], key); err != nil {
+	token.Signature = parts[2]
+	if err = token.Method.Verify(strings.Join(parts[0:2], "."), token.Signature, key); err != nil {
 		vErr.err = err.Error()
 		vErr.Errors |= ValidationErrorSignatureInvalid
 	}
