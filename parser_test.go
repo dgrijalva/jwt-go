@@ -3,12 +3,13 @@ package jwt_test
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
 	"io/ioutil"
 	"net/http"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/dgrijalva/jwt-go"
 )
 
 var (
@@ -136,13 +137,13 @@ func init() {
 	}
 }
 
-func makeSample(c map[string]interface{}) string {
+func makeSample(c map[string]interface{}, compression jwt.CompressionMethod) string {
 	key, e := ioutil.ReadFile("test/sample_key")
 	if e != nil {
 		panic(e.Error())
 	}
 
-	token := jwt.New(jwt.SigningMethodRS256)
+	token := jwt.New(jwt.SigningMethodRS256, compression)
 	token.Claims = c
 	s, e := token.SignedString(key)
 
@@ -156,7 +157,7 @@ func makeSample(c map[string]interface{}) string {
 func TestParser_Parse(t *testing.T) {
 	for _, data := range jwtTestData {
 		if data.tokenString == "" {
-			data.tokenString = makeSample(data.claims)
+			data.tokenString = makeSample(data.claims, jwt.CompressionNone)
 		}
 
 		var token *jwt.Token
@@ -202,7 +203,7 @@ func TestParseRequest(t *testing.T) {
 		}
 
 		if data.tokenString == "" {
-			data.tokenString = makeSample(data.claims)
+			data.tokenString = makeSample(data.claims, jwt.CompressionNone)
 		}
 
 		r, _ := http.NewRequest("GET", "/", nil)
@@ -225,9 +226,34 @@ func TestParseRequest(t *testing.T) {
 	}
 }
 
+func TestParseWithCompression(t *testing.T) {
+	var token = jwt.New(jwt.SigningMethodHS256, jwt.CompressionGzip)
+	var claimsMap = map[string]interface{}{
+		"claim1": "value1",
+	}
+	token.Claims = claimsMap
+
+	var tokenString, err = token.SignedString([]byte("TEST KEY"))
+	if err != nil {
+		t.Fatalf("Unexpected error creating token string: %s", err.Error())
+	}
+
+	var parsedToken *jwt.Token
+	parsedToken, err = jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		return []byte("TEST KEY"), nil
+	})
+	if err != nil {
+		t.Errorf("Error while parsing the token: %s", err.Error())
+	}
+
+	if reflect.DeepEqual(parsedToken.Claims, claimsMap) == false {
+		t.Errorf("Claims mismatch")
+	}
+}
+
 // Helper method for benchmarking various methods
 func benchmarkSigning(b *testing.B, method jwt.SigningMethod, key interface{}) {
-	t := jwt.New(method)
+	t := jwt.New(method, jwt.CompressionNone)
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			if _, err := t.SignedString(key); err != nil {
