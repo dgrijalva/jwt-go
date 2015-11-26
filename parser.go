@@ -32,7 +32,6 @@ func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
 	}
 
-	//var cMethod, ok = token.Header["cpr"].(string)
 	// parse Claims
 	var claimBytes []byte
 	if claimBytes, err = DecodeSegment(parts[1]); err != nil {
@@ -57,7 +56,7 @@ func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 
 	// Lookup signature method
 	if method, ok := token.Header["alg"].(string); ok {
-		if token.SigningMethod = GetSigningMethod(method); token.SigningMethod == nil {
+		if token.Method = GetSigningMethod(method); token.Method == nil {
 			return token, &ValidationError{err: "signing method (alg) is unavailable.", Errors: ValidationErrorUnverifiable}
 		}
 	} else {
@@ -67,7 +66,7 @@ func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	// Verify signing method is in the required set
 	if p.ValidMethods != nil {
 		var signingMethodValid = false
-		var alg = token.SigningMethod.Alg()
+		var alg = token.Method.Alg()
 		for _, m := range p.ValidMethods {
 			if m == alg {
 				signingMethodValid = true
@@ -109,7 +108,7 @@ func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 
 	// Perform validation
 	token.Signature = parts[2]
-	if err = token.SigningMethod.Verify(strings.Join(parts[0:2], "."), token.Signature, key); err != nil {
+	if err = token.Method.Verify(strings.Join(parts[0:2], "."), token.Signature, key); err != nil {
 		vErr.err = err.Error()
 		vErr.Errors |= ValidationErrorSignatureInvalid
 	}

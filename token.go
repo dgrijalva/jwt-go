@@ -22,24 +22,24 @@ type Keyfunc func(*Token) (interface{}, error)
 // A JWT Token.  Different fields will be used depending on whether you're
 // creating or parsing/verifying a token.
 type Token struct {
-	Raw           string                 // The raw token.  Populated when you Parse a token
-	SigningMethod SigningMethod          // The signing method used or to be used
-	Header        map[string]interface{} // The first segment of the token
-	Claims        map[string]interface{} // The second segment of the token
-	Signature     string                 // The third segment of the token.  Populated when you Parse a token
-	Valid         bool                   // Is the token valid?  Populated when you Parse/Verify a token
+	Raw       string                 // The raw token.  Populated when you Parse a token
+	Method    SigningMethod          // The signing method used or to be used
+	Header    map[string]interface{} // The first segment of the token
+	Claims    map[string]interface{} // The second segment of the token
+	Signature string                 // The third segment of the token.  Populated when you Parse a token
+	Valid     bool                   // Is the token valid?  Populated when you Parse/Verify a token
 }
 
 // Create a new Token.  Takes a signing method and compression method
 func New(signingMethod SigningMethod, compressionMethod CompressionMethod) *Token {
 	return &Token{
 		Header: map[string]interface{}{
-			"typ":   "JWT",
-			"alg":   signingMethod.Alg(),
+			"typ": "JWT",
+			"alg": signingMethod.Alg(),
 			"cpr": compressionMethod.Alg(),
 		},
-		Claims:        make(map[string]interface{}),
-		SigningMethod: signingMethod,
+		Claims: make(map[string]interface{}),
+		Method: signingMethod,
 	}
 }
 
@@ -50,7 +50,7 @@ func (t *Token) SignedString(key interface{}) (string, error) {
 	if sstr, err = t.SigningString(); err != nil {
 		return "", err
 	}
-	if sig, err = t.SigningMethod.Sign(sstr, key); err != nil {
+	if sig, err = t.Method.Sign(sstr, key); err != nil {
 		return "", err
 	}
 	return strings.Join([]string{sstr, sig}, "."), nil
