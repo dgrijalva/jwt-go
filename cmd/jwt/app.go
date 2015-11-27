@@ -182,7 +182,7 @@ func signToken() error {
 	}
 
 	// create a new token
-	token := jwt.New(alg)
+	token := jwt.New(alg, jwt.CompressionNone)
 	token.Claims = claims
 
 	if isEs() {
