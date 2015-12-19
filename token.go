@@ -97,7 +97,6 @@ func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 func ParseFromRequest(req *http.Request, keyFunc Keyfunc) (token *Token, err error) {
 
 	// Look for an Authorization header
-	_ = "breakpoint"
 	if ah := req.Header.Get("Authorization"); ah != "" {
 		// Should be a bearer token
 		if len(ah) > 6 && strings.ToUpper(ah[0:7]) == "BEARER " {
