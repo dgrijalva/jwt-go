@@ -84,6 +84,9 @@ func (t *Token) SigningString() (string, error) {
 // keyFunc will receive the parsed token and should return the key for validating.
 // If everything is kosher, err will be nil
 func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
+	if strings.Contains(strings.ToLower(tokenString), "bearer") {
+		return &ValidationError{err: "tokenstring should not contain bearer", Errors: ValidationErrorMalformed}
+	}
 	return new(Parser).Parse(tokenString, keyFunc)
 }
 
@@ -94,9 +97,10 @@ func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 func ParseFromRequest(req *http.Request, keyFunc Keyfunc) (token *Token, err error) {
 
 	// Look for an Authorization header
+	_ = "breakpoint"
 	if ah := req.Header.Get("Authorization"); ah != "" {
 		// Should be a bearer token
-		if len(ah) > 6 && strings.ToUpper(ah[0:6]) == "BEARER" {
+		if len(ah) > 6 && strings.ToUpper(ah[0:7]) == "BEARER " {
 			return Parse(ah[7:], keyFunc)
 		}
 	}
