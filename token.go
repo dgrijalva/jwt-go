@@ -85,7 +85,7 @@ func (t *Token) SigningString() (string, error) {
 // If everything is kosher, err will be nil
 func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	if strings.Contains(strings.ToLower(tokenString), "bearer") {
-		return &ValidationError{err: "tokenstring should not contain bearer", Errors: ValidationErrorMalformed}
+		return nil, &ValidationError{err: "tokenstring should not contain bearer", Errors: ValidationErrorMalformed}
 	}
 	return new(Parser).Parse(tokenString, keyFunc)
 }
