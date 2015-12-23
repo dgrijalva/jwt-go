@@ -26,8 +26,8 @@ func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	// parse Header
 	var headerBytes []byte
 	if headerBytes, err = DecodeSegment(parts[0]); err != nil {
-		if strings.Contains(strings.ToLower(tokenString), "bearer ") {
-			return token, &ValidationError{err: "tokenstring should not contain bearer", Errors: ValidationErrorMalformed}
+		if strings.HasPrefix(strings.ToLower(tokenString), "bearer ") {
+			return token, &ValidationError{err: "tokenstring should not contain 'bearer '", Errors: ValidationErrorMalformed}
 		}
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
 	}
