@@ -26,7 +26,7 @@ Parsing and verifying tokens is pretty straight forward.  You pass in the token 
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
-		return myLookupKey(token.Header["kid"])
+		return myLookupKey(token.Header["kid"]), nil
 	})
 
 	if err == nil && token.Valid {
