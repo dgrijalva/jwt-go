@@ -23,6 +23,7 @@ const (
 // The error from Parse if token is not valid
 type ValidationError struct {
 	err    string
+	Inner  error  // stores the error returned by external dependencies, i.e.: KeyFunc
 	Errors uint32 // bitfield.  see ValidationError... constants
 }
 

@@ -78,7 +78,7 @@ func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	}
 	if key, err = keyFunc(token); err != nil {
 		// keyFunc returned an error
-		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorUnverifiable}
+		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorUnverifiable, Inner: err}
 	}
 
 	// Check expiration times
