@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 )
 
@@ -97,6 +98,13 @@ func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 		if now < int64(nbf) {
 			vErr.err = "token is not valid yet"
 			vErr.Errors |= ValidationErrorNotValidYet
+		}
+	}
+	if iss, ok := token.Claims["iss"].(string); ok {
+		match, err := regexp.MatchString("[a-zA-Z0-9]", iss)
+		if !match || err != nil {
+			vErr.err = "token issuer is invalid"
+			vErr.Errors |= ValidationErrorInvalidIssuer
 		}
 	}
 
