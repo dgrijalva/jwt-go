@@ -102,12 +102,13 @@ func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 			}
 		}
 	} else {
-		var ok bool
-		if exp, ok = token.Claims["exp"].(int64); ok {
+		if num, ok := token.Claims["exp"].(float64); ok {
 			vexp = true
+			exp = int64(num)
 		}
-		if nbf, ok = token.Claims["nbf"].(int64); ok {
+		if num, ok := token.Claims["nbf"].(float64); ok {
 			vnbf = true
+			nbf = int64(num)
 		}
 	}
 
