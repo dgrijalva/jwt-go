@@ -106,7 +106,7 @@ func ParseFromRequestWithClaims(req *http.Request, keyFunc Keyfunc, claims Claim
 	// Look for an Authorization header
 	if ah := req.Header.Get("Authorization"); ah != "" {
 		// Should be a bearer token
-		if len(ah) > 6 && strings.ToUpper(ah[0:6]) == "BEARER" {
+		if len(ah) > 6 && strings.ToUpper(ah[0:7]) == "BEARER " {
 			return ParseWithClaims(ah[7:], keyFunc, claims)
 		}
 	}

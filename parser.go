@@ -31,6 +31,9 @@ func (p *Parser) ParseWithClaims(tokenString string, keyFunc Keyfunc, claims Cla
 	// parse Header
 	var headerBytes []byte
 	if headerBytes, err = DecodeSegment(parts[0]); err != nil {
+		if strings.HasPrefix(strings.ToLower(tokenString), "bearer ") {
+			return token, &ValidationError{err: "tokenstring should not contain 'bearer '", Errors: ValidationErrorMalformed}
+		}
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
 	}
 	if err = json.Unmarshal(headerBytes, &token.Header); err != nil {
@@ -104,7 +107,8 @@ func (p *Parser) ParseWithClaims(tokenString string, keyFunc Keyfunc, claims Cla
 	}
 
 	// Perform validation
-	if err = token.Method.Verify(strings.Join(parts[0:2], "."), parts[2], key); err != nil {
+	token.Signature = parts[2]
+	if err = token.Method.Verify(strings.Join(parts[0:2], "."), token.Signature, key); err != nil {
 		vErr.err = err.Error()
 		vErr.Errors |= ValidationErrorSignatureInvalid
 	}
