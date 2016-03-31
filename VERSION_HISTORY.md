@@ -1,5 +1,13 @@
 ## `jwt-go` Version History
 
+#### 2.5.0
+
+This will likely be the last backwards compatible release before 3.0.0.
+
+* Added support for signing method none.  You shouldn't use this.  The API tries to make this clear.
+* Updated/fixed some documentation
+* Added more helpful error message when trying to parse tokens that begin with `BEARER `
+
 #### 2.4.0
 
 * Added new type, Parser, to allow for configuration of various parsing parameters
