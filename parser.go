@@ -90,26 +90,26 @@ func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	var exp, nbf int64
 	var vexp, vnbf bool
 
-	if p.UseJSONNumber {
-		if num, ok := token.Claims["exp"].(json.Number); ok {
-			if exp, err = num.Int64(); err == nil {
-				vexp = true
-			}
-		}
-		if num, ok := token.Claims["nbf"].(json.Number); ok {
-			if nbf, err = num.Int64(); err == nil {
-				vnbf = true
-			}
-		}
-	} else {
-		if num, ok := token.Claims["exp"].(float64); ok {
+	// Parse 'exp' claim
+	switch num := token.Claims["exp"].(type) {
+	case json.Number:
+		if exp, err = num.Int64(); err == nil {
 			vexp = true
-			exp = int64(num)
 		}
-		if num, ok := token.Claims["nbf"].(float64); ok {
+	case float64:
+		vexp = true
+		exp = int64(num)
+	}
+
+	// Parse 'nbf' claim
+	switch num := token.Claims["nbf"].(type) {
+	case json.Number:
+		if nbf, err = num.Int64(); err == nil {
 			vnbf = true
-			nbf = int64(num)
 		}
+	case float64:
+		vnbf = true
+		nbf = int64(num)
 	}
 
 	if vexp && now > exp {
