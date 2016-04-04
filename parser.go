@@ -87,17 +87,39 @@ func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	// Check expiration times
 	vErr := &ValidationError{}
 	now := TimeFunc().Unix()
-	if exp, ok := token.Claims["exp"].(float64); ok {
-		if now > int64(exp) {
-			vErr.err = "token is expired"
-			vErr.Errors |= ValidationErrorExpired
+	var exp, nbf int64
+	var vexp, vnbf bool
+
+	if p.UseJSONNumber {
+		if num, ok := token.Claims["exp"].(json.Number); ok {
+			if exp, err = num.Int64(); err == nil {
+				vexp = true
+			}
+		}
+		if num, ok := token.Claims["nbf"].(json.Number); ok {
+			if nbf, err = num.Int64(); err == nil {
+				vnbf = true
+			}
+		}
+	} else {
+		if num, ok := token.Claims["exp"].(float64); ok {
+			vexp = true
+			exp = int64(num)
+		}
+		if num, ok := token.Claims["nbf"].(float64); ok {
+			vnbf = true
+			nbf = int64(num)
 		}
 	}
-	if nbf, ok := token.Claims["nbf"].(float64); ok {
-		if now < int64(nbf) {
-			vErr.err = "token is not valid yet"
-			vErr.Errors |= ValidationErrorNotValidYet
-		}
+
+	if vexp && now > exp {
+		vErr.err = "token is expired"
+		vErr.Errors |= ValidationErrorExpired
+	}
+
+	if vnbf && now < nbf {
+		vErr.err = "token is not valid yet"
+		vErr.Errors |= ValidationErrorNotValidYet
 	}
 
 	// Perform validation
