@@ -8,9 +8,9 @@ A [go](http://www.golang.org) (or 'golang' for search engine friendliness) imple
 
 In short, it's a signed JSON object that does something useful (for example, authentication).  It's commonly used for `Bearer` tokens in Oauth 2.  A token is made of three parts, separated by `.`'s.  The first two parts are JSON objects, that have been [base64url](http://tools.ietf.org/html/rfc4648) encoded.  The last part is the signature, encoded the same way.
 
-The first part is called the header.  It contains the necessary information for verifying the last part, the signature.  For example, which encryption method was used for signing and what key was used.
+The first part is called the header.  It contains the necessary information for verifying the last part, the signature. "A token header *typically* consists of two parts: the type of the token, which is JWT, and the hashing algorithm such as HMAC SHA256 or RSA." [(jwt.io)](https://jwt.io/introduction/)
 
-The part in the middle is the interesting bit.  It's called the Claims and contains the actual stuff you care about.  Refer to [the RFC](http://self-issued.info/docs/draft-jones-json-web-token.html) for information about reserved keys and the proper way to add your own.
+The part in the middle is the interesting bit.  It's called the Claims and contains the actual stuff you care about. Such as user id and expiration time. Claims are implemented as a map where you are free to add whatever keys and values you need (although there are conventions for choosing keys). Refer to [the RFC](http://self-issued.info/docs/draft-jones-json-web-token.html) for information about reserved keys and the proper way to add your own.
 
 ## What's in the box?
 
@@ -23,10 +23,10 @@ Parsing and verifying tokens is pretty straight forward.  You pass in the token 
 ```go
 	token, err := jwt.Parse(myToken, func(token *jwt.Token) (interface{}, error) {
 		// Don't forget to validate the alg is what you expect:
-		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
-		return myLookupKey(token.Header["kid"]), nil
+		return []byte(mySigningKey), nil
 	})
 
 	if err == nil && token.Valid {
@@ -45,6 +45,7 @@ Parsing and verifying tokens is pretty straight forward.  You pass in the token 
 	token.Claims["foo"] = "bar"
 	token.Claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
 	// Sign and get the complete encoded token as a string
+        // mySigningKey could for example be a []byte read from rand.Read
 	tokenString, err := token.SignedString(mySigningKey)
 ```	
 
