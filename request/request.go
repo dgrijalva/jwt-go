@@ -1,9 +1,15 @@
 package request
 
 import (
+	"errors"
 	"github.com/dgrijalva/jwt-go"
 	"net/http"
 	"strings"
+)
+
+// Errors
+var (
+	ErrNoTokenInRequest = errors.New("no token present in request")
 )
 
 // Try to find the token in an http.Request.
@@ -29,5 +35,5 @@ func ParseFromRequestWithClaims(req *http.Request, keyFunc jwt.Keyfunc, claims j
 		return jwt.ParseWithClaims(tokStr, keyFunc, claims)
 	}
 
-	return nil, jwt.ErrNoTokenInRequest
+	return nil, ErrNoTokenInRequest
 }
