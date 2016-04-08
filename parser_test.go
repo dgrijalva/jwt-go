@@ -4,12 +4,12 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"reflect"
 	"testing"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/dgrijalva/jwt-go/test"
 )
 
 var (
@@ -19,6 +19,10 @@ var (
 	errorKeyFunc      jwt.Keyfunc = func(t *jwt.Token) (interface{}, error) { return nil, fmt.Errorf("error loading key") }
 	nilKeyFunc        jwt.Keyfunc = nil
 )
+
+func init() {
+	jwtTestDefaultKey = test.LoadRSAPublicKeyFromDisk("test/sample_key.pub")
+}
 
 var jwtTestData = []struct {
 	name        string
@@ -130,40 +134,12 @@ var jwtTestData = []struct {
 	},
 }
 
-func init() {
-	if keyData, e := ioutil.ReadFile("test/sample_key.pub"); e == nil {
-		if jwtTestDefaultKey, e = jwt.ParseRSAPublicKeyFromPEM(keyData); e != nil {
-			panic(e)
-		}
-	} else {
-		panic(e)
-	}
-}
-
-func makeSample(c jwt.MapClaims) string {
-	keyData, e := ioutil.ReadFile("test/sample_key")
-	if e != nil {
-		panic(e.Error())
-	}
-	key, e := jwt.ParseRSAPrivateKeyFromPEM(keyData)
-	if e != nil {
-		panic(e.Error())
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, c)
-	s, e := token.SignedString(key)
-
-	if e != nil {
-		panic(e.Error())
-	}
-
-	return s
-}
-
 func TestParser_Parse(t *testing.T) {
+	privateKey := test.LoadRSAPrivateKeyFromDisk("test/sample_key")
+
 	for _, data := range jwtTestData {
 		if data.tokenString == "" {
-			data.tokenString = makeSample(data.claims)
+			data.tokenString = test.MakeSampleToken(data.claims, privateKey)
 		}
 
 		var token *jwt.Token
