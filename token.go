@@ -24,19 +24,23 @@ type Token struct {
 	Raw       string                 // The raw token.  Populated when you Parse a token
 	Method    SigningMethod          // The signing method used or to be used
 	Header    map[string]interface{} // The first segment of the token
-	Claims    map[string]interface{} // The second segment of the token
+	Claims    Claims                 // The second segment of the token
 	Signature string                 // The third segment of the token.  Populated when you Parse a token
 	Valid     bool                   // Is the token valid?  Populated when you Parse/Verify a token
 }
 
 // Create a new Token.  Takes a signing method
 func New(method SigningMethod) *Token {
+	return NewWithClaims(method, MapClaims{})
+}
+
+func NewWithClaims(method SigningMethod, claims Claims) *Token {
 	return &Token{
 		Header: map[string]interface{}{
 			"typ": "JWT",
 			"alg": method.Alg(),
 		},
-		Claims: make(map[string]interface{}),
+		Claims: claims,
 		Method: method,
 	}
 }
@@ -62,16 +66,15 @@ func (t *Token) SigningString() (string, error) {
 	var err error
 	parts := make([]string, 2)
 	for i, _ := range parts {
-		var source map[string]interface{}
-		if i == 0 {
-			source = t.Header
-		} else {
-			source = t.Claims
-		}
-
 		var jsonValue []byte
-		if jsonValue, err = json.Marshal(source); err != nil {
-			return "", err
+		if i == 0 {
+			if jsonValue, err = json.Marshal(t.Header); err != nil {
+				return "", err
+			}
+		} else {
+			if jsonValue, err = json.Marshal(t.Claims); err != nil {
+				return "", err
+			}
 		}
 
 		parts[i] = EncodeSegment(jsonValue)
@@ -84,6 +87,10 @@ func (t *Token) SigningString() (string, error) {
 // If everything is kosher, err will be nil
 func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	return new(Parser).Parse(tokenString, keyFunc)
+}
+
+func ParseWithClaims(tokenString string, keyFunc Keyfunc, claims Claims) (*Token, error) {
+	return new(Parser).ParseWithClaims(tokenString, keyFunc, claims)
 }
 
 // Encode JWT specific base64url encoding with padding stripped

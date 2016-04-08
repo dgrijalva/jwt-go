@@ -16,6 +16,10 @@ type Parser struct {
 // keyFunc will receive the parsed token and should return the key for validating.
 // If everything is kosher, err will be nil
 func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
+	return p.ParseWithClaims(tokenString, keyFunc, &MapClaims{})
+}
+
+func (p *Parser) ParseWithClaims(tokenString string, keyFunc Keyfunc, claims Claims) (*Token, error) {
 	parts := strings.Split(tokenString, ".")
 	if len(parts) != 3 {
 		return nil, &ValidationError{err: "token contains an invalid number of segments", Errors: ValidationErrorMalformed}
@@ -23,9 +27,13 @@ func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 
 	var err error
 	token := &Token{Raw: tokenString}
+
 	// parse Header
 	var headerBytes []byte
 	if headerBytes, err = DecodeSegment(parts[0]); err != nil {
+		if strings.HasPrefix(strings.ToLower(tokenString), "bearer ") {
+			return token, &ValidationError{err: "tokenstring should not contain 'bearer '", Errors: ValidationErrorMalformed}
+		}
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
 	}
 	if err = json.Unmarshal(headerBytes, &token.Header); err != nil {
@@ -34,6 +42,7 @@ func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 
 	// parse Claims
 	var claimBytes []byte
+
 	if claimBytes, err = DecodeSegment(parts[1]); err != nil {
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
 	}
@@ -41,9 +50,11 @@ func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	if p.UseJSONNumber {
 		dec.UseNumber()
 	}
-	if err = dec.Decode(&token.Claims); err != nil {
+	if err = dec.Decode(&claims); err != nil {
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
 	}
+
+	token.Claims = claims
 
 	// Lookup signature method
 	if method, ok := token.Header["alg"].(string); ok {
@@ -81,19 +92,17 @@ func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorUnverifiable}
 	}
 
-	// Check expiration times
 	vErr := &ValidationError{}
-	now := TimeFunc().Unix()
-	if exp, ok := token.Claims["exp"].(float64); ok {
-		if now > int64(exp) {
-			vErr.err = "token is expired"
-			vErr.Errors |= ValidationErrorExpired
-		}
-	}
-	if nbf, ok := token.Claims["nbf"].(float64); ok {
-		if now < int64(nbf) {
-			vErr.err = "token is not valid yet"
-			vErr.Errors |= ValidationErrorNotValidYet
+
+	// Validate Claims
+	if err := token.Claims.Valid(); err != nil {
+
+		// If the Claims Valid returned an error, check if it is a validation error,
+		// If it was another error type, create a ValidationError with a generic ClaimsInvalid flag set
+		if e, ok := err.(*ValidationError); !ok {
+			vErr = &ValidationError{err: err.Error(), Errors: ValidationErrorClaimsInvalid}
+		} else {
+			vErr = e
 		}
 	}
 

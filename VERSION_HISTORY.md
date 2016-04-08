@@ -1,5 +1,20 @@
 ## `jwt-go` Version History
 
+#### 3.0.0
+
+* Dropped support for `[]byte` keys when using RSA signing methods.  This convenience feature could contribute to security vulnerabilities involving mismatched key types with signing methods.
+* Added `Claims` interface type to allow users to decode the claims into a custom type
+* The `Claims` property on `Token` is now type `Claims` instead of `map[string]interface{}`.  The default value is type `MapClaims`, which is an alias to `map[string]interface{}`.  This makes it possible to use a custom type when decoding claims.
+* Added `ParseWithClaims`, which takes a third argument of type `Claims`.  Use this function instead of `Parse` if you have a custom type you'd like to decode into.
+
+#### 2.5.0
+
+This will likely be the last backwards compatible release before 3.0.0.
+
+* Added support for signing method none.  You shouldn't use this.  The API tries to make this clear.
+* Updated/fixed some documentation
+* Added more helpful error message when trying to parse tokens that begin with `BEARER `
+
 #### 2.4.0
 
 * Added new type, Parser, to allow for configuration of various parsing parameters
