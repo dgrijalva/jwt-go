@@ -56,6 +56,15 @@ var jwtTestData = []struct {
 		nil,
 	},
 	{
+		"basic iss",
+		"", // autogen
+		defaultKeyFunc,
+		map[string]interface{}{"foo": "bar", "iss": ""},
+		false,
+		jwt.ValidationErrorInvalidIssuer,
+		nil,
+	},
+	{
 		"expired and nbf",
 		"", // autogen
 		defaultKeyFunc,

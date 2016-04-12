@@ -18,6 +18,7 @@ const (
 	ValidationErrorSignatureInvalid                    // Signature validation failed
 	ValidationErrorExpired                             // Exp validation failed
 	ValidationErrorNotValidYet                         // NBF validation failed
+	ValidationErrorInvalidIssuer                       // ISS validation failed
 )
 
 // The error from Parse if token is not valid
