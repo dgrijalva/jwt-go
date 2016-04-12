@@ -7,6 +7,8 @@ A [go](http://www.golang.org) (or 'golang' for search engine friendliness) imple
 
 ## What the heck is a JWT?
 
+JWT.io has [a great introduction](https://jwt.io/introduction) to JSON Web Tokens.
+
 In short, it's a signed JSON object that does something useful (for example, authentication).  It's commonly used for `Bearer` tokens in Oauth 2.  A token is made of three parts, separated by `.`'s.  The first two parts are JSON objects, that have been [base64url](http://tools.ietf.org/html/rfc4648) encoded.  The last part is the signature, encoded the same way.
 
 The first part is called the header.  It contains the necessary information for verifying the last part, the signature.  For example, which encryption method was used for signing and what key was used.
