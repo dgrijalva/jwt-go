@@ -183,6 +183,10 @@ func TestParser_Parse(t *testing.T) {
 			t.Errorf("[%v] Invalid token passed validation", data.name)
 		}
 
+		if (err == nil && !token.Valid) || (err != nil && token.Valid) {
+			t.Errorf("[%v] Inconsistent behavior between returned error and token.Valid")
+		}
+
 		if data.errors != 0 {
 			if err == nil {
 				t.Errorf("[%v] Expecting error.  Didn't get one.", data.name)
