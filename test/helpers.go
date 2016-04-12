@@ -30,7 +30,7 @@ func LoadRSAPublicKeyFromDisk(location string) *rsa.PublicKey {
 	return key
 }
 
-func MakeSampleToken(c jwt.MapClaims, key interface{}) string {
+func MakeSampleToken(c jwt.Claims, key interface{}) string {
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, c)
 	s, e := token.SignedString(key)
 

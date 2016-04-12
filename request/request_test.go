@@ -65,13 +65,13 @@ func TestParseRequest(t *testing.T) {
 				r.Header.Set(k, tokenString)
 			}
 		}
-		token, err := ParseFromRequestWithClaims(r, keyfunc, &jwt.MapClaims{})
+		token, err := ParseFromRequestWithClaims(r, keyfunc, jwt.MapClaims{})
 
 		if token == nil {
 			t.Errorf("[%v] Token was not found: %v", data.name, err)
 			continue
 		}
-		if !reflect.DeepEqual(&data.claims, token.Claims) {
+		if !reflect.DeepEqual(data.claims, token.Claims) {
 			t.Errorf("[%v] Claims mismatch. Expecting: %v  Got: %v", data.name, data.claims, token.Claims)
 		}
 		if data.valid && err != nil {

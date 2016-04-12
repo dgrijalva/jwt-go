@@ -16,7 +16,7 @@ type Parser struct {
 // keyFunc will receive the parsed token and should return the key for validating.
 // If everything is kosher, err will be nil
 func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
-	return p.ParseWithClaims(tokenString, keyFunc, &MapClaims{})
+	return p.ParseWithClaims(tokenString, keyFunc, MapClaims{})
 }
 
 func (p *Parser) ParseWithClaims(tokenString string, keyFunc Keyfunc, claims Claims) (*Token, error) {
@@ -42,6 +42,7 @@ func (p *Parser) ParseWithClaims(tokenString string, keyFunc Keyfunc, claims Cla
 
 	// parse Claims
 	var claimBytes []byte
+	token.Claims = claims
 
 	if claimBytes, err = DecodeSegment(parts[1]); err != nil {
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
@@ -50,11 +51,16 @@ func (p *Parser) ParseWithClaims(tokenString string, keyFunc Keyfunc, claims Cla
 	if p.UseJSONNumber {
 		dec.UseNumber()
 	}
-	if err = dec.Decode(&claims); err != nil {
+	// JSON Decode.  Special case for map type to avoid weird pointer behavior
+	if c, ok := token.Claims.(MapClaims); ok {
+		err = dec.Decode(&c)
+	} else {
+		err = dec.Decode(&claims)
+	}
+	// Handle decode error
+	if err != nil {
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
 	}
-
-	token.Claims = claims
 
 	// Lookup signature method
 	if method, ok := token.Header["alg"].(string); ok {
