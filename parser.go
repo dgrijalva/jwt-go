@@ -40,6 +40,15 @@ func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	if claimBytes, err = DecodeSegment(parts[1]); err != nil {
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
 	}
+
+	var compression CompressionMethod
+	if compression, err = getCompressionMethod(token.Header["cpr"]); err != nil {
+		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
+	}
+	if claimBytes, err = compression.Decompress(claimBytes); err != nil {
+		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
+	}
+
 	dec := json.NewDecoder(bytes.NewBuffer(claimBytes))
 	if p.UseJSONNumber {
 		dec.UseNumber()

@@ -30,15 +30,16 @@ type Token struct {
 	Valid     bool                   // Is the token valid?  Populated when you Parse/Verify a token
 }
 
-// Create a new Token.  Takes a signing method
-func New(method SigningMethod) *Token {
+// Create a new Token.  Takes a signing method and compression method
+func New(signingMethod SigningMethod, compressionMethod CompressionMethod) *Token {
 	return &Token{
 		Header: map[string]interface{}{
 			"typ": "JWT",
-			"alg": method.Alg(),
+			"alg": signingMethod.Alg(),
+			"cpr": compressionMethod.Alg(),
 		},
 		Claims: make(map[string]interface{}),
-		Method: method,
+		Method: signingMethod,
 	}
 }
 
@@ -61,22 +62,27 @@ func (t *Token) SignedString(key interface{}) (string, error) {
 // the SignedString.
 func (t *Token) SigningString() (string, error) {
 	var err error
-	parts := make([]string, 2)
-	for i, _ := range parts {
-		var source map[string]interface{}
-		if i == 0 {
-			source = t.Header
-		} else {
-			source = t.Claims
-		}
+	var parts = []string{}
+	var jsonValue []byte
+	var compression CompressionMethod
 
-		var jsonValue []byte
-		if jsonValue, err = json.Marshal(source); err != nil {
-			return "", err
-		}
-
-		parts[i] = EncodeSegment(jsonValue)
+	if jsonValue, err = json.Marshal(t.Header); err != nil {
+		return "", err
 	}
+	parts = append(parts, EncodeSegment(jsonValue))
+
+	if jsonValue, err = json.Marshal(t.Claims); err != nil {
+		return "", err
+	}
+
+	if compression, err = getCompressionMethod(t.Header["cpr"]); err != nil {
+		return "", err
+	}
+	if jsonValue, err = compression.Compress(jsonValue); err != nil {
+		return "", err
+	}
+	parts = append(parts, EncodeSegment(jsonValue))
+
 	return strings.Join(parts, "."), nil
 }
 
