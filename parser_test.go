@@ -56,12 +56,21 @@ var jwtTestData = []struct {
 		nil,
 	},
 	{
-		"expired and nbf",
+		"basic iat",
 		"", // autogen
 		defaultKeyFunc,
-		map[string]interface{}{"foo": "bar", "nbf": float64(time.Now().Unix() + 100), "exp": float64(time.Now().Unix() - 100)},
+		map[string]interface{}{"foo": "bar", "iat": float64(time.Now().Unix() + 100)},
 		false,
-		jwt.ValidationErrorNotValidYet | jwt.ValidationErrorExpired,
+		jwt.ValidationErrorNotIssuedYet,
+		nil,
+	},
+	{
+		"expired, nbf and iat",
+		"", // autogen
+		defaultKeyFunc,
+		map[string]interface{}{"foo": "bar", "nbf": float64(time.Now().Unix() + 100), "exp": float64(time.Now().Unix() - 100), "iat": float64(time.Now().Unix() + 100)},
+		false,
+		jwt.ValidationErrorNotValidYet | jwt.ValidationErrorExpired | jwt.ValidationErrorNotIssuedYet,
 		nil,
 	},
 	{

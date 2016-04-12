@@ -121,6 +121,12 @@ func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 		vErr.err = "token is not valid yet"
 		vErr.Errors |= ValidationErrorNotValidYet
 	}
+	if iat, ok := token.Claims["iat"].(float64); ok {
+		if now < int64(iat) {
+			vErr.err = "token has not been issued yet"
+			vErr.Errors |= ValidationErrorNotIssuedYet
+		}
+	}
 
 	// Perform validation
 	token.Signature = parts[2]
