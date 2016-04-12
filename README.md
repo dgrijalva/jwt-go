@@ -93,7 +93,7 @@ On the other end of usage all of the `jwt.Parse` and friends got a `WithClaims` 
 
 New method usage:
 ```go
-	token, err := jwt.ParseWithClaims(token, keyFunc, &jwt.StandardClaims{})
+	token, err := jwt.ParseWithClaims(token, &jwt.StandardClaims{}, keyFunc)
 	claims := token.Claims.(jwt.StandardClaims)
 	fmt.Println(claims.IssuedAt)
 ```
