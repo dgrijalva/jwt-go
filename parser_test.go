@@ -143,6 +143,33 @@ var jwtTestData = []struct {
 		0,
 		&jwt.Parser{UseJSONNumber: true},
 	},
+	{
+		"JSON Number - basic expired",
+		"", // autogen
+		defaultKeyFunc,
+		jwt.MapClaims{"foo": "bar", "exp": json.Number(fmt.Sprintf("%v", time.Now().Unix()-100))},
+		false,
+		jwt.ValidationErrorExpired,
+		&jwt.Parser{UseJSONNumber: true},
+	},
+	{
+		"JSON Number - basic nbf",
+		"", // autogen
+		defaultKeyFunc,
+		jwt.MapClaims{"foo": "bar", "nbf": json.Number(fmt.Sprintf("%v", time.Now().Unix()+100))},
+		false,
+		jwt.ValidationErrorNotValidYet,
+		&jwt.Parser{UseJSONNumber: true},
+	},
+	{
+		"JSON Number - expired and nbf",
+		"", // autogen
+		defaultKeyFunc,
+		jwt.MapClaims{"foo": "bar", "nbf": json.Number(fmt.Sprintf("%v", time.Now().Unix()+100)), "exp": json.Number(fmt.Sprintf("%v", time.Now().Unix()-100))},
+		false,
+		jwt.ValidationErrorNotValidYet | jwt.ValidationErrorExpired,
+		&jwt.Parser{UseJSONNumber: true},
+	},
 }
 
 func TestParser_Parse(t *testing.T) {

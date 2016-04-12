@@ -1,6 +1,9 @@
 package jwt
 
-import "crypto/subtle"
+import (
+	"crypto/subtle"
+	"encoding/json"
+)
 
 // For a type to be a Claims object, it must just have a Valid method that determines
 // if the token is invalid for any supported reason
@@ -94,15 +97,27 @@ func (m MapClaims) VerifyAudience(cmp string, req bool) bool {
 // Compares the exp claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (m MapClaims) VerifyExpiresAt(cmp int64, req bool) bool {
-	exp, _ := m["exp"].(float64)
-	return verifyExp(int64(exp), cmp, req)
+	switch exp := m["exp"].(type) {
+	case float64:
+		return verifyExp(int64(exp), cmp, req)
+	case json.Number:
+		v, _ := exp.Int64()
+		return verifyExp(v, cmp, req)
+	}
+	return req == false
 }
 
 // Compares the iat claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (m MapClaims) VerifyIssuedAt(cmp int64, req bool) bool {
-	iat, _ := m["iat"].(float64)
-	return verifyIat(int64(iat), cmp, req)
+	switch iat := m["iat"].(type) {
+	case float64:
+		return verifyIat(int64(iat), cmp, req)
+	case json.Number:
+		v, _ := iat.Int64()
+		return verifyIat(v, cmp, req)
+	}
+	return req == false
 }
 
 // Compares the iss claim against cmp.
@@ -115,8 +130,14 @@ func (m MapClaims) VerifyIssuer(cmp string, req bool) bool {
 // Compares the nbf claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (m MapClaims) VerifyNotBefore(cmp int64, req bool) bool {
-	nbf, _ := m["nbf"].(float64)
-	return verifyNbf(int64(nbf), cmp, req)
+	switch nbf := m["nbf"].(type) {
+	case float64:
+		return verifyNbf(int64(nbf), cmp, req)
+	case json.Number:
+		v, _ := nbf.Int64()
+		return verifyNbf(v, cmp, req)
+	}
+	return req == false
 }
 
 // Validates time based claims "exp, iat, nbf".
