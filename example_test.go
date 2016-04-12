@@ -63,9 +63,9 @@ func ExampleParseWithClaims_customClaimsType() {
 
 	// sample token is expired.  override time so it parses as valid
 	at(time.Unix(0, 0), func() {
-		token, err := jwt.ParseWithClaims(tokenString, func(token *jwt.Token) (interface{}, error) {
+		token, err := jwt.ParseWithClaims(tokenString, &MyCustomClaims{}, func(token *jwt.Token) (interface{}, error) {
 			return []byte("AllYourBase"), nil
-		}, &MyCustomClaims{})
+		})
 
 		if claims, ok := token.Claims.(*MyCustomClaims); ok && token.Valid {
 			fmt.Printf("%v %v", claims.Foo, claims.StandardClaims.ExpiresAt)

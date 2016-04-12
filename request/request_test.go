@@ -65,7 +65,7 @@ func TestParseRequest(t *testing.T) {
 				r.Header.Set(k, tokenString)
 			}
 		}
-		token, err := ParseFromRequestWithClaims(r, keyfunc, jwt.MapClaims{})
+		token, err := ParseFromRequestWithClaims(r, jwt.MapClaims{}, keyfunc)
 
 		if token == nil {
 			t.Errorf("[%v] Token was not found: %v", data.name, err)

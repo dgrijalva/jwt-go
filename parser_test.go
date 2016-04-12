@@ -192,9 +192,9 @@ func TestParser_Parse(t *testing.T) {
 		// Figure out correct claims type
 		switch data.claims.(type) {
 		case jwt.MapClaims:
-			token, err = parser.ParseWithClaims(data.tokenString, data.keyfunc, jwt.MapClaims{})
+			token, err = parser.ParseWithClaims(data.tokenString, jwt.MapClaims{}, data.keyfunc)
 		case *jwt.StandardClaims:
-			token, err = parser.ParseWithClaims(data.tokenString, data.keyfunc, &jwt.StandardClaims{})
+			token, err = parser.ParseWithClaims(data.tokenString, &jwt.StandardClaims{}, data.keyfunc)
 		}
 
 		// Verify result matches expectation
