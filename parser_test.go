@@ -25,7 +25,7 @@ var jwtTestData = []struct {
 	name        string
 	tokenString string
 	keyfunc     jwt.Keyfunc
-	claims      jwt.MapClaims
+	claims      jwt.Claims
 	valid       bool
 	errors      uint32
 	parser      *jwt.Parser
@@ -106,7 +106,7 @@ var jwtTestData = []struct {
 		"invalid signing method",
 		"",
 		defaultKeyFunc,
-		map[string]interface{}{"foo": "bar"},
+		jwt.MapClaims{"foo": "bar"},
 		false,
 		jwt.ValidationErrorSignatureInvalid,
 		&jwt.Parser{ValidMethods: []string{"HS256"}},
@@ -115,7 +115,7 @@ var jwtTestData = []struct {
 		"valid signing method",
 		"",
 		defaultKeyFunc,
-		map[string]interface{}{"foo": "bar"},
+		jwt.MapClaims{"foo": "bar"},
 		true,
 		0,
 		&jwt.Parser{ValidMethods: []string{"RS256", "HS256"}},
@@ -124,7 +124,18 @@ var jwtTestData = []struct {
 		"JSON Number",
 		"",
 		defaultKeyFunc,
-		map[string]interface{}{"foo": json.Number("123.4")},
+		jwt.MapClaims{"foo": json.Number("123.4")},
+		true,
+		0,
+		&jwt.Parser{UseJSONNumber: true},
+	},
+	{
+		"Standard Claims",
+		"",
+		defaultKeyFunc,
+		&jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(time.Second * 10).Unix(),
+		},
 		true,
 		0,
 		&jwt.Parser{UseJSONNumber: true},
@@ -141,7 +152,7 @@ func init() {
 	}
 }
 
-func makeSample(c jwt.MapClaims) string {
+func makeSample(c jwt.Claims) string {
 	keyData, e := ioutil.ReadFile("test/sample_key")
 	if e != nil {
 		panic(e.Error())
@@ -162,20 +173,30 @@ func makeSample(c jwt.MapClaims) string {
 }
 
 func TestParser_Parse(t *testing.T) {
+	// Iterate over test data set and run tests
 	for _, data := range jwtTestData {
+		// If the token string is blank, use helper function to generate string
 		if data.tokenString == "" {
 			data.tokenString = makeSample(data.claims)
 		}
 
+		// Parse the token
 		var token *jwt.Token
 		var err error
-		if data.parser != nil {
-			token, err = data.parser.Parse(data.tokenString, data.keyfunc)
-		} else {
-			token, err = jwt.Parse(data.tokenString, data.keyfunc)
+		var parser = data.parser
+		if parser == nil {
+			parser = new(jwt.Parser)
+		}
+		// Figure out correct claims type
+		switch data.claims.(type) {
+		case jwt.MapClaims:
+			token, err = parser.ParseWithClaims(data.tokenString, data.keyfunc, jwt.MapClaims{})
+		case *jwt.StandardClaims:
+			token, err = parser.ParseWithClaims(data.tokenString, data.keyfunc, &jwt.StandardClaims{})
 		}
 
-		if !reflect.DeepEqual(&data.claims, token.Claims) {
+		// Verify result matches expectation
+		if !reflect.DeepEqual(data.claims, token.Claims) {
 			t.Errorf("[%v] Claims mismatch. Expecting: %v  Got: %v", data.name, data.claims, token.Claims)
 		}
 
@@ -218,13 +239,13 @@ func TestParseRequest(t *testing.T) {
 
 		r, _ := http.NewRequest("GET", "/", nil)
 		r.Header.Set("Authorization", fmt.Sprintf("Bearer %v", data.tokenString))
-		token, err := jwt.ParseFromRequestWithClaims(r, data.keyfunc, &jwt.MapClaims{})
+		token, err := jwt.ParseFromRequestWithClaims(r, data.keyfunc, jwt.MapClaims{})
 
 		if token == nil {
 			t.Errorf("[%v] Token was not found: %v", data.name, err)
 			continue
 		}
-		if !reflect.DeepEqual(&data.claims, token.Claims) {
+		if !reflect.DeepEqual(data.claims, token.Claims) {
 			t.Errorf("[%v] Claims mismatch. Expecting: %v  Got: %v", data.name, data.claims, token.Claims)
 		}
 		if data.valid && err != nil {
