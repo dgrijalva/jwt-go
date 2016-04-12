@@ -3,7 +3,6 @@ package jwt
 import (
 	"encoding/base64"
 	"encoding/json"
-	"net/http"
 	"strings"
 	"time"
 )
@@ -92,32 +91,6 @@ func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 
 func ParseWithClaims(tokenString string, keyFunc Keyfunc, claims Claims) (*Token, error) {
 	return new(Parser).ParseWithClaims(tokenString, keyFunc, claims)
-}
-
-// Try to find the token in an http.Request.
-// This method will call ParseMultipartForm if there's no token in the header.
-// Currently, it looks in the Authorization header as well as
-// looking for an 'access_token' request parameter in req.Form.
-func ParseFromRequest(req *http.Request, keyFunc Keyfunc) (token *Token, err error) {
-	return ParseFromRequestWithClaims(req, keyFunc, &MapClaims{})
-}
-
-func ParseFromRequestWithClaims(req *http.Request, keyFunc Keyfunc, claims Claims) (token *Token, err error) {
-	// Look for an Authorization header
-	if ah := req.Header.Get("Authorization"); ah != "" {
-		// Should be a bearer token
-		if len(ah) > 6 && strings.ToUpper(ah[0:7]) == "BEARER " {
-			return ParseWithClaims(ah[7:], keyFunc, claims)
-		}
-	}
-
-	// Look for "access_token" parameter
-	req.ParseMultipartForm(10e6)
-	if tokStr := req.Form.Get("access_token"); tokStr != "" {
-		return ParseWithClaims(tokStr, keyFunc, claims)
-	}
-
-	return nil, ErrNoTokenInRequest
 }
 
 // Encode JWT specific base64url encoding with padding stripped

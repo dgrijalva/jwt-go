@@ -6,9 +6,8 @@ import (
 
 // Error constants
 var (
-	ErrInvalidKey       = errors.New("key is invalid or of invalid type")
-	ErrHashUnavailable  = errors.New("the requested hash function is unavailable")
-	ErrNoTokenInRequest = errors.New("no token present in request")
+	ErrInvalidKey      = errors.New("key is invalid or of invalid type")
+	ErrHashUnavailable = errors.New("the requested hash function is unavailable")
 )
 
 // The errors that might occur when parsing and validating a token

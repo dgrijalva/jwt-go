@@ -4,13 +4,12 @@ import (
 	"crypto/rsa"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
 	"reflect"
 	"testing"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/dgrijalva/jwt-go/test"
 )
 
 var (
@@ -20,6 +19,10 @@ var (
 	errorKeyFunc      jwt.Keyfunc = func(t *jwt.Token) (interface{}, error) { return nil, fmt.Errorf("error loading key") }
 	nilKeyFunc        jwt.Keyfunc = nil
 )
+
+func init() {
+	jwtTestDefaultKey = test.LoadRSAPublicKeyFromDisk("test/sample_key.pub")
+}
 
 var jwtTestData = []struct {
 	name        string
@@ -142,42 +145,14 @@ var jwtTestData = []struct {
 	},
 }
 
-func init() {
-	if keyData, e := ioutil.ReadFile("test/sample_key.pub"); e == nil {
-		if jwtTestDefaultKey, e = jwt.ParseRSAPublicKeyFromPEM(keyData); e != nil {
-			panic(e)
-		}
-	} else {
-		panic(e)
-	}
-}
-
-func makeSample(c jwt.Claims) string {
-	keyData, e := ioutil.ReadFile("test/sample_key")
-	if e != nil {
-		panic(e.Error())
-	}
-	key, e := jwt.ParseRSAPrivateKeyFromPEM(keyData)
-	if e != nil {
-		panic(e.Error())
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, c)
-	s, e := token.SignedString(key)
-
-	if e != nil {
-		panic(e.Error())
-	}
-
-	return s
-}
-
 func TestParser_Parse(t *testing.T) {
+	privateKey := test.LoadRSAPrivateKeyFromDisk("test/sample_key")
+
 	// Iterate over test data set and run tests
 	for _, data := range jwtTestData {
 		// If the token string is blank, use helper function to generate string
 		if data.tokenString == "" {
-			data.tokenString = makeSample(data.claims)
+			data.tokenString = test.MakeSampleToken(data.claims, privateKey)
 		}
 
 		// Parse the token
@@ -220,39 +195,6 @@ func TestParser_Parse(t *testing.T) {
 		}
 		if data.valid && token.Signature == "" {
 			t.Errorf("[%v] Signature is left unpopulated after parsing", data.name)
-		}
-	}
-}
-
-func TestParseRequest(t *testing.T) {
-	// Bearer token request
-	for _, data := range jwtTestData {
-		// FIXME: custom parsers are not supported by this helper.  skip tests that require them
-		if data.parser != nil {
-			t.Logf("Skipping [%v].  Custom parsers are not supported by ParseRequest", data.name)
-			continue
-		}
-
-		if data.tokenString == "" {
-			data.tokenString = makeSample(data.claims)
-		}
-
-		r, _ := http.NewRequest("GET", "/", nil)
-		r.Header.Set("Authorization", fmt.Sprintf("Bearer %v", data.tokenString))
-		token, err := jwt.ParseFromRequestWithClaims(r, data.keyfunc, jwt.MapClaims{})
-
-		if token == nil {
-			t.Errorf("[%v] Token was not found: %v", data.name, err)
-			continue
-		}
-		if !reflect.DeepEqual(data.claims, token.Claims) {
-			t.Errorf("[%v] Claims mismatch. Expecting: %v  Got: %v", data.name, data.claims, token.Claims)
-		}
-		if data.valid && err != nil {
-			t.Errorf("[%v] Error while verifying token: %v", data.name, err)
-		}
-		if !data.valid && err == nil {
-			t.Errorf("[%v] Invalid token passed validation", data.name)
 		}
 	}
 }
