@@ -17,37 +17,13 @@ The part in the middle is the interesting bit.  It's called the Claims and conta
 
 This library supports the parsing and verification as well as the generation and signing of JWTs.  Current supported signing algorithms are HMAC SHA, RSA, RSA-PSS, and ECDSA, though hooks are present for adding your own.
 
-## Parse and Verify
+## Examples
 
-Parsing and verifying tokens is pretty straight forward.  You pass in the token and a function for looking up the key.  This is done as a callback since you may need to parse the token to find out what signing method and key was used.
+See [the project documentation](https://godoc.org/github.com/dgrijalva/jwt-go) for examples of usage:
 
-```go
-	token, err := jwt.Parse(myToken, func(token *jwt.Token) (interface{}, error) {
-		// Don't forget to validate the alg is what you expect:
-		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
-		}
-		return myLookupKey(token.Header["kid"]), nil
-	})
-
-	if err == nil && token.Valid {
-		deliverGoodness("!")
-	} else {
-		deliverUtterRejection(":(")
-	}
-```
-
-## Create a token
-
-```go
-	// Create the token
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"foo": "bar",
-		"exp": time.Now().Add(time.Hour * 72).Unix(),
-	})
-	// Sign and get the complete encoded token as a string
-	tokenString, err := token.SignedString(mySigningKey)
-```
+* [Simple example of parsing and validating a token](https://godoc.org/github.com/dgrijalva/jwt-go#example_Parse_hmac)
+* [Simple example of building and signing a token](https://godoc.org/github.com/dgrijalva/jwt-go#example_New_hmac)
+* [Directory of Examples](https://godoc.org/github.com/dgrijalva/jwt-go#pkg-examples)
 
 ## Extensions
 
