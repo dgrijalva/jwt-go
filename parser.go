@@ -18,7 +18,7 @@ type Parser struct {
 func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	parts := strings.Split(tokenString, ".")
 	if len(parts) != 3 {
-		return nil, &ValidationError{err: "token contains an invalid number of segments", Errors: ValidationErrorMalformed}
+		return nil, NewValidationError("token contains an invalid number of segments", ValidationErrorMalformed)
 	}
 
 	var err error
@@ -27,34 +27,34 @@ func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	var headerBytes []byte
 	if headerBytes, err = DecodeSegment(parts[0]); err != nil {
 		if strings.HasPrefix(strings.ToLower(tokenString), "bearer ") {
-			return token, &ValidationError{err: "tokenstring should not contain 'bearer '", Errors: ValidationErrorMalformed}
+			return token, NewValidationError("tokenstring should not contain 'bearer '", ValidationErrorMalformed)
 		}
-		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
+		return token, &ValidationError{Inner: err, Errors: ValidationErrorMalformed}
 	}
 	if err = json.Unmarshal(headerBytes, &token.Header); err != nil {
-		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
+		return token, &ValidationError{Inner: err, Errors: ValidationErrorMalformed}
 	}
 
 	// parse Claims
 	var claimBytes []byte
 	if claimBytes, err = DecodeSegment(parts[1]); err != nil {
-		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
+		return token, &ValidationError{Inner: err, Errors: ValidationErrorMalformed}
 	}
 	dec := json.NewDecoder(bytes.NewBuffer(claimBytes))
 	if p.UseJSONNumber {
 		dec.UseNumber()
 	}
 	if err = dec.Decode(&token.Claims); err != nil {
-		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
+		return token, &ValidationError{Inner: err, Errors: ValidationErrorMalformed}
 	}
 
 	// Lookup signature method
 	if method, ok := token.Header["alg"].(string); ok {
 		if token.Method = GetSigningMethod(method); token.Method == nil {
-			return token, &ValidationError{err: "signing method (alg) is unavailable.", Errors: ValidationErrorUnverifiable}
+			return token, NewValidationError("signing method (alg) is unavailable.", ValidationErrorUnverifiable)
 		}
 	} else {
-		return token, &ValidationError{err: "signing method (alg) is unspecified.", Errors: ValidationErrorUnverifiable}
+		return token, NewValidationError("signing method (alg) is unspecified.", ValidationErrorUnverifiable)
 	}
 
 	// Verify signing method is in the required set
@@ -69,7 +69,7 @@ func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 		}
 		if !signingMethodValid {
 			// signing method is not in the listed set
-			return token, &ValidationError{err: fmt.Sprintf("signing method %v is invalid", alg), Errors: ValidationErrorSignatureInvalid}
+			return token, NewValidationError(fmt.Sprintf("signing method %v is invalid", alg), ValidationErrorSignatureInvalid)
 		}
 	}
 
@@ -77,11 +77,11 @@ func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	var key interface{}
 	if keyFunc == nil {
 		// keyFunc was not provided.  short circuiting validation
-		return token, &ValidationError{err: "no Keyfunc was provided.", Errors: ValidationErrorUnverifiable}
+		return token, NewValidationError("no Keyfunc was provided.", ValidationErrorUnverifiable)
 	}
 	if key, err = keyFunc(token); err != nil {
 		// keyFunc returned an error
-		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorUnverifiable, Inner: err}
+		return token, &ValidationError{Inner: err, Errors: ValidationErrorUnverifiable}
 	}
 
 	// Check expiration times
@@ -113,19 +113,19 @@ func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	}
 
 	if vexp && now > exp {
-		vErr.err = "token is expired"
+		vErr.Inner = fmt.Errorf("token is expired")
 		vErr.Errors |= ValidationErrorExpired
 	}
 
 	if vnbf && now < nbf {
-		vErr.err = "token is not valid yet"
+		vErr.Inner = fmt.Errorf("token is not valid yet")
 		vErr.Errors |= ValidationErrorNotValidYet
 	}
 
 	// Perform validation
 	token.Signature = parts[2]
 	if err = token.Method.Verify(strings.Join(parts[0:2], "."), token.Signature, key); err != nil {
-		vErr.err = err.Error()
+		vErr.Inner = err
 		vErr.Errors |= ValidationErrorSignatureInvalid
 	}
 

@@ -20,19 +20,26 @@ const (
 	ValidationErrorNotValidYet                         // NBF validation failed
 )
 
+// Helper for constructing a ValidationError with a string error message
+func NewValidationError(errorText string, errorFlags uint32) *ValidationError {
+	return &ValidationError{
+		Inner:  errors.New(errorText),
+		Errors: errorFlags,
+	}
+}
+
 // The error from Parse if token is not valid
 type ValidationError struct {
-	err    string
 	Inner  error  // stores the error returned by external dependencies, i.e.: KeyFunc
 	Errors uint32 // bitfield.  see ValidationError... constants
 }
 
 // Validation error is an error type
 func (e ValidationError) Error() string {
-	if e.err == "" {
+	if e.Inner == nil {
 		return "token is invalid"
 	}
-	return e.err
+	return e.Inner.Error()
 }
 
 // No errors
