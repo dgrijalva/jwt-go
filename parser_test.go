@@ -3,19 +3,22 @@ package jwt_test
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
 	"io/ioutil"
 	"net/http"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/dgrijalva/jwt-go"
 )
+
+var keyFuncError error = fmt.Errorf("error loading key")
 
 var (
 	jwtTestDefaultKey []byte
 	defaultKeyFunc    jwt.Keyfunc = func(t *jwt.Token) (interface{}, error) { return jwtTestDefaultKey, nil }
 	emptyKeyFunc      jwt.Keyfunc = func(t *jwt.Token) (interface{}, error) { return nil, nil }
-	errorKeyFunc      jwt.Keyfunc = func(t *jwt.Token) (interface{}, error) { return nil, fmt.Errorf("error loading key") }
+	errorKeyFunc      jwt.Keyfunc = func(t *jwt.Token) (interface{}, error) { return nil, keyFuncError }
 	nilKeyFunc        jwt.Keyfunc = nil
 )
 
@@ -207,9 +210,15 @@ func TestParser_Parse(t *testing.T) {
 			if err == nil {
 				t.Errorf("[%v] Expecting error.  Didn't get one.", data.name)
 			} else {
+
+				ve := err.(*jwt.ValidationError)
 				// compare the bitfield part of the error
-				if e := err.(*jwt.ValidationError).Errors; e != data.errors {
+				if e := ve.Errors; e != data.errors {
 					t.Errorf("[%v] Errors don't match expectation.  %v != %v", data.name, e, data.errors)
+				}
+
+				if err.Error() == keyFuncError.Error() && ve.Inner != keyFuncError {
+					t.Errorf("[%v] Inner error does not match expectation.  %v != %v", data.name, ve.Inner, keyFuncError)
 				}
 			}
 		}
