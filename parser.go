@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 )
 
 type Parser struct {
@@ -113,7 +114,8 @@ func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	}
 
 	if vexp && now > exp {
-		vErr.Inner = fmt.Errorf("token is expired")
+		delta := time.Unix(now, 0).Sub(time.Unix(exp, 0))
+		vErr.Inner = fmt.Errorf("token is expired by %v", delta)
 		vErr.Errors |= ValidationErrorExpired
 	}
 
