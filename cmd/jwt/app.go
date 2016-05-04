@@ -16,7 +16,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/dgrijalva/jwt-go"
+	jwt "github.com/dgrijalva/jwt-go"
 )
 
 var (
@@ -29,6 +29,7 @@ var (
 	// Modes - exactly one of these is required
 	flagSign   = flag.String("sign", "", "path to claims object to sign or '-' to read from stdin")
 	flagVerify = flag.String("verify", "", "path to JWT token to verify or '-' to read from stdin")
+	flagShow   = flag.String("show", "", "path to JWT file or '-' to read from stdin")
 )
 
 func main() {
@@ -56,6 +57,8 @@ func start() error {
 		return signToken()
 	} else if *flagVerify != "" {
 		return verifyToken()
+	} else if *flagShow != "" {
+		return showToken()
 	} else {
 		flag.Usage()
 		return fmt.Errorf("None of the required flags are present.  What do you want me to do?")
@@ -200,6 +203,39 @@ func signToken() error {
 		fmt.Println(out)
 	} else {
 		return fmt.Errorf("Error signing token: %v", err)
+	}
+
+	return nil
+}
+
+// showToken pretty-prints the token on the command line.
+func showToken() error {
+	// get the token
+	tokData, err := loadData(*flagShow)
+	if err != nil {
+		return fmt.Errorf("Couldn't read token: %v", err)
+	}
+
+	// trim possible whitespace from token
+	tokData = regexp.MustCompile(`\s*$`).ReplaceAll(tokData, []byte{})
+	if *flagDebug {
+		fmt.Fprintf(os.Stderr, "Token len: %v bytes\n", len(tokData))
+	}
+
+	token, err := jwt.Parse(string(tokData), nil)
+	if token == nil {
+		return fmt.Errorf("malformed token: %v", err)
+	}
+
+	// Print the token details
+	fmt.Println("Header:")
+	if err := printJSON(token.Header); err != nil {
+		return fmt.Errorf("Failed to output header: %v", err)
+	}
+
+	fmt.Println("Claims:")
+	if err := printJSON(token.Claims); err != nil {
+		return fmt.Errorf("Failed to output claims: %v", err)
 	}
 
 	return nil
