@@ -15,7 +15,7 @@ var TimeFunc = time.Now
 
 // Parse methods use this callback function to supply
 // the key for verification.  The function receives the parsed,
-// but unverified Token.  This allows you to use propries in the
+// but unverified Token.  This allows you to use properties in the
 // Header of the token (such as `kid`) to identify which key to use.
 type Keyfunc func(*Token) (interface{}, error)
 
