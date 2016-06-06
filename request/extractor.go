@@ -10,12 +10,15 @@ var (
 	ErrNoTokenInRequest = errors.New("no token present in request")
 )
 
-// Interface for extracting a token from an HTTP request
+// Interface for extracting a token from an HTTP request.
+// The ExtractToken method should return a token string or an error.
+// If no token is present, you must return ErrNoTokenInRequest.
 type Extractor interface {
 	ExtractToken(*http.Request) (string, error)
 }
 
-// Extract token from headers
+// Extractor for finding a token in a header.  Looks at each specified
+// header in order until there's a match
 type HeaderExtractor []string
 
 func (e HeaderExtractor) ExtractToken(req *http.Request) (string, error) {
@@ -28,7 +31,8 @@ func (e HeaderExtractor) ExtractToken(req *http.Request) (string, error) {
 	return "", ErrNoTokenInRequest
 }
 
-// Extract token from request args
+// Extract token from request arguments.  This includes a POSTed form or
+// GET URL arguments.  Argument names are tried in order until there's a match.
 type ArgumentExtractor []string
 
 func (e ArgumentExtractor) ExtractToken(req *http.Request) (string, error) {
@@ -45,7 +49,7 @@ func (e ArgumentExtractor) ExtractToken(req *http.Request) (string, error) {
 	return "", ErrNoTokenInRequest
 }
 
-// Tries extractors in order until one works or an error occurs
+// Tries Extractors in order until one returns a token string or an error occurs
 type MultiExtractor []Extractor
 
 func (e MultiExtractor) ExtractToken(req *http.Request) (string, error) {
@@ -60,7 +64,8 @@ func (e MultiExtractor) ExtractToken(req *http.Request) (string, error) {
 	return "", ErrNoTokenInRequest
 }
 
-// Wrap an Extractor in this to post-process the value before it's handed off
+// Wrap an Extractor in this to post-process the value before it's handed off.
+// See AuthorizationHeaderExtractor for an example
 type PostExtractionFilter struct {
 	Extractor
 	Filter func(string) (string, error)

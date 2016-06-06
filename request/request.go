@@ -5,20 +5,20 @@ import (
 	"net/http"
 )
 
-// Try to find the token in an http.Request.
-// This method will call ParseMultipartForm if there's no token in the header.
-// Currently, it looks in the Authorization header as well as
-// looking for an 'access_token' request parameter in req.Form.
+// Extract and parse a JWT token from an HTTP request.
+// This behaves the same as Parse, but accepts a request and an extractor
+// instead of a token string.  The Extractor interface allows you to define
+// the logic for extracting a token.  Several useful implementations are provided.
 func ParseFromRequest(req *http.Request, extractor Extractor, keyFunc jwt.Keyfunc) (token *jwt.Token, err error) {
 	return ParseFromRequestWithClaims(req, extractor, jwt.MapClaims{}, keyFunc)
 }
 
+// ParseFromRequest but with custom Claims type
 func ParseFromRequestWithClaims(req *http.Request, extractor Extractor, claims jwt.Claims, keyFunc jwt.Keyfunc) (token *jwt.Token, err error) {
 	// Extract token from request
-	tokStr, err := extractor.ExtractToken(req)
-	if err != nil {
+	if tokStr, err := extractor.ExtractToken(req); err == nil {
+		return jwt.ParseWithClaims(tokStr, claims, keyFunc)
+	} else {
 		return nil, err
 	}
-
-	return jwt.ParseWithClaims(tokStr, claims, keyFunc)
 }

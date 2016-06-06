@@ -4,7 +4,8 @@ import (
 	"strings"
 )
 
-// Extract Authorization header and strip 'Bearer ' from it
+// Extract bearer token from Authorization header
+// Uses PostExtractionFilter to strip "Bearer " prefix from header
 var AuthorizationHeaderExtractor = &PostExtractionFilter{
 	HeaderExtractor{"Authorization"},
 	func(tok string) (string, error) {
@@ -16,7 +17,8 @@ var AuthorizationHeaderExtractor = &PostExtractionFilter{
 	},
 }
 
-// Extractor for OAuth2 access tokens
+// Extractor for OAuth2 access tokens.  Looks in 'Authorization'
+// header then 'access_token' argument for a token.
 var OAuth2Extractor = &MultiExtractor{
 	// Look for authorization token first
 	AuthorizationHeaderExtractor,
