@@ -2,10 +2,20 @@
 
 #### 3.0.0
 
-* Dropped support for `[]byte` keys when using RSA signing methods.  This convenience feature could contribute to security vulnerabilities involving mismatched key types with signing methods.
-* Added `Claims` interface type to allow users to decode the claims into a custom type
-* The `Claims` property on `Token` is now type `Claims` instead of `map[string]interface{}`.  The default value is type `MapClaims`, which is an alias to `map[string]interface{}`.  This makes it possible to use a custom type when decoding claims.
-* Added `ParseWithClaims`, which takes a third argument of type `Claims`.  Use this function instead of `Parse` if you have a custom type you'd like to decode into.
+* **Compatibility Breaking Changes**
+	* Dropped support for `[]byte` keys when using RSA signing methods.  This convenience feature could contribute to security vulnerabilities involving mismatched key types with signing methods.
+	* Signature of `Keyfunc` is now `func(*Token) (interface{}, error)`
+	* `ParseFromRequest` has been moved to `request` subpackage and usage has changed
+	* The `Claims` property on `Token` is now type `Claims` instead of `map[string]interface{}`.  The default value is type `MapClaims`, which is an alias to `map[string]interface{}`.  This makes it possible to use a custom type when decoding claims.
+* Other Additions and Changes
+	* Added `Claims` interface type to allow users to decode the claims into a custom type
+	* Added `ParseWithClaims`, which takes a third argument of type `Claims`.  Use this function instead of `Parse` if you have a custom type you'd like to decode into.
+	* Dramatically improved the functionality and flexibility of `ParseFromRequest`, which is now in the `request` subpackage
+	* Added `ParseFromRequestWithClaims` which is the `FromRequest` equivalent of `ParseWithClaims`
+	* Added new interface type `Extractor`, which is used for extracting JWT strings from http requests.  Used with `ParseFromRequest` and `ParseFromRequestWithClaims`.
+	* Added several new, more specific, validation errors to error type bitmask
+	* Moved examples from README to executable example files
+	* Signing method registry is now thread safe
 
 #### 2.5.0
 
