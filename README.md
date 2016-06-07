@@ -2,6 +2,8 @@ A [go](http://www.golang.org) (or 'golang' for search engine friendliness) imple
 
 [![Build Status](https://travis-ci.org/dgrijalva/jwt-go.svg?branch=master)](https://travis-ci.org/dgrijalva/jwt-go)
 
+**BREAKING CHANGES COMING:*** Version 3.0.0 is almost complete. It will include _a lot_ of changes including a few that break the API.  We've tried to break as few things as possible, so there should just be a few type signature changes.  A full list of breaking changes will be available before 3.0.0 lands.  If you would like to have any input befor 3.0.0 is locked, now's the time to review and provide feedback.
+
 **NOTICE:** A vulnerability in JWT was [recently published](https://auth0.com/blog/2015/03/31/critical-vulnerabilities-in-json-web-token-libraries/).  As this library doesn't force users to validate the `alg` is what they expected, it's possible your usage is effected.  There will be an update soon to remedy this, and it will likey require backwards-incompatible changes to the API.  In the short term, please make sure your implementation verifies the `alg` is what you expect.
 
 ## What the heck is a JWT?
