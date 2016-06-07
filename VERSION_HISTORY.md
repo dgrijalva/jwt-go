@@ -16,6 +16,7 @@
 	* Added several new, more specific, validation errors to error type bitmask
 	* Moved examples from README to executable example files
 	* Signing method registry is now thread safe
+	* Added new property to `ValidationError`, which contains the raw error returned by calls made by parse/verify (such as those returned by keyfunc or json parser)
 
 #### 2.6.0
 
