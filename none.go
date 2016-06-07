@@ -13,10 +13,8 @@ type unsafeNoneMagicConstant string
 
 func init() {
 	SigningMethodNone = &signingMethodNone{}
-	NoneSignatureTypeDisallowedError = &ValidationError{
-		"'none' signature type is not allowed",
-		ValidationErrorSignatureInvalid,
-	}
+	NoneSignatureTypeDisallowedError = NewValidationError("'none' signature type is not allowed", ValidationErrorSignatureInvalid)
+
 	RegisterSigningMethod(SigningMethodNone.Alg(), func() SigningMethod {
 		return SigningMethodNone
 	})
@@ -35,10 +33,10 @@ func (m *signingMethodNone) Verify(signingString, signature string, key interfac
 	}
 	// If signing method is none, signature must be an empty string
 	if signature != "" {
-		return &ValidationError{
+		return NewValidationError(
 			"'none' signing method with non-empty signature",
 			ValidationErrorSignatureInvalid,
-		}
+		)
 	}
 
 	// Accept 'none' signing method.

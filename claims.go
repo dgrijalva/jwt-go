@@ -2,6 +2,8 @@ package jwt
 
 import (
 	"crypto/subtle"
+	"fmt"
+	"time"
 )
 
 // For a type to be a Claims object, it must just have a Valid method that determines
@@ -34,17 +36,18 @@ func (c StandardClaims) Valid() error {
 	// The claims below are optional, by default, so if they are set to the
 	// default value in Go, let's not fail the verification for them.
 	if c.VerifyExpiresAt(now, false) == false {
-		vErr.err = "Token is expired"
+		delta := time.Unix(now, 0).Sub(time.Unix(c.ExpiresAt, 0))
+		vErr.Inner = fmt.Errorf("token is expired by %v", delta)
 		vErr.Errors |= ValidationErrorExpired
 	}
 
 	if c.VerifyIssuedAt(now, false) == false {
-		vErr.err = "Token used before issued, clock skew issue?"
+		vErr.Inner = fmt.Errorf("Token used before issued")
 		vErr.Errors |= ValidationErrorIssuedAt
 	}
 
 	if c.VerifyNotBefore(now, false) == false {
-		vErr.err = "Token is not valid yet"
+		vErr.Inner = fmt.Errorf("token is not valid yet")
 		vErr.Errors |= ValidationErrorNotValidYet
 	}
 

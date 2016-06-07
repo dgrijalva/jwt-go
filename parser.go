@@ -22,7 +22,7 @@ func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 func (p *Parser) ParseWithClaims(tokenString string, claims Claims, keyFunc Keyfunc) (*Token, error) {
 	parts := strings.Split(tokenString, ".")
 	if len(parts) != 3 {
-		return nil, &ValidationError{err: "token contains an invalid number of segments", Errors: ValidationErrorMalformed}
+		return nil, NewValidationError("token contains an invalid number of segments", ValidationErrorMalformed)
 	}
 
 	var err error
@@ -32,12 +32,12 @@ func (p *Parser) ParseWithClaims(tokenString string, claims Claims, keyFunc Keyf
 	var headerBytes []byte
 	if headerBytes, err = DecodeSegment(parts[0]); err != nil {
 		if strings.HasPrefix(strings.ToLower(tokenString), "bearer ") {
-			return token, &ValidationError{err: "tokenstring should not contain 'bearer '", Errors: ValidationErrorMalformed}
+			return token, NewValidationError("tokenstring should not contain 'bearer '", ValidationErrorMalformed)
 		}
-		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
+		return token, &ValidationError{Inner: err, Errors: ValidationErrorMalformed}
 	}
 	if err = json.Unmarshal(headerBytes, &token.Header); err != nil {
-		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
+		return token, &ValidationError{Inner: err, Errors: ValidationErrorMalformed}
 	}
 
 	// parse Claims
@@ -45,7 +45,7 @@ func (p *Parser) ParseWithClaims(tokenString string, claims Claims, keyFunc Keyf
 	token.Claims = claims
 
 	if claimBytes, err = DecodeSegment(parts[1]); err != nil {
-		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
+		return token, &ValidationError{Inner: err, Errors: ValidationErrorMalformed}
 	}
 	dec := json.NewDecoder(bytes.NewBuffer(claimBytes))
 	if p.UseJSONNumber {
@@ -59,16 +59,16 @@ func (p *Parser) ParseWithClaims(tokenString string, claims Claims, keyFunc Keyf
 	}
 	// Handle decode error
 	if err != nil {
-		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
+		return token, &ValidationError{Inner: err, Errors: ValidationErrorMalformed}
 	}
 
 	// Lookup signature method
 	if method, ok := token.Header["alg"].(string); ok {
 		if token.Method = GetSigningMethod(method); token.Method == nil {
-			return token, &ValidationError{err: "signing method (alg) is unavailable.", Errors: ValidationErrorUnverifiable}
+			return token, NewValidationError("signing method (alg) is unavailable.", ValidationErrorUnverifiable)
 		}
 	} else {
-		return token, &ValidationError{err: "signing method (alg) is unspecified.", Errors: ValidationErrorUnverifiable}
+		return token, NewValidationError("signing method (alg) is unspecified.", ValidationErrorUnverifiable)
 	}
 
 	// Verify signing method is in the required set
@@ -83,7 +83,7 @@ func (p *Parser) ParseWithClaims(tokenString string, claims Claims, keyFunc Keyf
 		}
 		if !signingMethodValid {
 			// signing method is not in the listed set
-			return token, &ValidationError{err: fmt.Sprintf("signing method %v is invalid", alg), Errors: ValidationErrorSignatureInvalid}
+			return token, NewValidationError(fmt.Sprintf("signing method %v is invalid", alg), ValidationErrorSignatureInvalid)
 		}
 	}
 
@@ -91,11 +91,11 @@ func (p *Parser) ParseWithClaims(tokenString string, claims Claims, keyFunc Keyf
 	var key interface{}
 	if keyFunc == nil {
 		// keyFunc was not provided.  short circuiting validation
-		return token, &ValidationError{err: "no Keyfunc was provided.", Errors: ValidationErrorUnverifiable}
+		return token, NewValidationError("no Keyfunc was provided.", ValidationErrorUnverifiable)
 	}
 	if key, err = keyFunc(token); err != nil {
 		// keyFunc returned an error
-		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorUnverifiable}
+		return token, &ValidationError{Inner: err, Errors: ValidationErrorUnverifiable}
 	}
 
 	vErr := &ValidationError{}
@@ -106,7 +106,7 @@ func (p *Parser) ParseWithClaims(tokenString string, claims Claims, keyFunc Keyf
 		// If the Claims Valid returned an error, check if it is a validation error,
 		// If it was another error type, create a ValidationError with a generic ClaimsInvalid flag set
 		if e, ok := err.(*ValidationError); !ok {
-			vErr = &ValidationError{err: err.Error(), Errors: ValidationErrorClaimsInvalid}
+			vErr = &ValidationError{Inner: err, Errors: ValidationErrorClaimsInvalid}
 		} else {
 			vErr = e
 		}
@@ -115,7 +115,7 @@ func (p *Parser) ParseWithClaims(tokenString string, claims Claims, keyFunc Keyf
 	// Perform validation
 	token.Signature = parts[2]
 	if err = token.Method.Verify(strings.Join(parts[0:2], "."), token.Signature, key); err != nil {
-		vErr.err = err.Error()
+		vErr.Inner = err
 		vErr.Errors |= ValidationErrorSignatureInvalid
 	}
 
