@@ -1,39 +1,24 @@
 package request
 
 import (
-	"errors"
 	"github.com/dgrijalva/jwt-go"
 	"net/http"
-	"strings"
 )
 
-// Errors
-var (
-	ErrNoTokenInRequest = errors.New("no token present in request")
-)
-
-// Try to find the token in an http.Request.
-// This method will call ParseMultipartForm if there's no token in the header.
-// Currently, it looks in the Authorization header as well as
-// looking for an 'access_token' request parameter in req.Form.
-func ParseFromRequest(req *http.Request, keyFunc jwt.Keyfunc) (token *jwt.Token, err error) {
-	return ParseFromRequestWithClaims(req, jwt.MapClaims{}, keyFunc)
+// Extract and parse a JWT token from an HTTP request.
+// This behaves the same as Parse, but accepts a request and an extractor
+// instead of a token string.  The Extractor interface allows you to define
+// the logic for extracting a token.  Several useful implementations are provided.
+func ParseFromRequest(req *http.Request, extractor Extractor, keyFunc jwt.Keyfunc) (token *jwt.Token, err error) {
+	return ParseFromRequestWithClaims(req, extractor, jwt.MapClaims{}, keyFunc)
 }
 
-func ParseFromRequestWithClaims(req *http.Request, claims jwt.Claims, keyFunc jwt.Keyfunc) (token *jwt.Token, err error) {
-	// Look for an Authorization header
-	if ah := req.Header.Get("Authorization"); ah != "" {
-		// Should be a bearer token
-		if len(ah) > 6 && strings.ToUpper(ah[0:7]) == "BEARER " {
-			return jwt.ParseWithClaims(ah[7:], claims, keyFunc)
-		}
-	}
-
-	// Look for "access_token" parameter
-	req.ParseMultipartForm(10e6)
-	if tokStr := req.Form.Get("access_token"); tokStr != "" {
+// ParseFromRequest but with custom Claims type
+func ParseFromRequestWithClaims(req *http.Request, extractor Extractor, claims jwt.Claims, keyFunc jwt.Keyfunc) (token *jwt.Token, err error) {
+	// Extract token from request
+	if tokStr, err := extractor.ExtractToken(req); err == nil {
 		return jwt.ParseWithClaims(tokStr, claims, keyFunc)
+	} else {
+		return nil, err
 	}
-
-	return nil, ErrNoTokenInRequest
 }
