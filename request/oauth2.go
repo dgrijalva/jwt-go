@@ -23,5 +23,5 @@ var OAuth2Extractor = &MultiExtractor{
 	// Look for authorization token first
 	AuthorizationHeaderExtractor,
 	// Extract access_token from form or GET argument
-	&ArgumentExtractor{"access_token"},
+	ArgumentExtractor{"access_token"},
 }
