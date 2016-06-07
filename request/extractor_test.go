@@ -67,10 +67,7 @@ func TestExtractor(t *testing.T) {
 	// Bearer token request
 	for _, data := range extractorTestData {
 		// Make request from test struct
-		r, _ := http.NewRequest("GET", fmt.Sprintf("/?%v", data.query.Encode()), nil)
-		for k, v := range data.headers {
-			r.Header.Set(k, v)
-		}
+		r := makeExampleRequest("GET", "/", data.headers, data.query)
 
 		// Test extractor
 		token, err := data.extractor.ExtractToken(r)
@@ -83,4 +80,12 @@ func TestExtractor(t *testing.T) {
 			continue
 		}
 	}
+}
+
+func makeExampleRequest(method, path string, headers map[string]string, urlArgs url.Values) *http.Request {
+	r, _ := http.NewRequest(method, fmt.Sprintf("%v?%v", path, urlArgs.Encode()), nil)
+	for k, v := range headers {
+		r.Header.Set(k, v)
+	}
+	return r
 }
