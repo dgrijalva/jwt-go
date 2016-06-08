@@ -133,4 +133,4 @@ Without going too far down the rabbit hole, here's a description of the interact
 
 Documentation can be found [on godoc.org](http://godoc.org/github.com/dgrijalva/jwt-go).
 
-The command line utility included in this project (cmd/jwt) provides a straightforward example of token creation and parsing as well as a useful tool for debugging your own integration.  For a more http centric example, see [this gist](https://gist.github.com/cryptix/45c33ecf0ae54828e63b).
+The command line utility included in this project (cmd/jwt) provides a straightforward example of token creation and parsing as well as a useful tool for debugging your own integration.  You'll also find several implementation examples in to documentation.
