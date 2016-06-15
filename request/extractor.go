@@ -33,6 +33,7 @@ func (e HeaderExtractor) ExtractToken(req *http.Request) (string, error) {
 
 // Extract token from request arguments.  This includes a POSTed form or
 // GET URL arguments.  Argument names are tried in order until there's a match.
+// This extractor calls `ParseMultipartForm` on the request
 type ArgumentExtractor []string
 
 func (e ArgumentExtractor) ExtractToken(req *http.Request) (string, error) {
