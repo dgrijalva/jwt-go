@@ -8,8 +8,13 @@ import (
 
 // For a type to be a Claims object, it must just have a Valid method that determines
 // if the token is invalid for any supported reason
+// opts will often be nil
 type Claims interface {
-	Valid() error
+	Valid(opts *ValidationOptions) error
+}
+
+type ValidationOptions struct {
+	Leeway int64 // allow a bit (a minute or so) of extra time to allow for clock sku
 }
 
 // Structured version of Claims Section, as referenced at
@@ -29,14 +34,20 @@ type StandardClaims struct {
 // There is no accounting for clock skew.
 // As well, if any of the above claims are not in the token, it will still
 // be considered a valid claim.
-func (c StandardClaims) Valid() error {
+func (c StandardClaims) Valid(opts *ValidationOptions) error {
 	vErr := new(ValidationError)
 	now := TimeFunc().Unix()
 
+	// Get leeway out of opts (if present)
+	var leeway int64
+	if opts != nil {
+		leeway = opts.Leeway
+	}
+
 	// The claims below are optional, by default, so if they are set to the
 	// default value in Go, let's not fail the verification for them.
-	if c.VerifyExpiresAt(now, false) == false {
-		delta := time.Unix(now, 0).Sub(time.Unix(c.ExpiresAt, 0))
+	if c.VerifyExpiresAt(now-leeway, false) == false {
+		delta := time.Unix(now-leeway, 0).Sub(time.Unix(c.ExpiresAt, 0))
 		vErr.Inner = fmt.Errorf("token is expired by %v", delta)
 		vErr.Errors |= ValidationErrorExpired
 	}
@@ -46,7 +57,7 @@ func (c StandardClaims) Valid() error {
 		vErr.Errors |= ValidationErrorIssuedAt
 	}
 
-	if c.VerifyNotBefore(now, false) == false {
+	if c.VerifyNotBefore(now+leeway, false) == false {
 		vErr.Inner = fmt.Errorf("token is not valid yet")
 		vErr.Errors |= ValidationErrorNotValidYet
 	}
