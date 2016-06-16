@@ -1,8 +1,15 @@
 ## `jwt-go` Version History
 
-#### 2.6.0
+#### 2.7.0
 
-This will likely be the last backwards compatible release before 3.0.0.
+This will likely be the last backwards compatible release before 3.0.0, excluding essential bug fixes.
+
+* Added new option `-show` to the `jwt` command that will just output the decoded token without verifying
+* Error text for expired tokens includes how long it's been expired
+* Fixed incorrect error returned from `ParseRSAPublicKeyFromPEM`
+* Documentation updates
+
+#### 2.6.0
 
 * Exposed inner error within ValidationError
 * Fixed validation errors when using UseJSONNumber flag
