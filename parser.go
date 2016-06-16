@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"time"
 )
 
 type Parser struct {
@@ -17,6 +16,10 @@ type Parser struct {
 // keyFunc will receive the parsed token and should return the key for validating.
 // If everything is kosher, err will be nil
 func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
+	return p.ParseWithClaims(tokenString, MapClaims{}, keyFunc)
+}
+
+func (p *Parser) ParseWithClaims(tokenString string, claims Claims, keyFunc Keyfunc) (*Token, error) {
 	parts := strings.Split(tokenString, ".")
 	if len(parts) != 3 {
 		return nil, NewValidationError("token contains an invalid number of segments", ValidationErrorMalformed)
@@ -24,6 +27,7 @@ func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 
 	var err error
 	token := &Token{Raw: tokenString}
+
 	// parse Header
 	var headerBytes []byte
 	if headerBytes, err = DecodeSegment(parts[0]); err != nil {
@@ -38,6 +42,8 @@ func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 
 	// parse Claims
 	var claimBytes []byte
+	token.Claims = claims
+
 	if claimBytes, err = DecodeSegment(parts[1]); err != nil {
 		return token, &ValidationError{Inner: err, Errors: ValidationErrorMalformed}
 	}
@@ -45,7 +51,14 @@ func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	if p.UseJSONNumber {
 		dec.UseNumber()
 	}
-	if err = dec.Decode(&token.Claims); err != nil {
+	// JSON Decode.  Special case for map type to avoid weird pointer behavior
+	if c, ok := token.Claims.(MapClaims); ok {
+		err = dec.Decode(&c)
+	} else {
+		err = dec.Decode(&claims)
+	}
+	// Handle decode error
+	if err != nil {
 		return token, &ValidationError{Inner: err, Errors: ValidationErrorMalformed}
 	}
 
@@ -85,43 +98,18 @@ func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 		return token, &ValidationError{Inner: err, Errors: ValidationErrorUnverifiable}
 	}
 
-	// Check expiration times
 	vErr := &ValidationError{}
-	now := TimeFunc().Unix()
-	var exp, nbf int64
-	var vexp, vnbf bool
 
-	// Parse 'exp' claim
-	switch num := token.Claims["exp"].(type) {
-	case json.Number:
-		if exp, err = num.Int64(); err == nil {
-			vexp = true
+	// Validate Claims
+	if err := token.Claims.Valid(); err != nil {
+
+		// If the Claims Valid returned an error, check if it is a validation error,
+		// If it was another error type, create a ValidationError with a generic ClaimsInvalid flag set
+		if e, ok := err.(*ValidationError); !ok {
+			vErr = &ValidationError{Inner: err, Errors: ValidationErrorClaimsInvalid}
+		} else {
+			vErr = e
 		}
-	case float64:
-		vexp = true
-		exp = int64(num)
-	}
-
-	// Parse 'nbf' claim
-	switch num := token.Claims["nbf"].(type) {
-	case json.Number:
-		if nbf, err = num.Int64(); err == nil {
-			vnbf = true
-		}
-	case float64:
-		vnbf = true
-		nbf = int64(num)
-	}
-
-	if vexp && now > exp {
-		delta := time.Unix(now, 0).Sub(time.Unix(exp, 0))
-		vErr.Inner = fmt.Errorf("token is expired by %v", delta)
-		vErr.Errors |= ValidationErrorExpired
-	}
-
-	if vnbf && now < nbf {
-		vErr.Inner = fmt.Errorf("token is not valid yet")
-		vErr.Errors |= ValidationErrorNotValidYet
 	}
 
 	// Perform validation
