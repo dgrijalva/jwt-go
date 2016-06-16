@@ -13,6 +13,8 @@ type Claims interface {
 	Valid(opts *ValidationOptions) error
 }
 
+// Options passed in to Claims.Valid
+// Currently only supports Leeway (more coming soon)
 type ValidationOptions struct {
 	Leeway int64 // allow a bit (a minute or so) of extra time to allow for clock sku
 }
