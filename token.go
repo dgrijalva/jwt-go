@@ -47,15 +47,16 @@ func NewWithClaims(method SigningMethod, claims Claims) *Token {
 
 // Get the complete, signed token
 func (t *Token) SignedString(key interface{}) (string, error) {
-	var sig, sstr string
+	var sstr string
 	var err error
 	if sstr, err = t.SigningString(); err != nil {
 		return "", err
 	}
-	if sig, err = t.Method.Sign(sstr, key); err != nil {
+	if t.Signature, err = t.Method.Sign(sstr, key); err != nil {
 		return "", err
 	}
-	return strings.Join([]string{sstr, sig}, "."), nil
+	t.Raw = strings.Join([]string{sstr, t.Signature}, ".")
+	return t.Raw, nil
 }
 
 // Generate the signing string.  This is the
