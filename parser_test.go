@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"testing"
 	"time"
+	"strings"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/dgrijalva/jwt-go/test"
@@ -184,15 +185,18 @@ var jwtTestData = []struct {
 }
 
 func TestExpiredErrorStringNumber(t *testing.T) {
+	t.Log("Given the need to test parsing a token with MapClaims that is past its json.Number expire-at time.")
 	name := "Map claims expired delta with a json.Number"
 	privateKey := test.LoadRSAPrivateKeyFromDisk("test/sample_key")
-	claims := jwt.MapClaims{"foo": "bar", "exp": json.Number(fmt.Sprintf("%v", time.Now().Unix()-100))}
+	t.Log("\tSpecify the claim exp as a json.Number")
+	claimExpire := json.Number(fmt.Sprintf("%v", time.Now().Unix()-100))
+	claims := jwt.MapClaims{"foo": "bar", "exp": claimExpire}
+	t.Log("\tCreate a token from the claims and a private key")
 	tokenString := test.MakeSampleToken(claims, privateKey)
-	// Parse the token
+	t.Log("\tParse the token")
 	var parser = new(jwt.Parser)
-	// Figure out correct claims type
 	token, err := parser.ParseWithClaims(tokenString, jwt.MapClaims{}, defaultKeyFunc)
-	expiresAt, _ := claims["exp"].(json.Number).Int64()
+	expiresAt, _ := claimExpire.Int64()
 	mapClaims := token.Claims.(jwt.MapClaims)
 	parsedExpiresAt := int64(mapClaims["exp"].(float64))
 	if expiresAt != parsedExpiresAt {
@@ -206,24 +210,26 @@ func TestExpiredErrorStringNumber(t *testing.T) {
 		if e := ve.Errors; e != jwt.ValidationErrorExpired {
 			t.Errorf("[%v] Errors don't match expectation.  %v != %v", name, e, jwt.ValidationErrorExpired)
 		}
-		expectedError := fmt.Errorf("Token is expired by 1m40s")
-		if ve.Inner.Error() != expectedError.Error() {
-			t.Errorf("[%v] Errors inner text is not as expected.  %v != %v", name, ve.Inner, expectedError)
-		}
+		expectedErrorStr := "Token is expired by 1m4"
+		if !strings.Contains(fmt.Sprint(ve.Inner.Error()), "Token is expired by 1m4") {
+			t.Errorf("[%v] Errors inner text is not as expected.  %v does not contain %v", name, ve.Inner, expectedErrorStr)
+		} 
 	}
 }
 
 func TestExpiredErrorStringFloat(t *testing.T) {
+	t.Log("Given the need to test parsing a token with MapClaims that is past its float64 expire-at time.")
 	name := "Map claims expired delta with a float64"
 	privateKey := test.LoadRSAPrivateKeyFromDisk("test/sample_key")
+	t.Log("\tSpecify the claim exp as a float64")
 	claimExpire, _ := json.Number(fmt.Sprintf("%v", time.Now().Unix()-100)).Float64()
 	claims := jwt.MapClaims{"foo": "bar", "exp": claimExpire}
+	t.Log("\tCreate a token from the claims and a private key")
 	tokenString := test.MakeSampleToken(claims, privateKey)
-	// Parse the token
+	t.Log("\tParse the token ")
 	var parser = new(jwt.Parser)
-	// Figure out correct claims type
 	token, err := parser.ParseWithClaims(tokenString, jwt.MapClaims{}, defaultKeyFunc)
-	expiresAt := int64(claims["exp"].(float64))
+	expiresAt := int64(claimExpire)
 	mapClaims := token.Claims.(jwt.MapClaims)
 	parsedExpiresAt := int64(mapClaims["exp"].(float64))
 	if expiresAt != parsedExpiresAt {
@@ -237,9 +243,9 @@ func TestExpiredErrorStringFloat(t *testing.T) {
 		if e := ve.Errors; e != jwt.ValidationErrorExpired {
 			t.Errorf("[%v] Errors don't match expectation.  %v != %v", name, e, jwt.ValidationErrorExpired)
 		}
-		expectedError := fmt.Errorf("Token is expired by 1m40s")
-		if ve.Inner.Error() != expectedError.Error() {
-			t.Errorf("[%v] Errors inner text is not as expected.  %v != %v", name, ve.Inner, expectedError)
+		expectedErrorStr := "Token is expired by 1m4"
+		if !strings.Contains(fmt.Sprint(ve.Inner.Error()), "Token is expired by 1m4") {
+			t.Errorf("[%v] Errors inner text is not as expected.  %v does not contain %v", name, ve.Inner, expectedErrorStr)
 		}
 	}
 }
@@ -283,7 +289,7 @@ func TestParser_Parse(t *testing.T) {
 		}
 
 		if (err == nil && !token.Valid) || (err != nil && token.Valid) {
-			t.Errorf("[%v] Inconsistent behavior between returned error and token.Valid")
+			t.Errorf("[%v] Inconsistent behavior between returned error and token.Valid", data.name)
 		}
 
 		if data.errors != 0 {
