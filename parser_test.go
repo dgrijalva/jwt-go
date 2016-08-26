@@ -183,6 +183,67 @@ var jwtTestData = []struct {
 	},
 }
 
+func TestExpiredErrorStringNumber(t *testing.T) {
+	name := "Map claims expired delta with a json.Number"
+	privateKey := test.LoadRSAPrivateKeyFromDisk("test/sample_key")
+	claims := jwt.MapClaims{"foo": "bar", "exp": json.Number(fmt.Sprintf("%v", time.Now().Unix()-100))}
+	tokenString := test.MakeSampleToken(claims, privateKey)
+	// Parse the token
+	var parser = new(jwt.Parser)
+	// Figure out correct claims type
+	token, err := parser.ParseWithClaims(tokenString, jwt.MapClaims{}, defaultKeyFunc)
+	expiresAt, _ := claims["exp"].(json.Number).Int64()
+	mapClaims := token.Claims.(jwt.MapClaims)
+	parsedExpiresAt := int64(mapClaims["exp"].(float64))
+	if expiresAt != parsedExpiresAt {
+		t.Errorf("[%v] Claims expire mismatch. Expecting: %v  Got: %v", name, expiresAt, parsedExpiresAt)
+	}
+	if err == nil {
+		t.Errorf("[%v] Expecting error.  Didn't get one.", name)
+	} else {
+		ve := err.(*jwt.ValidationError)
+		// compare the bitfield part of the error
+		if e := ve.Errors; e != jwt.ValidationErrorExpired {
+			t.Errorf("[%v] Errors don't match expectation.  %v != %v", name, e, jwt.ValidationErrorExpired)
+		}
+		expectedError := fmt.Errorf("Token is expired by 1m40s")
+		if ve.Inner.Error() != expectedError.Error() {
+			t.Errorf("[%v] Errors inner text is not as expected.  %v != %v", name, ve.Inner, expectedError)
+		}
+	}
+}
+
+func TestExpiredErrorStringFloat(t *testing.T) {
+	name := "Map claims expired delta with a float64"
+	privateKey := test.LoadRSAPrivateKeyFromDisk("test/sample_key")
+	claimExpire, _ := json.Number(fmt.Sprintf("%v", time.Now().Unix()-100)).Float64()
+	claims := jwt.MapClaims{"foo": "bar", "exp": claimExpire}
+	tokenString := test.MakeSampleToken(claims, privateKey)
+	// Parse the token
+	var parser = new(jwt.Parser)
+	// Figure out correct claims type
+	token, err := parser.ParseWithClaims(tokenString, jwt.MapClaims{}, defaultKeyFunc)
+	expiresAt := int64(claims["exp"].(float64))
+	mapClaims := token.Claims.(jwt.MapClaims)
+	parsedExpiresAt := int64(mapClaims["exp"].(float64))
+	if expiresAt != parsedExpiresAt {
+		t.Errorf("[%v] Claims expire mismatch. Expecting: %v  Got: %v", name, expiresAt, parsedExpiresAt)
+	}
+	if err == nil {
+		t.Errorf("[%v] Expecting error.  Didn't get one.", name)
+	} else {
+		ve := err.(*jwt.ValidationError)
+		// compare the bitfield part of the error
+		if e := ve.Errors; e != jwt.ValidationErrorExpired {
+			t.Errorf("[%v] Errors don't match expectation.  %v != %v", name, e, jwt.ValidationErrorExpired)
+		}
+		expectedError := fmt.Errorf("Token is expired by 1m40s")
+		if ve.Inner.Error() != expectedError.Error() {
+			t.Errorf("[%v] Errors inner text is not as expected.  %v != %v", name, ve.Inner, expectedError)
+		}
+	}
+}
+
 func TestParser_Parse(t *testing.T) {
 	privateKey := test.LoadRSAPrivateKeyFromDisk("test/sample_key")
 
