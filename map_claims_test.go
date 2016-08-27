@@ -10,7 +10,10 @@ import (
 	"github.com/dgrijalva/jwt-go/test"
 )
 
-const expireAtInt = 100
+const (
+	expireAtInt = 100
+	nowInt = 200
+)
 
 var claimsTestData = []struct {
 	name   string
@@ -27,16 +30,20 @@ var claimsTestData = []struct {
 		need:   "Given the need to test validating a MapClaims that is past its float64 expire-at time.",
 		claims: jwt.MapClaims{"exp": float64(time.Unix(expireAtInt, 0).Unix())},
 	},
+	{
+		name:   "StandardClaims expired float64",
+		need:   "Given the need to test validating a StandardClaims that is past its expire-at time.",
+		claims: jwt.StandardClaims{ExpiresAt: int64(time.Unix(expireAtInt, 0).Unix())},
+	},
 }
 
-func TestMapClaimValidExpired(t *testing.T) {
+func TestClaimValidExpired(t *testing.T) {
 	for _, data := range claimsTestData {
 		t.Log(data.name)
 		t.Logf("\t%s", data.need)
 		name := data.name
-		claims := data.claims.(jwt.MapClaims)
-		t.Logf("\t\tValidate the MapClaims with exp as a %vs in the past", claims["exp"])
-		test.At(time.Unix(200, 0), func() {
+		t.Logf("\t\tValidate the Claims with exp as %v at time %v",  nowInt, expireAtInt)
+		test.At(time.Unix(nowInt, 0), func() {
 			err := data.claims.Valid()
 			t.Log("\t\t\tExpect an error who's message includes the expired by 1m40s")
 			if err == nil {
@@ -49,7 +56,7 @@ func TestMapClaimValidExpired(t *testing.T) {
 				}
 				expectedErrorStr := "Token is expired by 1m40s"
 				if fmt.Sprint(ve.Inner.Error()) != expectedErrorStr {
-					t.Errorf("[%v] Errors inner text is not as expected.  %v does not contain %v", name, ve.Inner, expectedErrorStr)
+					t.Errorf("[%v] Errors inner text is not as expected. \"%v\" is not \"%v\"", name, ve.Inner, expectedErrorStr)
 				}
 			}
 		})
