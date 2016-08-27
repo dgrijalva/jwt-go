@@ -10,6 +10,52 @@ import (
 	"github.com/dgrijalva/jwt-go/test"
 )
 
+const expireAtInt = 100
+
+var claimsTestData = []struct {
+	name   string
+	need   string
+	claims jwt.Claims
+}{
+	{
+		name:   "Map claims expired json.Number",
+		need:   "Given the need to test validating a MapClaims that is past its json.Number expire-at time.",
+		claims: jwt.MapClaims{"exp": json.Number(fmt.Sprintf("%v", time.Unix(expireAtInt, 0).Unix()))},
+	},
+	{
+		name:   "Map claims expired float64",
+		need:   "Given the need to test validating a MapClaims that is past its float64 expire-at time.",
+		claims: jwt.MapClaims{"exp": float64(time.Unix(expireAtInt, 0).Unix())},
+	},
+}
+
+func TestMapClaimValidExpired(t *testing.T) {
+	for _, data := range claimsTestData {
+		t.Log(data.name)
+		t.Logf("\t%s", data.need)
+		name := data.name
+		claims := data.claims.(jwt.MapClaims)
+		t.Logf("\t\tValidate the MapClaims with exp as a %vs in the past", claims["exp"])
+		test.At(time.Unix(200, 0), func() {
+			err := data.claims.Valid()
+			t.Log("\t\t\tExpect an error who's message includes the expired by 1m40s")
+			if err == nil {
+				t.Errorf("[%v] Expecting error.  Didn't get one.", name)
+			} else {
+				ve := err.(*jwt.ValidationError)
+				// compare the bitfield part of the error
+				if e := ve.Errors; e != jwt.ValidationErrorExpired {
+					t.Errorf("[%v] Errors don't match expectation.  %v != %v", name, e, jwt.ValidationErrorExpired)
+				}
+				expectedErrorStr := "Token is expired by 1m40s"
+				if fmt.Sprint(ve.Inner.Error()) != expectedErrorStr {
+					t.Errorf("[%v] Errors inner text is not as expected.  %v does not contain %v", name, ve.Inner, expectedErrorStr)
+				}
+			}
+		})
+	}
+}
+
 func TestExpiredErrorStringNumber(t *testing.T) {
 	t.Log("Given the need to test validating a MapClaims that is past its json.Number expire-at time.")
 	name := "Map claims expired delta with a json.Number"
