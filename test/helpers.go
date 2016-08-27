@@ -1,9 +1,11 @@
 package test
 
 import (
-	"crypto/rsa"
-	"github.com/dgrijalva/jwt-go"
+	"time"
 	"io/ioutil"
+	"crypto/rsa"
+
+	"github.com/dgrijalva/jwt-go"
 )
 
 func LoadRSAPrivateKeyFromDisk(location string) *rsa.PrivateKey {
@@ -39,4 +41,13 @@ func MakeSampleToken(c jwt.Claims, key interface{}) string {
 	}
 
 	return s
+}
+
+// At overrides time value for tests.  Restore default value after.
+func At(t time.Time, f func()) {
+	jwt.TimeFunc = func() time.Time {
+		return t
+	}
+	f()
+	jwt.TimeFunc = time.Now
 }
