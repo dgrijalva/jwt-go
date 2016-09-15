@@ -25,6 +25,12 @@ type StandardClaims struct {
 	Subject   string `json:"sub,omitempty"`
 }
 
+var ClaimVerificationOptions = struct {
+	VerifyIssuedAt bool
+}{
+	VerifyIssuedAt: true,
+}
+
 // Validates time based claims "exp, iat, nbf".
 // There is no accounting for clock skew.
 // As well, if any of the above claims are not in the token, it will still
@@ -41,9 +47,11 @@ func (c StandardClaims) Valid() error {
 		vErr.Errors |= ValidationErrorExpired
 	}
 
-	if c.VerifyIssuedAt(now, false) == false {
-		vErr.Inner = fmt.Errorf("Token used before issued")
-		vErr.Errors |= ValidationErrorIssuedAt
+	if ClaimVerificationOptions.VerifyIssuedAt {
+		if c.VerifyIssuedAt(now, false) == false {
+			vErr.Inner = fmt.Errorf("Token used before issued")
+			vErr.Errors |= ValidationErrorIssuedAt
+		}
 	}
 
 	if c.VerifyNotBefore(now, false) == false {
