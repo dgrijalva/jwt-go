@@ -23,25 +23,24 @@ var (
 func init() {
 	// HS256
 	SigningMethodHS256 = &SigningMethodHMAC{"HS256", crypto.SHA256}
-	RegisterSigningMethod(SigningMethodHS256.Alg(), func() SigningMethod {
-		return SigningMethodHS256
-	})
+	SigningMethodHS256.Register()
 
 	// HS384
 	SigningMethodHS384 = &SigningMethodHMAC{"HS384", crypto.SHA384}
-	RegisterSigningMethod(SigningMethodHS384.Alg(), func() SigningMethod {
-		return SigningMethodHS384
-	})
+	SigningMethodHS384.Register()
 
 	// HS512
 	SigningMethodHS512 = &SigningMethodHMAC{"HS512", crypto.SHA512}
-	RegisterSigningMethod(SigningMethodHS512.Alg(), func() SigningMethod {
-		return SigningMethodHS512
-	})
+	SigningMethodHS512.Register()
 }
 
 func (m *SigningMethodHMAC) Alg() string {
 	return m.Name
+}
+
+// Register the signing method
+func (m *SigningMethodHMAC) Register() {
+	RegisterSigningMethod(m.Name, func() SigningMethod { return m })
 }
 
 // Verify the signature of HSXXX tokens.  Returns nil if the signature is valid.
