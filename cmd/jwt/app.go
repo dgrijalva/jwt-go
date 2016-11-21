@@ -126,6 +126,8 @@ func verifyToken() error {
 		}
 		if isEs() {
 			return jwt.ParseECPublicKeyFromPEM(data)
+		} else if isRs() {
+			return jwt.ParseRSAPublicKeyFromPEM(data)
 		}
 		return data, nil
 	})
@@ -196,6 +198,15 @@ func signToken() error {
 				return err
 			}
 		}
+	} else if isRs() {
+		if k, ok := key.([]byte); !ok {
+			return fmt.Errorf("Couldn't convert key data to key")
+		} else {
+			key, err = jwt.ParseRSAPrivateKeyFromPEM(k)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	if out, err := token.SignedString(key); err == nil {
@@ -242,4 +253,8 @@ func showToken() error {
 
 func isEs() bool {
 	return strings.HasPrefix(*flagAlg, "ES")
+}
+
+func isRs() bool {
+	return strings.HasPrefix(*flagAlg, "RS")
 }
