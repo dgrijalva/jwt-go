@@ -61,7 +61,7 @@ func (c StandardClaims) Valid() error {
 // Compares the aud claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (c *StandardClaims) VerifyAudience(cmp string, req bool) bool {
-	return verifyAud(c.Audience, cmp, req)
+	return verifyAud([]string{c.Audience}, cmp, req)
 }
 
 // Compares the exp claim against cmp.
@@ -90,15 +90,18 @@ func (c *StandardClaims) VerifyNotBefore(cmp int64, req bool) bool {
 
 // ----- helpers
 
-func verifyAud(aud string, cmp string, required bool) bool {
-	if aud == "" {
+func verifyAud(aud []string, cmp string, required bool) bool {
+	if len(aud) <= 0 || aud[0] == "" {
 		return !required
 	}
-	if subtle.ConstantTimeCompare([]byte(aud), []byte(cmp)) != 0 {
-		return true
-	} else {
-		return false
+
+	for _, a := range aud {
+		if subtle.ConstantTimeCompare([]byte(a), []byte(cmp)) != 0 {
+			return true
+		}
 	}
+
+	return false
 }
 
 func verifyExp(exp int64, now int64, required bool) bool {
