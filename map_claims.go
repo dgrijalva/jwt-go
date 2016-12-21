@@ -11,34 +11,32 @@ import (
 type MapClaims map[string]interface{}
 
 // Compares the aud claim against cmp.
-// If the aud claim is a string, this method will return true if the value matches exactly.
-// If the aud claim is a slice of strings, this method will return true if the value exactly matches any of the items in the slice.
+// If the aud claim is a string, this method will return true if cmp matches exactly.
+// If the aud claim is a slice of strings, this method will return true if cmp exactly matches any of the items in the slice.
 // If required is false, this method will return true if the value matches or is unset
 func (m MapClaims) VerifyAudience(cmp string, req bool) bool {
-	aud := m["aud"]
-
-	switch aud.(type) {
-	default:
-		// Unknown types are treated as if there were no "aud" claim
-		return verifyAud([]string{}, cmp, req)
+	switch aud := m["aud"].(type) {
 	case string:
-		// Single item case
-		return verifyAud([]string{aud.(string)}, cmp, req)
+		// Single item special case
+		return verifyAud([]string{aud}, cmp, req)
 	case []string:
-
-		return verifyAud(aud.([]string), cmp, req)
+		return verifyAud(aud, cmp, req)
 	case []interface{}:
 		// The result of parsing a token into MapClaims from JSON is an []interface{}.
-		strAud := []string{}
-		for _, a := range aud.([]interface{}) {
-			switch a.(type) {
-			default:
-				return verifyAud([]string{}, cmp, req)
+		strAuds := []string{}
+		for _, obj := range aud {
+			switch a := obj.(type) {
 			case string:
-				strAud = append(strAud, a.(string))
+				strAuds = append(strAuds, a)
+			default:
+				// If the result is not a string, we should ignore the aud claim, as it is malformed
+				return verifyAud([]string{}, cmp, req)
 			}
 		}
-		return verifyAud(strAud, cmp, req)
+		return verifyAud(strAuds, cmp, req)
+	default:
+		// Unknown types are treated as if there were no aud claim
+		return verifyAud([]string{}, cmp, req)
 
 	}
 }

@@ -95,13 +95,14 @@ func verifyAud(aud []string, cmp string, required bool) bool {
 		return !required
 	}
 
+	matchesAny := false
 	for _, a := range aud {
 		if subtle.ConstantTimeCompare([]byte(a), []byte(cmp)) != 0 {
-			return true
+			matchesAny = true
 		}
 	}
 
-	return false
+	return matchesAny
 }
 
 func verifyExp(exp int64, now int64, required bool) bool {

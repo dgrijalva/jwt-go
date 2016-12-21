@@ -71,6 +71,12 @@ var claimsAudienceTestData = []struct {
 		false,
 	},
 	{
+		[]interface{}{"aud1", "aud2", "aud3"},
+		"aud3",
+		true,
+		true,
+	},
+	{
 		[]interface{}{"aud1", "aud2", []string{"unknown", "structure"}},
 		"aud1",
 		true,
