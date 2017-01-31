@@ -21,11 +21,12 @@ import (
 
 var (
 	// Options
-	flagAlg     = flag.String("alg", "", "signing algorithm identifier")
-	flagKey     = flag.String("key", "", "path to key file or '-' to read from stdin")
-	flagCompact = flag.Bool("compact", false, "output compact JSON")
-	flagDebug   = flag.Bool("debug", false, "print out all kinds of debug data")
-	flagKid     = flag.String("kid", "", "key id to use")
+	flagAlg        = flag.String("alg", "", "signing algorithm identifier")
+	flagKey        = flag.String("key", "", "path to key file or '-' to read from stdin")
+	flagCompact    = flag.Bool("compact", false, "output compact JSON")
+	flagDebug      = flag.Bool("debug", false, "print out all kinds of debug data")
+	flagKid        = flag.String("kid", "", "key id to use")
+	flagConentType = flag.String("cty", "", "content type to set")
 
 	// Modes - exactly one of these is required
 	flagSign   = flag.String("sign", "", "path to claims object to sign or '-' to read from stdin")
@@ -188,12 +189,18 @@ func signToken() error {
 	// create a new token
 	token := jwt.NewWithClaims(alg, claims)
 
+	// add the algorithm header
+	token.Header["alg"] = *flagAlg
+
+	// if we were given a kid add the header
 	if *flagKid != "" {
 		token.Header["kid"] = *flagKid
 	}
 
-	// add the algorithm header
-	token.Header["alg"] = *flagAlg
+	// if we were given a content type, add it
+	if *flagConentType != "" {
+		token.Header["cty"] = *flagConentType
+	}
 
 	if isEs() {
 		if k, ok := key.([]byte); !ok {
