@@ -192,6 +192,9 @@ func signToken() error {
 		token.Header["kid"] = *flagKid
 	}
 
+	// add the algorithm header
+	token.Header["alg"] = *flagAlg
+
 	if isEs() {
 		if k, ok := key.([]byte); !ok {
 			return fmt.Errorf("Couldn't convert key data to key")
