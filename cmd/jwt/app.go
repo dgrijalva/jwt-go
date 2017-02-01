@@ -37,7 +37,7 @@ var (
 func main() {
 	// Plug in Var flags
 	flag.Var(flagClaims, "claim", "add additional claims. may be used more than once")
-	flag.Var(flagHead, "head", "add additional header params. may be used more than once")
+	flag.Var(flagHead, "header", "add additional header params. may be used more than once")
 
 	// Usage message if you ask for -help or if you mess up inputs.
 	flag.Usage = func() {
