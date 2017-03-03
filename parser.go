@@ -7,10 +7,13 @@ import (
 	"strings"
 )
 
+type Unmarshaler func([]byte, interface{}) error
+
 type Parser struct {
-	ValidMethods         []string // If populated, only these methods will be considered valid
-	UseJSONNumber        bool     // Use JSON Number format in JSON decoder
-	SkipClaimsValidation bool     // Skip claims validation during token parsing
+	ValidMethods         []string    // If populated, only these methods will be considered valid
+	UseJSONNumber        bool        // Use JSON Number format in JSON decoder
+	SkipClaimsValidation bool        // Skip claims validation during token parsing
+	ClaimUnmarshaler     Unmarshaler // Support custom unmarshaler
 }
 
 // Parse, validate, and return a token.
@@ -48,15 +51,21 @@ func (p *Parser) ParseWithClaims(tokenString string, claims Claims, keyFunc Keyf
 	if claimBytes, err = DecodeSegment(parts[1]); err != nil {
 		return token, &ValidationError{Inner: err, Errors: ValidationErrorMalformed}
 	}
-	dec := json.NewDecoder(bytes.NewBuffer(claimBytes))
-	if p.UseJSONNumber {
-		dec.UseNumber()
-	}
-	// JSON Decode.  Special case for map type to avoid weird pointer behavior
-	if c, ok := token.Claims.(MapClaims); ok {
-		err = dec.Decode(&c)
+	if p.ClaimUnmarshaler == nil {
+		// Use standard json Unmarshaler
+		dec := json.NewDecoder(bytes.NewBuffer(claimBytes))
+		if p.UseJSONNumber {
+			dec.UseNumber()
+		}
+		// JSON Decode.  Special case for map type to avoid weird pointer behavior
+		if c, ok := token.Claims.(MapClaims); ok {
+			err = dec.Decode(&c)
+		} else {
+			err = dec.Decode(&claims)
+		}
 	} else {
-		err = dec.Decode(&claims)
+		// Use custom Unmarshaler
+		err = p.ClaimUnmarshaler(claimBytes, &claims)
 	}
 	// Handle decode error
 	if err != nil {
