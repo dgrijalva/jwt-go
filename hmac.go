@@ -6,13 +6,14 @@ import (
 	"errors"
 )
 
-// Implements the HMAC-SHA family of signing methods signing methods
+// SigningMethodHMAC implements the HMAC-SHA family of signing methods signing
+// methods.
 type SigningMethodHMAC struct {
 	Name string
 	Hash crypto.Hash
 }
 
-// Specific instances for HS256 and company
+// Specific instances for HS256 and company.
 var (
 	SigningMethodHS256  *SigningMethodHMAC
 	SigningMethodHS384  *SigningMethodHMAC
@@ -40,6 +41,7 @@ func init() {
 	})
 }
 
+// Alg returns the algorithm name.
 func (m *SigningMethodHMAC) Alg() string {
 	return m.Name
 }
@@ -76,8 +78,8 @@ func (m *SigningMethodHMAC) Verify(signingString, signature string, key interfac
 	return nil
 }
 
-// Implements the Sign method from SigningMethod for this signing method.
-// Key must be []byte
+// Sign implements the Sign method from SigningMethod for this signing method.
+// Key must be []byte.
 func (m *SigningMethodHMAC) Sign(signingString string, key interface{}) (string, error) {
 	if keyBytes, ok := key.([]byte); ok {
 		if !m.Hash.Available() {

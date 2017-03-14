@@ -1,11 +1,13 @@
 package jwt
 
-// Implements the none signing method.  This is required by the spec
-// but you probably should never use it.
+// SigningMethodNone implements the none signing method.  This is required by
+// the spec but you probably should never use it.
 var SigningMethodNone *signingMethodNone
 
+// UnsafeAllowNoneSignatureType is a magic constant
 const UnsafeAllowNoneSignatureType unsafeNoneMagicConstant = "none signing method allowed"
 
+// NoneSignatureTypeDisallowedError is the error.
 var NoneSignatureTypeDisallowedError error
 
 type signingMethodNone struct{}

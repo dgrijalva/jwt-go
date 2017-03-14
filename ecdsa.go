@@ -8,12 +8,12 @@ import (
 	"math/big"
 )
 
+// Sadly this is missing from crypto/ecdsa compared to crypto/rsa
 var (
-	// Sadly this is missing from crypto/ecdsa compared to crypto/rsa
 	ErrECDSAVerification = errors.New("crypto/ecdsa: verification error")
 )
 
-// Implements the ECDSA family of signing methods signing methods
+// SigningMethodECDSA implements the ECDSA family of signing methods.
 type SigningMethodECDSA struct {
 	Name      string
 	Hash      crypto.Hash
@@ -48,12 +48,13 @@ func init() {
 	})
 }
 
+// Alg returns the name of the algorithm.
 func (m *SigningMethodECDSA) Alg() string {
 	return m.Name
 }
 
-// Implements the Verify method from SigningMethod
-// For this verify method, key must be an ecdsa.PublicKey struct
+// Verify implements the Verify method from SigningMethod. For this verify
+// method, key must be an ecdsa.PublicKey struct.
 func (m *SigningMethodECDSA) Verify(signingString, signature string, key interface{}) error {
 	var err error
 
@@ -89,12 +90,11 @@ func (m *SigningMethodECDSA) Verify(signingString, signature string, key interfa
 	// Verify the signature
 	if verifystatus := ecdsa.Verify(ecdsaKey, hasher.Sum(nil), r, s); verifystatus == true {
 		return nil
-	} else {
-		return ErrECDSAVerification
 	}
+	return ErrECDSAVerification
 }
 
-// Implements the Sign method from SigningMethod
+// Sign implements the Sign method from SigningMethod
 // For this signing method, key must be an ecdsa.PrivateKey struct
 func (m *SigningMethodECDSA) Sign(signingString string, key interface{}) (string, error) {
 	// Get the key
@@ -115,7 +115,8 @@ func (m *SigningMethodECDSA) Sign(signingString string, key interface{}) (string
 	hasher.Write([]byte(signingString))
 
 	// Sign the string and return r, s
-	if r, s, err := ecdsa.Sign(rand.Reader, ecdsaKey, hasher.Sum(nil)); err == nil {
+	r, s, err := ecdsa.Sign(rand.Reader, ecdsaKey, hasher.Sum(nil))
+	if err == nil {
 		curveBits := ecdsaKey.Curve.Params().BitSize
 
 		if m.CurveBits != curveBits {
@@ -124,7 +125,7 @@ func (m *SigningMethodECDSA) Sign(signingString string, key interface{}) (string
 
 		keyBytes := curveBits / 8
 		if curveBits%8 > 0 {
-			keyBytes += 1
+			keyBytes++
 		}
 
 		// We serialize the outpus (r and s) into big-endian byte arrays and pad
@@ -141,7 +142,7 @@ func (m *SigningMethodECDSA) Sign(signingString string, key interface{}) (string
 		out := append(rBytesPadded, sBytesPadded...)
 
 		return EncodeSegment(out), nil
-	} else {
-		return "", err
 	}
+	return "", err
+
 }
