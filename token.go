@@ -22,12 +22,12 @@ type Keyfunc func(*Token) (interface{}, error)
 // Token represents a JSON Web Token.  Different fields will be used depending
 // on whether you're creating or parsing/verifying a token.
 type Token struct {
-	Raw       string                 // The raw token.  Populated when parsing a token.
+	Raw       string                 // The raw token.  Populated when token is parsed.
 	Method    SigningMethod          // The signing method used or to be used.
 	Header    map[string]interface{} // The first segment of the token.
 	Claims    Claims                 // The second segment of the token.
-	Signature string                 // The third segment of the token.  Populated when Token is parsed.
-	Valid     bool                   // Is the token valid?  Populated when Token is Parse/Verify.
+	Signature string                 // The third segment of the token.  Populated when token is parsed.
+	Valid     bool                   // Is the token valid?  Populated when token is parsed or verified.
 }
 
 // New creates a new Token.

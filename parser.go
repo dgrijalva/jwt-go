@@ -14,9 +14,8 @@ type Parser struct {
 	SkipClaimsValidation bool     // Skip claims validation during token parsing.
 }
 
-// Parse parses, validates, and returns a token. // keyFunc will receive
-// the parsed token and should return the key for validating. // If everything
-// is kosher, err will be nil.
+// Parse parses, validates, and returns a token.  keyFunc will receive the
+// parsed token and should return the key for validating.
 func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	return p.ParseWithClaims(tokenString, MapClaims{}, keyFunc)
 }

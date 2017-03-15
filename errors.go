@@ -23,7 +23,7 @@ const (
 	ValidationErrorIssuedAt      // IAT validation failed
 	ValidationErrorIssuer        // ISS validation failed
 	ValidationErrorNotValidYet   // NBF validation failed
-	ValidationErrorID            // JTI validation failed
+	ValidationErrorId            // JTI validation failed
 	ValidationErrorClaimsInvalid // Generic claims validation error
 )
 
