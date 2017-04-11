@@ -48,14 +48,12 @@ func (e ValidationError) Error() string {
 		return e.Inner.Error()
 	} else if e.text != "" {
 		return e.text
-	}
-	return "token is invalid"
+  } else {
+	  return "token is invalid"
+  }
 }
 
 // No errors
 func (e *ValidationError) valid() bool {
-	if e.Errors > 0 {
-		return false
-	}
-	return true
+	return e.Errors == 0
 }
