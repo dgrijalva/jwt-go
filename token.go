@@ -86,7 +86,7 @@ func (t *Token) SigningString() (string, error) {
 // keyFunc will receive the parsed token and should return the key for validating.
 // If everything is kosher, err will be nil
 func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
-	return new(Parser).Parse(tokenString, keyFunc)
+	return new(Parser).ParseWithClaims(tokenString, MapClaims{}, keyFunc)
 }
 
 func ParseWithClaims(tokenString string, claims Claims, keyFunc Keyfunc) (*Token, error) {
