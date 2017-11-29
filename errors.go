@@ -6,9 +6,10 @@ import (
 
 // Error constants
 var (
-	ErrInvalidKey      = errors.New("key is invalid")
-	ErrInvalidKeyType  = errors.New("key is of invalid type")
-	ErrHashUnavailable = errors.New("the requested hash function is unavailable")
+	ErrInvalidKey              = errors.New("key is invalid")
+	ErrInvalidKeyType          = errors.New("key is of invalid type")
+	ErrHashUnavailable         = errors.New("the requested hash function is unavailable")
+	ErrECDSASignatureUnmarshal = errors.New("unexpected extra bytes in ecda signature")
 )
 
 // The errors that might occur when parsing and validating a token
