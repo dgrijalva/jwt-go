@@ -48,6 +48,16 @@ func (p *Parser) ParseWithClaims(tokenString string, claims Claims, keyFunc Keyf
 	if claimBytes, err = DecodeSegment(parts[1]); err != nil {
 		return token, &ValidationError{Inner: err, Errors: ValidationErrorMalformed}
 	}
+
+	if compression, ok := token.Header["zip"].(string); ok {
+		if err = validateCompressionAlgorithm(compression); err != nil {
+			return token, &ValidationError{Inner: err, Errors: ValidationErrorMalformed}
+		}
+		claimBytes, err = decompress(claimBytes)
+		if err != nil {
+			return token, &ValidationError{Inner: err, Errors: ValidationErrorMalformed}
+		}
+	}
 	dec := json.NewDecoder(bytes.NewBuffer(claimBytes))
 	if p.UseJSONNumber {
 		dec.UseNumber()

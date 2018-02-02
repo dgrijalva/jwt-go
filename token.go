@@ -1,8 +1,12 @@
 package jwt
 
 import (
+	"bytes"
+	"compress/gzip"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"strings"
 	"time"
 )
@@ -18,6 +22,9 @@ var TimeFunc = time.Now
 // Header of the token (such as `kid`) to identify which key to use.
 type Keyfunc func(*Token) (interface{}, error)
 
+// TokenOption configures how we construct the token.
+type TokenOption func(*Token) error
+
 // A JWT Token.  Different fields will be used depending on whether you're
 // creating or parsing/verifying a token.
 type Token struct {
@@ -29,20 +36,103 @@ type Token struct {
 	Valid     bool                   // Is the token valid?  Populated when you Parse/Verify a token
 }
 
+func validateCompressionAlgorithm(algorithm string) error {
+	if algorithm != "DEF" {
+		return fmt.Errorf("unsupported compression algorithm: %v", algorithm)
+	}
+
+	return nil
+}
+
+func compress(data []byte) ([]byte, error) {
+	var b bytes.Buffer
+	gz := gzip.NewWriter(&b)
+
+	if _, err := gz.Write(data); err != nil {
+		return nil, err
+	}
+	if err := gz.Flush(); err != nil {
+		return nil, err
+	}
+	if err := gz.Close(); err != nil {
+		return nil, err
+	}
+
+	return b.Bytes(), nil
+}
+
+func decompress(data []byte) ([]byte, error) {
+	gz, err := gzip.NewReader(bytes.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
+
+	unzipped, err := ioutil.ReadAll(gz)
+	if err != nil {
+		return nil, err
+	}
+
+	return unzipped, nil
+}
+
+// WithClaims specifies the claims to use with the new token
+func WithClaims(claims Claims) TokenOption {
+	return func(t *Token) error {
+		t.Claims = claims
+		return nil
+	}
+}
+
+// WithCompression specifies the compression algorithm to use with the new token
+func WithCompression(algorithm ...string) TokenOption {
+	return func(t *Token) error {
+		for _, a := range algorithm {
+			if err := validateCompressionAlgorithm(a); err != nil {
+				return err
+			}
+		}
+
+		t.Header["zip"] = "DEF"
+		return nil
+	}
+}
+
+// WithSigningMethod specifies the signing method of the new token
+func WithSigningMethod(method SigningMethod) TokenOption {
+	return func(t *Token) error {
+		t.Header["alg"] = method.Alg()
+		t.Method = method
+		return nil
+	}
+}
+
+// NewWithOptions constructs a new token using the given options
+func NewWithOptions(options ...TokenOption) (*Token, error) {
+	t := &Token{
+		Header: map[string]interface{}{
+			"typ": "JWT",
+		},
+	}
+
+	for _, option := range options {
+		err := option(t)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return t, nil
+}
+
 // Create a new Token.  Takes a signing method
 func New(method SigningMethod) *Token {
-	return NewWithClaims(method, MapClaims{})
+	t, _ := NewWithOptions(WithSigningMethod(method))
+	return t
 }
 
 func NewWithClaims(method SigningMethod, claims Claims) *Token {
-	return &Token{
-		Header: map[string]interface{}{
-			"typ": "JWT",
-			"alg": method.Alg(),
-		},
-		Claims: claims,
-		Method: method,
-	}
+	t, _ := NewWithOptions(WithSigningMethod(method), WithClaims(claims))
+	return t
 }
 
 // Get the complete, signed token
@@ -74,6 +164,18 @@ func (t *Token) SigningString() (string, error) {
 		} else {
 			if jsonValue, err = json.Marshal(t.Claims); err != nil {
 				return "", err
+			}
+
+			if val, ok := t.Header["zip"].(string); ok {
+				if err = validateCompressionAlgorithm(val); err != nil {
+					return "", err
+				}
+
+				zipped, err := compress(jsonValue)
+				if err != nil {
+					return "", err
+				}
+				jsonValue = zipped
 			}
 		}
 

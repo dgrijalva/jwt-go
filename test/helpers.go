@@ -2,8 +2,9 @@ package test
 
 import (
 	"crypto/rsa"
-	"github.com/dgrijalva/jwt-go"
 	"io/ioutil"
+
+	"github.com/dgrijalva/jwt-go"
 )
 
 func LoadRSAPrivateKeyFromDisk(location string) *rsa.PrivateKey {
@@ -30,10 +31,15 @@ func LoadRSAPublicKeyFromDisk(location string) *rsa.PublicKey {
 	return key
 }
 
-func MakeSampleToken(c jwt.Claims, key interface{}) string {
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, c)
-	s, e := token.SignedString(key)
+func MakeSampleToken(o []jwt.TokenOption, c jwt.Claims, key interface{}) string {
+	o = append(o, jwt.WithSigningMethod(jwt.SigningMethodRS256))
+	o = append(o, jwt.WithClaims(c))
+	token, e := jwt.NewWithOptions(o...)
+	if e != nil {
+		panic(e.Error())
+	}
 
+	s, e := token.SignedString(key)
 	if e != nil {
 		panic(e.Error())
 	}
