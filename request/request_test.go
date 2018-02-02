@@ -2,13 +2,14 @@ package request
 
 import (
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
-	"github.com/dgrijalva/jwt-go/test"
 	"net/http"
 	"net/url"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/dgrijalva/jwt-go"
+	"github.com/dgrijalva/jwt-go/test"
 )
 
 var requestTestData = []struct {
@@ -64,7 +65,7 @@ func TestParseRequest(t *testing.T) {
 	// Bearer token request
 	for _, data := range requestTestData {
 		// Make token from claims
-		tokenString := test.MakeSampleToken(data.claims, privateKey)
+		tokenString := test.MakeSampleToken(nil, data.claims, privateKey)
 
 		// Make query string
 		for k, vv := range data.query {
