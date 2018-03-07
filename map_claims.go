@@ -72,17 +72,17 @@ func (m MapClaims) Valid() error {
 	now := TimeFunc().Unix()
 
 	if m.VerifyExpiresAt(now, false) == false {
-		vErr.Inner = errors.New("Token is expired")
+		vErr.Inner = errors.New("token is expired")
 		vErr.Errors |= ValidationErrorExpired
 	}
 
 	if m.VerifyIssuedAt(now, false) == false {
-		vErr.Inner = errors.New("Token used before issued")
+		vErr.Inner = errors.New("token used before issued")
 		vErr.Errors |= ValidationErrorIssuedAt
 	}
 
 	if m.VerifyNotBefore(now, false) == false {
-		vErr.Inner = errors.New("Token is not valid yet")
+		vErr.Inner = errors.New("token is not valid yet")
 		vErr.Errors |= ValidationErrorNotValidYet
 	}
 

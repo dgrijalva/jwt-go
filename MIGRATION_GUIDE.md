@@ -82,7 +82,7 @@ To replace this behavior, we've added two helper methods: `ParseRSAPrivateKeyFro
 	func keyLookupFunc(*Token) (interface{}, error) {
 		// Don't forget to validate the alg is what you expect:
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		
 		// Look up key 
