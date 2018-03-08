@@ -1,5 +1,10 @@
 ## `jwt-go` Version History
 
+#### 3.2.0
+
+* Added method `ParseUnverified` to allow users to split up the tasks of parsing and validation
+* HMAC signing method returns `ErrInvalidKeyType` instead of `ErrInvalidKey` where appropriate
+
 #### 3.1.0
 
 * Improvements to `jwt` command line tool
