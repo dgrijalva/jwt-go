@@ -2,6 +2,7 @@ package jwt
 
 import (
 	"errors"
+	"time"
 )
 
 // Error constants
@@ -56,4 +57,16 @@ func (e ValidationError) Error() string {
 // No errors
 func (e *ValidationError) valid() bool {
 	return e.Errors == 0
+}
+
+// ExpiredError allows the caller to know the delta between now and the expired time and the unvalidated claims.
+// A client system may have a bug that doesn't refresh a token in time, or there may be clock skew so this information can help you understand.
+type ExpiredError struct {
+	Now       int64
+	ExpiredBy time.Duration
+	Claims
+}
+
+func (e *ExpiredError) Error() string {
+	return "Token is expired"
 }

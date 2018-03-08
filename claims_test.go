@@ -3,6 +3,7 @@ package jwt_test
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
 	"testing"
 	"time"
 
@@ -64,12 +65,8 @@ func TestClaimValidExpired(t *testing.T) {
 					if vi.ExpiredBy != 100*time.Second {
 						t.Errorf("[%v] ExpiredError.ExpiredBy %v is not %v\n", name, vi.ExpiredBy, 100*time.Second)
 					}
-					foo, ok := vi.Claims["foo"].(string)
-					if !ok {
-						t.Errorf("[%v] foo missing from claims %v\n", name, vi.Claims)
-					}
-					if foo != "bar" {
-						t.Errorf("[%v] foo is not bar in claims %v\n", name, vi.Claims)
+					if !reflect.DeepEqual(vi.Claims, data.claims) {
+						t.Errorf("[%v] Claims did not get set in expired error \"%v\"\n", name, vi.Error())
 					}
 					if vi.Error() != "Token is expired" {
 						t.Errorf("[%v] Error message is not as expected \"%v\"\n", name, vi.Error())

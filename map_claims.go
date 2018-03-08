@@ -10,18 +10,6 @@ import (
 // This is the default claims type if you don't supply one
 type MapClaims map[string]interface{}
 
-// ExpiredError allows the caller to know the delta between now and the expired time and the unvalidated claims.
-// A client system may have a bug that doesn't refresh a token in time, or there may be clock skew so this information can help you understand.
-type ExpiredError struct {
-	Now int64
-	ExpiredBy time.Duration
-	Claims MapClaims
-}
-
-func (e *ExpiredError) Error() string {
-    return "Token is expired"
-}
-
 // Compares the aud claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (m MapClaims) VerifyAudience(cmp string, req bool) bool {
