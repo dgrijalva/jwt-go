@@ -2,8 +2,10 @@ package jwt_test
 
 import (
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
 	"time"
+
+	"github.com/dgrijalva/jwt-go"
+	"github.com/dgrijalva/jwt-go/test"
 )
 
 // Example (atypical) using the StandardClaims type by itself to parse a token.
@@ -62,7 +64,7 @@ func ExampleParseWithClaims_customClaimsType() {
 	}
 
 	// sample token is expired.  override time so it parses as valid
-	at(time.Unix(0, 0), func() {
+	test.At(time.Unix(0, 0), func() {
 		token, err := jwt.ParseWithClaims(tokenString, &MyCustomClaims{}, func(token *jwt.Token) (interface{}, error) {
 			return []byte("AllYourBase"), nil
 		})
@@ -75,15 +77,6 @@ func ExampleParseWithClaims_customClaimsType() {
 	})
 
 	// Output: bar 15000
-}
-
-// Override time value for tests.  Restore default value after.
-func at(t time.Time, f func()) {
-	jwt.TimeFunc = func() time.Time {
-		return t
-	}
-	f()
-	jwt.TimeFunc = time.Now
 }
 
 // An example of parsing the error types using bitfield checks
