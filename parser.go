@@ -96,6 +96,9 @@ func (p *Parser) ParseWithClaims(tokenString string, claims Claims, keyFunc Keyf
 	}
 	if key, err = keyFunc(token); err != nil {
 		// keyFunc returned an error
+		if ve, ok := err.(*ValidationError); ok {
+			return token, ve
+		}
 		return token, &ValidationError{Inner: err, Errors: ValidationErrorUnverifiable}
 	}
 
