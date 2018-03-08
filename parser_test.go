@@ -273,7 +273,7 @@ func TestParser_ParseUnverified(t *testing.T) {
 		}
 
 		if err != nil {
-			t.Errorf("[%v] Invalid token")
+			t.Errorf("[%v] Invalid token", data.name)
 		}
 
 		// Verify result matches expectation
