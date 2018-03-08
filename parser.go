@@ -7,19 +7,20 @@ import (
 	"strings"
 )
 
+// Parser holds the configs for parsing tokens.
 type Parser struct {
-	ValidMethods         []string // If populated, only these methods will be considered valid
-	UseJSONNumber        bool     // Use JSON Number format in JSON decoder
-	SkipClaimsValidation bool     // Skip claims validation during token parsing
+	ValidMethods         []string // If populated, only these methods will be considered valid.
+	UseJSONNumber        bool     // Use JSON Number format in JSON decoder.
+	SkipClaimsValidation bool     // Skip claims validation during token parsing.
 }
 
-// Parse, validate, and return a token.
-// keyFunc will receive the parsed token and should return the key for validating.
-// If everything is kosher, err will be nil
+// Parse parses, validates, and returns a token.  keyFunc will receive the
+// parsed token and should return the key for validating.
 func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	return p.ParseWithClaims(tokenString, MapClaims{}, keyFunc)
 }
 
+// ParseWithClaims parses a token.  See Parse for documetation.
 func (p *Parser) ParseWithClaims(tokenString string, claims Claims, keyFunc Keyfunc) (*Token, error) {
 	parts := strings.Split(tokenString, ".")
 	if len(parts) != 3 {
@@ -103,7 +104,7 @@ func (p *Parser) ParseWithClaims(tokenString string, claims Claims, keyFunc Keyf
 
 	// Validate Claims
 	if !p.SkipClaimsValidation {
-		if err := token.Claims.Valid(); err != nil {
+		if err = token.Claims.Valid(); err != nil {
 
 			// If the Claims Valid returned an error, check if it is a validation error,
 			// If it was another error type, create a ValidationError with a generic ClaimsInvalid flag set
