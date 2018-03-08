@@ -42,7 +42,7 @@ func (c StandardClaims) Valid() error {
 	}
 
 	if c.VerifyIssuedAt(now, false) == false {
-		vErr.Inner = fmt.Errorf("Token used before issued")
+		vErr.Inner = fmt.Errorf("token used before issued")
 		vErr.Errors |= ValidationErrorIssuedAt
 	}
 
