@@ -10,6 +10,8 @@
 
 * Added method `ParseUnverified` to allow users to split up the tasks of parsing and validation
 * HMAC signing method returns `ErrInvalidKeyType` instead of `ErrInvalidKey` where appropriate
+* Added options to `request.ParseFromRequest`, which allows for an arbitrary list of modifiers to parsing behavior. Initial set include `WithClaims` and `WithParser`. Existing usage of this function will continue to work as before.
+* Deprecated `ParseFromRequestWithClaims` to simplify API in the future.
 
 #### 3.1.0
 
