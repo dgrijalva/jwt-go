@@ -90,5 +90,5 @@ func (m *SigningMethodHMAC) Sign(signingString string, key interface{}) (string,
 		return EncodeSegment(hasher.Sum(nil)), nil
 	}
 
-	return "", ErrInvalidKey
+	return "", ErrInvalidKeyType
 }
