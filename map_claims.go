@@ -3,12 +3,24 @@ package jwt
 import (
 	"encoding/json"
 	"errors"
-	// "fmt"
+	"time"
 )
 
 // Claims type that uses the map[string]interface{} for JSON decoding
 // This is the default claims type if you don't supply one
 type MapClaims map[string]interface{}
+
+// ExpiredError allows the caller to know the delta between now and the expired time and the unvalidated claims.
+// A client system may have a bug that doesn't refresh a token in time, or there may be clock skew so this information can help you understand.
+type ExpiredError struct {
+	Now int64
+	ExpiredBy time.Duration
+	Claims MapClaims
+}
+
+func (e *ExpiredError) Error() string {
+    return "Token is expired"
+}
 
 // Compares the aud claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
@@ -72,7 +84,15 @@ func (m MapClaims) Valid() error {
 	now := TimeFunc().Unix()
 
 	if m.VerifyExpiresAt(now, false) == false {
-		vErr.Inner = errors.New("Token is expired")
+		var expiresAt int64
+		switch exp := m["exp"].(type) {
+		case float64:
+			expiresAt = int64(exp)
+		case json.Number:
+			expiresAt, _ = exp.Int64()
+		}
+		delta := time.Unix(now, 0).Sub(time.Unix(expiresAt, 0))
+		vErr.Inner = &ExpiredError{now, delta, m}
 		vErr.Errors |= ValidationErrorExpired
 	}
 
