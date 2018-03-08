@@ -6,6 +6,11 @@
 	* Changed text in some errors to match go formatting standards. If you need to switch on error type, it's best to compare directly against the variables in the library rather than comparing their text.
 	* When a token is expired, the `Inner` error value will now be of type `ExipredError`
 
+#### 3.2.0
+
+* Added method `ParseUnverified` to allow users to split up the tasks of parsing and validation
+* HMAC signing method returns `ErrInvalidKeyType` instead of `ErrInvalidKey` where appropriate
+
 #### 3.1.0
 
 * Improvements to `jwt` command line tool
