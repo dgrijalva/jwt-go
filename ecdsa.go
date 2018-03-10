@@ -82,7 +82,7 @@ func (m *SigningMethodECDSA) Verify(signingString, signature string, key interfa
 			return ErrInvalidKeyType
 		}
 	default:
-		return ErrInvalidKey
+		return ErrInvalidKeyType
 	}
 
 	if len(sig) != 2*m.KeySize {

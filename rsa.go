@@ -66,7 +66,7 @@ func (m *SigningMethodRSA) Verify(signingString, signature string, key interface
 			return ErrInvalidKeyType
 		}
 	default:
-		return ErrInvalidKey
+		return ErrInvalidKeyType
 	}
 
 	// Create hasher

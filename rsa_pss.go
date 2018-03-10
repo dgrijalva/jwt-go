@@ -91,7 +91,7 @@ func (m *SigningMethodRSAPSS) Verify(signingString, signature string, key interf
 			return ErrInvalidKeyType
 		}
 	default:
-		return ErrInvalidKey
+		return ErrInvalidKeyType
 	}
 
 	// Create hasher
