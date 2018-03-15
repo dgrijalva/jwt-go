@@ -95,10 +95,10 @@ func ParseWithClaims(tokenString string, claims Claims, keyFunc Keyfunc) (*Token
 
 // Encode JWT specific base64url encoding with padding stripped
 func EncodeSegment(seg []byte) string {
-	return base64.URLEncoding.WithPadding(base64.NoPadding).EncodeToString(seg)
+	return base64.RawURLEncoding.EncodeToString(seg)
 }
 
 // Decode JWT specific base64url encoding with padding stripped
 func DecodeSegment(seg string) ([]byte, error) {
-	return base64.URLEncoding.WithPadding(base64.NoPadding).DecodeString(seg)
+	return base64.RawURLEncoding.DecodeString(seg)
 }
