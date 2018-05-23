@@ -1,1 +1,1 @@
-module "github.com/dgrijalva/jwt-go"
+module github.com/dgrijalva/jwt-go/v3
