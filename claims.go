@@ -16,7 +16,7 @@ type Claims interface {
 // https://tools.ietf.org/html/rfc7519#section-4.1
 // See examples for how to use this with your own claim types
 type StandardClaims struct {
-	IatLeeway time.Duration `json:"-"`
+	IatLeeway time.Duration `json:"-"` // Added to time.Unix() before validating the IssuedAt claim.
 	Audience  string        `json:"aud,omitempty"`
 	ExpiresAt int64         `json:"exp,omitempty"`
 	Id        string        `json:"jti,omitempty"`
