@@ -6,7 +6,8 @@ import (
 )
 
 
-// Parse PEM encoded Elliptic Curve Private Key Structure
+// Pseudo decoder hack, someone should probably implement proper asn1 parsing for this stuff
+// https://tools.ietf.org/id/draft-ietf-curdle-pkix-06.html#rfc.section.7
 func ParseED25519PrivateKeyFromPEM(key []byte) (*ed25519.PrivateKey, error) {
 	var block *pem.Block
 	if block, _ = pem.Decode(key); block == nil {
@@ -17,7 +18,6 @@ func ParseED25519PrivateKeyFromPEM(key []byte) (*ed25519.PrivateKey, error) {
 	return &privKey, nil
 }
 
-// Parse PEM encoded PKCS1 or PKCS8 public key
 func ParseED25519PublicKeyFromPEM(key []byte) (*ed25519.PublicKey, error) {
 	var block *pem.Block
 	if block, _ = pem.Decode(key); block == nil {

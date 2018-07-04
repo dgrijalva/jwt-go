@@ -6,17 +6,16 @@ import (
 )
 
 var (
-	// Sadly this is missing from crypto/ED25519 compared to crypto/rsa
 	ErrED25519Verification = errors.New("golang.org/x/ed25519: verification error")
 )
 
-// Implements the ED25519 family of signing methods signing methods
+// Implements the ED25519 signing method
 // Expects *ED25519.PrivateKey for signing and *ED25519.PublicKey for verification
 type SigningMethodED25519 struct {
 	Name string
 }
 
-// Specific instances for EC256 and company
+// Specific instance for ED25519
 var (
 	ED25519 *SigningMethodED25519
 )
@@ -70,6 +69,7 @@ func (m *SigningMethodED25519) Sign(signingString string, key interface{}) (str 
 		return "", ErrInvalidKeyType
 	}
 
+	// sadly the ed25519 Sign implementation only panics in case of an error
 	defer func(){
 		if r := recover(); r != nil {
 			switch x := r.(type) {
@@ -80,6 +80,8 @@ func (m *SigningMethodED25519) Sign(signingString string, key interface{}) (str 
 			}
 		}
 	}()
+
+	// Sign the string and return the encoded result
 	sig := ed25519.Sign(*ED25519Key, []byte(signingString))
 	return EncodeSegment(sig), nil
 }
