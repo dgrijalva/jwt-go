@@ -78,7 +78,6 @@ func ExtractAudience(c *StandardClaims) []string {
 // If required is false, this method will return true if the value matches or is unset
 func (c *StandardClaims) VerifyAudience(cmp string, req bool) bool {
 	audiences := ExtractAudience(c)
-
 	return verifyAud(audiences, cmp, req)
 }
 
