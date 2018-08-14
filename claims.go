@@ -112,7 +112,7 @@ func verifyAud(auds []string, cmp string, required bool) bool {
 		return !required
 	} else {
 		for _, aud := range auds {
-			if subtle.ConstantTimeCompare([]byte(aud), []byte(cmp)) != 0 {
+			if len(aud) == len(cmp) && subtle.ConstantTimeCompare([]byte(aud), []byte(cmp)) != 0 {
 				return true
 			}
 		}

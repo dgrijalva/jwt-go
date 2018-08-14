@@ -4,10 +4,12 @@ import (
 	"testing"
 )
 
-var fixedAudienceKeyForClaims = "Aud"
+// Test StandardClaims instances with an audience value populated in a string, []string and []interface{}
+var audienceValue = "Aud"
+var unmatchedAudienceValue = audienceValue + "Test"
 var claimWithAudience = []StandardClaims{
 	{
-		fixedAudienceKeyForClaims,
+		audienceValue,
 		123123,
 		"Id",
 		12312,
@@ -16,7 +18,7 @@ var claimWithAudience = []StandardClaims{
 		"Subject",
 	},
 	{
-		[]string{fixedAudienceKeyForClaims},
+		[]string{audienceValue, unmatchedAudienceValue},
 		123123,
 		"Id",
 		12312,
@@ -25,7 +27,7 @@ var claimWithAudience = []StandardClaims{
 		"Subject",
 	},
 	{
-		[]interface{}{fixedAudienceKeyForClaims},
+		[]interface{}{audienceValue, unmatchedAudienceValue},
 		123123,
 		"Id",
 		12312,
@@ -35,6 +37,7 @@ var claimWithAudience = []StandardClaims{
 	},
 }
 
+// Test StandardClaims instances with no aduences within empty []string and []interface{} collections.
 var claimWithoutAudience = []StandardClaims{
 	{
 		[]string{},
@@ -56,10 +59,10 @@ var claimWithoutAudience = []StandardClaims{
 	},
 }
 
-func TestExtractAudience_WithAudienceValues(t *testing.T) {
+func TestExtractAudienceWithAudienceValues(t *testing.T) {
 	for _, data := range claimWithAudience {
 		var aud = ExtractAudience(&data)
-		if len(aud) == 0 || aud[0] != fixedAudienceKeyForClaims {
+		if len(aud) == 0 || aud[0] != audienceValue {
 			t.Errorf("The audience value was not extracted properly")
 		}
 	}
@@ -75,19 +78,19 @@ func TestExtractAudience_WithoutAudienceValues(t *testing.T) {
 }
 
 var audWithValues = [][]string{
-	[]string{fixedAudienceKeyForClaims},
-	[]string{"Aud1", "Aud2", fixedAudienceKeyForClaims},
+	[]string{audienceValue},
+	[]string{"Aud1", "Aud2", audienceValue},
 }
 
 var audWithLackingOriginalValue = [][]string{
 	[]string{},
-	[]string{fixedAudienceKeyForClaims + "1"},
-	[]string{"Aud1", "Aud2", fixedAudienceKeyForClaims + "1"},
+	[]string{audienceValue + "1"},
+	[]string{"Aud1", "Aud2", audienceValue + "1"},
 }
 
 func TestVerifyAud_ShouldVerifyExists(t *testing.T) {
 	for _, data := range audWithValues {
-		if !verifyAud(data, fixedAudienceKeyForClaims, true) {
+		if !verifyAud(data, audienceValue, true) {
 			t.Errorf("The audience value was not verified properly")
 		}
 	}
@@ -95,7 +98,7 @@ func TestVerifyAud_ShouldVerifyExists(t *testing.T) {
 
 func TestVerifyAud_ShouldVerifyDoesNotExist(t *testing.T) {
 	for _, data := range audWithValues {
-		if !verifyAud(data, fixedAudienceKeyForClaims, true) {
+		if !verifyAud(data, audienceValue, true) {
 			t.Errorf("The audience value was not verified properly")
 		}
 	}
