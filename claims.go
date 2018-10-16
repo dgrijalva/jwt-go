@@ -90,6 +90,18 @@ func (c *StandardClaims) VerifyNotBefore(cmp int64, req bool) bool {
 
 // ----- helpers
 
+func cutOff(ts int64) int64 {
+	digit := 0
+	for i := ts; i > 0; digit++ {
+		i /= 10
+	}
+	for digit > 10 {
+		ts /= 10
+		digit--
+	}
+	return ts
+}
+
 func verifyAud(aud string, cmp string, required bool) bool {
 	if aud == "" {
 		return !required
@@ -105,14 +117,14 @@ func verifyExp(exp int64, now int64, required bool) bool {
 	if exp == 0 {
 		return !required
 	}
-	return now <= exp
+	return now <= cutOff(exp)
 }
 
 func verifyIat(iat int64, now int64, required bool) bool {
 	if iat == 0 {
 		return !required
 	}
-	return now >= iat
+	return now >= cutOff(iat)
 }
 
 func verifyIss(iss string, cmp string, required bool) bool {
@@ -130,5 +142,5 @@ func verifyNbf(nbf int64, now int64, required bool) bool {
 	if nbf == 0 {
 		return !required
 	}
-	return now >= nbf
+	return now >= cutOff(nbf)
 }
