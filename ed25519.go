@@ -2,6 +2,7 @@ package jwt
 
 import (
 	"errors"
+
 	"golang.org/x/crypto/ed25519"
 )
 
@@ -17,13 +18,14 @@ type SigningMethodED25519 struct {
 
 // Specific instance for ED25519
 var (
-	ED25519 *SigningMethodED25519
+	SigningMethodEdDSA *SigningMethodED25519
+	ED25519            *SigningMethodED25519
 )
 
 func init() {
-	ED25519 = &SigningMethodED25519{"ED25519"}
-	RegisterSigningMethod(ED25519.Alg(), func() SigningMethod {
-		return ED25519
+	SigningMethodEdDSA = &SigningMethodED25519{"EdDSA"}
+	RegisterSigningMethod(SigningMethodEdDSA.Alg(), func() SigningMethod {
+		return SigningMethodEdDSA
 	})
 }
 
@@ -70,7 +72,7 @@ func (m *SigningMethodED25519) Sign(signingString string, key interface{}) (str 
 	}
 
 	// sadly the ed25519 Sign implementation only panics in case of an error
-	defer func(){
+	defer func() {
 		if r := recover(); r != nil {
 			switch x := r.(type) {
 			case error:
