@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/aldgate-ventures/jwt-go"
 )
 
 var rsaPSSTestData = []struct {

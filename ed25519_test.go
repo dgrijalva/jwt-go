@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/aldgate-ventures/jwt-go"
 	"golang.org/x/crypto/ed25519"
 )
 
@@ -21,7 +21,7 @@ var ed25519TestData = []struct {
 		"Basic ED25519",
 		map[string]string{"private": "test/ed25519-private.pem", "public": "test/ed25519-public.pem"},
 		"eyJhbGciOiJFRDI1NTE5IiwidHlwIjoiSldUIn0.eyJmb28iOiJiYXIifQ.ESuVzZq1cECrt9Od_gLPVG-_6uRP_8Nq-ajx6CtmlDqRJZqdejro2ilkqaQgSL-siE_3JMTUW7UwAorLaTyFCw",
-		"ED25519",
+		"EdDSA",
 		map[string]interface{}{"foo": "bar"},
 		true,
 	},
@@ -29,7 +29,7 @@ var ed25519TestData = []struct {
 		"Basic ED25519",
 		map[string]string{"private": "test/ed25519-private.pem", "public": "test/ed25519-public.pem"},
 		"eyJhbGciOiJFRDI1NTE5IiwidHlwIjoiSldUIn0.eyJmb28iOiJiYXoifQ.ESuVzZq1cECrt9Od_gLPVG-_6uRP_8Nq-ajx6CtmlDqRJZqdejro2ilkqaQgSL-siE_3JMTUW7UwAorLaTyFCw",
-		"ED25519",
+		"EdDSA",
 		map[string]interface{}{"foo": "bar"},
 		false,
 	},

@@ -3,6 +3,7 @@ package jwt
 import (
 	"encoding/asn1"
 	"encoding/pem"
+
 	"golang.org/x/crypto/ed25519"
 )
 
