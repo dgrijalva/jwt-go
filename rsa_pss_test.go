@@ -7,8 +7,10 @@ import (
 	"io/ioutil"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/dgrijalva/jwt-go/test"
 )
 
 var rsaPSSTestData = []struct {
@@ -93,4 +95,56 @@ func TestRSAPSSSign(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestRSAPSSSaltLengthCompatibility(t *testing.T) {
+	// Fails token verify, if salt length is auto.
+	ps256SaltLengthEqualsHash := &jwt.SigningMethodRSAPSS{
+		SigningMethodRSA: jwt.SigningMethodPS256.SigningMethodRSA,
+		Options: &rsa.PSSOptions{
+			SaltLength: rsa.PSSSaltLengthEqualsHash,
+		},
+	}
+
+	// Behaves as before https://github.com/dgrijalva/jwt-go/issues/285 fix.
+	ps256SaltLengthAuto := &jwt.SigningMethodRSAPSS{
+		SigningMethodRSA: jwt.SigningMethodPS256.SigningMethodRSA,
+		Options: &rsa.PSSOptions{
+			SaltLength: rsa.PSSSaltLengthAuto,
+		},
+	}
+	if !verify(jwt.SigningMethodPS256, makeToken(ps256SaltLengthEqualsHash)) {
+		t.Error("SigningMethodPS256 should accept salt length that is defined in RFC")
+	}
+	if !verify(ps256SaltLengthEqualsHash, makeToken(jwt.SigningMethodPS256)) {
+		t.Error("Sign by SigningMethodPS256 should have salt length that is defined in RFC")
+	}
+	if !verify(jwt.SigningMethodPS256, makeToken(ps256SaltLengthAuto)) {
+		t.Error("SigningMethodPS256 should accept auto salt length to be compatible with previous versions")
+	}
+	if !verify(ps256SaltLengthAuto, makeToken(jwt.SigningMethodPS256)) {
+		t.Error("Sign by SigningMethodPS256 should be accepted by previous versions")
+	}
+	if verify(ps256SaltLengthEqualsHash, makeToken(ps256SaltLengthAuto)) {
+		t.Error("Auto salt length should be not accepted, when RFC salt length is required")
+	}
+}
+
+func makeToken(method jwt.SigningMethod) string {
+	token := jwt.NewWithClaims(method, jwt.StandardClaims{
+		Issuer:   "example",
+		IssuedAt: time.Now().Unix(),
+	})
+	privateKey := test.LoadRSAPrivateKeyFromDisk("test/sample_key")
+	signed, err := token.SignedString(privateKey)
+	if err != nil {
+		panic(err)
+	}
+	return signed
+}
+
+func verify(signingMethod jwt.SigningMethod, token string) bool {
+	segments := strings.Split(token, ".")
+	err := signingMethod.Verify(strings.Join(segments[:2], "."), segments[2], test.LoadRSAPublicKeyFromDisk("test/sample_key.pub"))
+	return err == nil
 }
