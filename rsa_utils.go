@@ -8,9 +8,9 @@ import (
 )
 
 var (
-	ErrKeyMustBePEMEncoded = errors.New("Invalid Key: Key must be PEM encoded PKCS1 or PKCS8 private key")
-	ErrNotRSAPrivateKey    = errors.New("Key is not a valid RSA private key")
-	ErrNotRSAPublicKey     = errors.New("Key is not a valid RSA public key")
+	ErrKeyMustBePEMEncoded = errors.New("invalid key: key must be PEM encoded PKCS1 or PKCS8 private key")
+	ErrNotRSAPrivateKey    = errors.New("key is not a valid RSA private key")
+	ErrNotRSAPublicKey     = errors.New("key is not a valid RSA public key")
 )
 
 // Parse PEM encoded PKCS1 or PKCS8 private key
