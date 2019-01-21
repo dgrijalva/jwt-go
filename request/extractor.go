@@ -73,9 +73,9 @@ type PostExtractionFilter struct {
 }
 
 func (e *PostExtractionFilter) ExtractToken(req *http.Request) (string, error) {
-	if tok, err := e.Extractor.ExtractToken(req); tok != "" {
+	tok, err := e.Extractor.ExtractToken(req)
+	if tok != "" {
 		return e.Filter(tok)
-	} else {
-		return "", err
 	}
+	return "", err
 }
