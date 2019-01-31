@@ -104,5 +104,10 @@ func DecodeSegment(seg string) ([]byte, error) {
 		seg += strings.Repeat("=", 4-l)
 	}
 
-	return base64.URLEncoding.DecodeString(seg)
+	data, err := base64.URLEncoding.DecodeString(seg)
+	if err == nil {
+		return data, nil
+	}
+
+	return base64.RawStdEncoding.DecodeString(seg)
 }
