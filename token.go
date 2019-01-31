@@ -100,6 +100,8 @@ func EncodeSegment(seg []byte) string {
 
 // Decode JWT specific base64url encoding with padding stripped
 func DecodeSegment(seg string) ([]byte, error) {
+	origSeg := seg
+
 	if l := len(seg) % 4; l > 0 {
 		seg += strings.Repeat("=", 4-l)
 	}
@@ -109,5 +111,5 @@ func DecodeSegment(seg string) ([]byte, error) {
 		return data, nil
 	}
 
-	return base64.RawStdEncoding.DecodeString(seg)
+	return base64.RawStdEncoding.DecodeString(origSeg)
 }
