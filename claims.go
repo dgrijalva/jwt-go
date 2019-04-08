@@ -6,13 +6,16 @@ import (
 	"time"
 )
 
-// For a type to be a Claims object, it must just have a Valid method that determines
+// Claims is the interface used to hold the claims values of a token
+// For a type to be a Claims object, it must have a Valid method that determines
 // if the token is invalid for any supported reason
+// Claims are parsed and encoded using the standard library's encoding/json
+// package. Claims are passed directly to that.
 type Claims interface {
 	Valid() error
 }
 
-// Structured version of Claims Section, as referenced at
+// StandardClaims is a structured version of Claims Section, as referenced at
 // https://tools.ietf.org/html/rfc7519#section-4.1
 // See examples for how to use this with your own claim types
 type StandardClaims struct {
@@ -25,6 +28,7 @@ type StandardClaims struct {
 	Subject   string `json:"sub,omitempty"`
 }
 
+// Valid implements Valid from Claims
 // Validates time based claims "exp, iat, nbf".
 // There is no accounting for clock skew.
 // As well, if any of the above claims are not in the token, it will still
@@ -58,31 +62,31 @@ func (c StandardClaims) Valid() error {
 	return vErr
 }
 
-// Compares the aud claim against cmp.
+// VerifyAudience compares the aud claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (c *StandardClaims) VerifyAudience(cmp string, req bool) bool {
 	return verifyAud(c.Audience, cmp, req)
 }
 
-// Compares the exp claim against cmp.
+// VerifyExpiresAt compares the exp claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (c *StandardClaims) VerifyExpiresAt(cmp int64, req bool) bool {
 	return verifyExp(c.ExpiresAt, cmp, req)
 }
 
-// Compares the iat claim against cmp.
+// VerifyIssuedAt compares the iat claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (c *StandardClaims) VerifyIssuedAt(cmp int64, req bool) bool {
 	return verifyIat(c.IssuedAt, cmp, req)
 }
 
-// Compares the iss claim against cmp.
+// VerifyIssuer compares the iss claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (c *StandardClaims) VerifyIssuer(cmp string, req bool) bool {
 	return verifyIss(c.Issuer, cmp, req)
 }
 
-// Compares the nbf claim against cmp.
+// VerifyNotBefore compares the nbf claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (c *StandardClaims) VerifyNotBefore(cmp int64, req bool) bool {
 	return verifyNbf(c.NotBefore, cmp, req)
