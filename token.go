@@ -12,12 +12,6 @@ import (
 // server uses a different time zone than your tokens.
 var TimeFunc = time.Now
 
-// Keyfunc is the type passed to Parse methods to supply
-// the key for verification.  The function receives the parsed,
-// but unverified Token.  This allows you to use properties in the
-// Header of the token (such as `kid`) to identify which key to use.
-type Keyfunc func(*Token) (interface{}, error)
-
 // Token represents JWT Token.  Different fields will be used depending on whether you're
 // creating or parsing/verifying a token.
 type Token struct {
