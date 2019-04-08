@@ -100,9 +100,8 @@ func verifyAud(aud string, cmp string, required bool) bool {
 	}
 	if subtle.ConstantTimeCompare([]byte(aud), []byte(cmp)) != 0 {
 		return true
-	} else {
-		return false
 	}
+	return false
 }
 
 func verifyExp(exp int64, now int64, required bool) bool {
@@ -125,9 +124,9 @@ func verifyIss(iss string, cmp string, required bool) bool {
 	}
 	if subtle.ConstantTimeCompare([]byte(iss), []byte(cmp)) != 0 {
 		return true
-	} else {
-		return false
 	}
+	return false
+
 }
 
 func verifyNbf(nbf int64, now int64, required bool) bool {
