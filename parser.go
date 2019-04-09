@@ -60,8 +60,15 @@ func (p *Parser) ParseWithClaims(tokenString string, claims Claims, keyFunc Keyf
 
 	vErr := &ValidationError{}
 
+	// Perform validation
+	token.Signature = parts[2]
+	if err = token.Method.Verify(strings.Join(parts[0:2], "."), token.Signature, key); err != nil {
+		vErr.Inner = err
+		vErr.Errors |= ValidationErrorSignatureInvalid
+	}
+
 	// Validate Claims
-	if !p.SkipClaimsValidation {
+	if !p.SkipClaimsValidation && vErr.valid() {
 		if err := token.Claims.Valid(); err != nil {
 
 			// If the Claims Valid returned an error, check if it is a validation error,
@@ -72,13 +79,6 @@ func (p *Parser) ParseWithClaims(tokenString string, claims Claims, keyFunc Keyf
 				vErr = e
 			}
 		}
-	}
-
-	// Perform validation
-	token.Signature = parts[2]
-	if err = token.Method.Verify(strings.Join(parts[0:2], "."), token.Signature, key); err != nil {
-		vErr.Inner = err
-		vErr.Errors |= ValidationErrorSignatureInvalid
 	}
 
 	if vErr.valid() {
