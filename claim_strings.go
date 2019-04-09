@@ -9,6 +9,8 @@ import (
 // can be either a string or array of strings
 type ClaimStrings []string
 
+// ParseClaimStrings is used to produce a ClaimStrings value
+// from the various forms it may present during encoding/decodeing
 func ParseClaimStrings(value interface{}) (ClaimStrings, error) {
 	switch v := value.(type) {
 	case string:
