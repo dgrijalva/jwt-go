@@ -44,11 +44,6 @@ func (c StandardClaims) Valid() error {
 		vErr.Errors |= ValidationErrorExpired
 	}
 
-	if c.VerifyIssuedAt(now, false) == false {
-		vErr.Inner = fmt.Errorf("token used before issued")
-		vErr.Errors |= ValidationErrorIssuedAt
-	}
-
 	if c.VerifyNotBefore(now, false) == false {
 		vErr.Inner = fmt.Errorf("token is not valid yet")
 		vErr.Errors |= ValidationErrorNotValidYet
@@ -71,12 +66,6 @@ func (c *StandardClaims) VerifyAudience(cmp string, req bool) bool {
 // If required is false, this method will return true if the value matches or is unset
 func (c *StandardClaims) VerifyExpiresAt(cmp *Time, req bool) bool {
 	return verifyExp(c.ExpiresAt, cmp, req)
-}
-
-// VerifyIssuedAt compares the iat claim against cmp.
-// If required is false, this method will return true if the value matches or is unset
-func (c *StandardClaims) VerifyIssuedAt(cmp *Time, req bool) bool {
-	return verifyIat(c.IssuedAt, cmp, req)
 }
 
 // VerifyIssuer compares the iss claim against cmp.
@@ -110,13 +99,6 @@ func verifyExp(exp *Time, now *Time, required bool) bool {
 		return !required
 	}
 	return now.Before(exp.Time)
-}
-
-func verifyIat(iat *Time, now *Time, required bool) bool {
-	if iat == nil {
-		return !required
-	}
-	return iat.Before(now.Time)
 }
 
 func verifyIss(iss string, cmp string, required bool) bool {

@@ -38,19 +38,6 @@ func (m MapClaims) VerifyExpiresAt(cmp *Time, req bool) bool {
 	return req == false
 }
 
-// VerifyIssuedAt compares the iat claim against cmp.
-// If required is false, this method will return true if the value matches or is unset
-func (m MapClaims) VerifyIssuedAt(cmp *Time, req bool) bool {
-	switch iat := m["iat"].(type) {
-	case float64:
-		return verifyIat(NewTime(iat), cmp, req)
-	case json.Number:
-		v, _ := iat.Float64()
-		return verifyIat(NewTime(v), cmp, req)
-	}
-	return req == false
-}
-
 // VerifyIssuer compares the iss claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (m MapClaims) VerifyIssuer(cmp string, req bool) bool {
@@ -91,11 +78,6 @@ func (m MapClaims) Valid() error {
 		delta := now.Sub(expiresAt.Time)
 		vErr.Inner = &ExpiredError{now.Unix(), delta, m}
 		vErr.Errors |= ValidationErrorExpired
-	}
-
-	if m.VerifyIssuedAt(now, false) == false {
-		vErr.Inner = errors.New("token used before issued")
-		vErr.Errors |= ValidationErrorIssuedAt
 	}
 
 	if m.VerifyNotBefore(now, false) == false {
