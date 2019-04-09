@@ -139,7 +139,7 @@ var jwtTestData = []struct {
 		"",
 		defaultKeyFunc,
 		&jwt.StandardClaims{
-			ExpiresAt: jwt.At(time.Now().Add(time.Second * 10)),
+			ExpiresAt: jwt.At(time.Now().Add(time.Second * 10).Truncate(time.Second)),
 		},
 		true,
 		0,
