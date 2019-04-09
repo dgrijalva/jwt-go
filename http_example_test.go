@@ -151,7 +151,7 @@ func createToken(user string) (string, error) {
 		&jwt.StandardClaims{
 			// set the expire time
 			// see http://tools.ietf.org/html/draft-ietf-oauth-json-web-token-20#section-4.1.4
-			ExpiresAt: time.Now().Add(time.Minute * 1).Unix(),
+			ExpiresAt: jwt.At(time.Now().Add(time.Minute * 1)),
 		},
 		"level1",
 		CustomerInfo{user, "human"},

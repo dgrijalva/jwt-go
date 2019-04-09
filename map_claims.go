@@ -3,7 +3,6 @@ package jwt
 import (
 	"encoding/json"
 	"errors"
-	"time"
 )
 
 // Claims type that uses the map[string]interface{} for JSON decoding
@@ -18,38 +17,36 @@ func (m MapClaims) VerifyAudience(cmp string, req bool) bool {
 		return !req
 	}
 
-	switch v := aud.(type) {
-	case string:
-		return verifyAud(ClaimStrings{v}, cmp, req)
-	case []string:
-		return verifyAud(ClaimStrings(v), cmp, req)
-	default:
+	cs, err := ParseClaimStrings(aud)
+	if err != nil {
 		return false
 	}
+
+	return verifyAud(cs, cmp, req)
 }
 
 // Compares the exp claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
-func (m MapClaims) VerifyExpiresAt(cmp int64, req bool) bool {
+func (m MapClaims) VerifyExpiresAt(cmp *Time, req bool) bool {
 	switch exp := m["exp"].(type) {
 	case float64:
-		return verifyExp(int64(exp), cmp, req)
+		return verifyExp(NewTime(exp), cmp, req)
 	case json.Number:
-		v, _ := exp.Int64()
-		return verifyExp(v, cmp, req)
+		v, _ := exp.Float64()
+		return verifyExp(NewTime(v), cmp, req)
 	}
 	return req == false
 }
 
 // Compares the iat claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
-func (m MapClaims) VerifyIssuedAt(cmp int64, req bool) bool {
+func (m MapClaims) VerifyIssuedAt(cmp *Time, req bool) bool {
 	switch iat := m["iat"].(type) {
 	case float64:
-		return verifyIat(int64(iat), cmp, req)
+		return verifyIat(NewTime(iat), cmp, req)
 	case json.Number:
-		v, _ := iat.Int64()
-		return verifyIat(v, cmp, req)
+		v, _ := iat.Float64()
+		return verifyIat(NewTime(v), cmp, req)
 	}
 	return req == false
 }
@@ -63,13 +60,13 @@ func (m MapClaims) VerifyIssuer(cmp string, req bool) bool {
 
 // Compares the nbf claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
-func (m MapClaims) VerifyNotBefore(cmp int64, req bool) bool {
+func (m MapClaims) VerifyNotBefore(cmp *Time, req bool) bool {
 	switch nbf := m["nbf"].(type) {
 	case float64:
-		return verifyNbf(int64(nbf), cmp, req)
+		return verifyNbf(NewTime(nbf), cmp, req)
 	case json.Number:
-		v, _ := nbf.Int64()
-		return verifyNbf(v, cmp, req)
+		v, _ := nbf.Float64()
+		return verifyNbf(NewTime(v), cmp, req)
 	}
 	return req == false
 }
@@ -80,18 +77,19 @@ func (m MapClaims) VerifyNotBefore(cmp int64, req bool) bool {
 // be considered a valid claim.
 func (m MapClaims) Valid() error {
 	vErr := new(ValidationError)
-	now := TimeFunc().Unix()
+	now := Now()
 
 	if m.VerifyExpiresAt(now, false) == false {
-		var expiresAt int64
+		var expiresAt *Time
 		switch exp := m["exp"].(type) {
 		case float64:
-			expiresAt = int64(exp)
+			expiresAt = NewTime(exp)
 		case json.Number:
-			expiresAt, _ = exp.Int64()
+			x, _ := exp.Float64()
+			expiresAt = NewTime(x)
 		}
-		delta := time.Unix(now, 0).Sub(time.Unix(expiresAt, 0))
-		vErr.Inner = &ExpiredError{now, delta, m}
+		delta := now.Sub(expiresAt.Time)
+		vErr.Inner = &ExpiredError{now.Unix(), delta, m}
 		vErr.Errors |= ValidationErrorExpired
 	}
 

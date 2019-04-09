@@ -9,6 +9,29 @@ import (
 // can be either a string or array of strings
 type ClaimStrings []string
 
+func ParseClaimStrings(value interface{}) (ClaimStrings, error) {
+	switch v := value.(type) {
+	case string:
+		return ClaimStrings{v}, nil
+	case []string:
+		return ClaimStrings(v), nil
+	case []interface{}:
+		result := make(ClaimStrings, 0, len(v))
+		for i, vv := range v {
+			if x, ok := vv.(string); ok {
+				result = append(result, x)
+			} else {
+				return nil, &json.UnsupportedTypeError{Type: reflect.TypeOf(v[i])}
+			}
+		}
+		return result, nil
+	case nil:
+		return nil, nil
+	default:
+		return nil, &json.UnsupportedTypeError{Type: reflect.TypeOf(v)}
+	}
+}
+
 // UnmarshalJSON implements the json package's Unmarshaler interface
 func (c *ClaimStrings) UnmarshalJSON(data []byte) error {
 	var value interface{}
@@ -16,22 +39,7 @@ func (c *ClaimStrings) UnmarshalJSON(data []byte) error {
 	if err != nil {
 		return err
 	}
-	switch v := value.(type) {
-	case string:
-		*c = ClaimStrings{v}
-	case []interface{}:
-		result := make(ClaimStrings, 0, len(v))
-		for i, vv := range v {
-			if x, ok := vv.(string); ok {
-				result = append(result, x)
-			} else {
-				return &json.UnsupportedTypeError{Type: reflect.TypeOf(v[i])}
-			}
-		}
-		*c = result
-	case nil:
-	default:
-		return &json.UnsupportedTypeError{Type: reflect.TypeOf(v)}
-	}
-	return nil
+
+	*c, err = ParseClaimStrings(value)
+	return err
 }

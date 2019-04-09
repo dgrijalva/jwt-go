@@ -3,7 +3,6 @@ package jwt
 import (
 	"crypto/subtle"
 	"fmt"
-	"time"
 )
 
 // Claims is the interface used to hold the claims values of a token
@@ -20,11 +19,11 @@ type Claims interface {
 // See examples for how to use this with your own claim types
 type StandardClaims struct {
 	Audience  ClaimStrings `json:"aud,omitempty"`
-	ExpiresAt int64        `json:"exp,omitempty"`
+	ExpiresAt *Time        `json:"exp,omitempty"`
 	ID        string       `json:"jti,omitempty"`
-	IssuedAt  int64        `json:"iat,omitempty"`
+	IssuedAt  *Time        `json:"iat,omitempty"`
 	Issuer    string       `json:"iss,omitempty"`
-	NotBefore int64        `json:"nbf,omitempty"`
+	NotBefore *Time        `json:"nbf,omitempty"`
 	Subject   string       `json:"sub,omitempty"`
 }
 
@@ -35,13 +34,13 @@ type StandardClaims struct {
 // be considered a valid claim.
 func (c StandardClaims) Valid() error {
 	vErr := new(ValidationError)
-	now := TimeFunc().Unix()
+	now := Now()
 
 	// The claims below are optional, by default, so if they are set to the
 	// default value in Go, let's not fail the verification for them.
 	if c.VerifyExpiresAt(now, false) == false {
-		delta := time.Unix(now, 0).Sub(time.Unix(c.ExpiresAt, 0))
-		vErr.Inner = &ExpiredError{now, delta, c}
+		delta := now.Sub(c.ExpiresAt.Time)
+		vErr.Inner = &ExpiredError{now.Unix(), delta, c}
 		vErr.Errors |= ValidationErrorExpired
 	}
 
@@ -70,13 +69,13 @@ func (c *StandardClaims) VerifyAudience(cmp string, req bool) bool {
 
 // VerifyExpiresAt compares the exp claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
-func (c *StandardClaims) VerifyExpiresAt(cmp int64, req bool) bool {
+func (c *StandardClaims) VerifyExpiresAt(cmp *Time, req bool) bool {
 	return verifyExp(c.ExpiresAt, cmp, req)
 }
 
 // VerifyIssuedAt compares the iat claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
-func (c *StandardClaims) VerifyIssuedAt(cmp int64, req bool) bool {
+func (c *StandardClaims) VerifyIssuedAt(cmp *Time, req bool) bool {
 	return verifyIat(c.IssuedAt, cmp, req)
 }
 
@@ -88,7 +87,7 @@ func (c *StandardClaims) VerifyIssuer(cmp string, req bool) bool {
 
 // VerifyNotBefore compares the nbf claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
-func (c *StandardClaims) VerifyNotBefore(cmp int64, req bool) bool {
+func (c *StandardClaims) VerifyNotBefore(cmp *Time, req bool) bool {
 	return verifyNbf(c.NotBefore, cmp, req)
 }
 
@@ -106,18 +105,18 @@ func verifyAud(aud ClaimStrings, cmp string, required bool) bool {
 	return false
 }
 
-func verifyExp(exp int64, now int64, required bool) bool {
-	if exp == 0 {
+func verifyExp(exp *Time, now *Time, required bool) bool {
+	if exp == nil {
 		return !required
 	}
-	return now <= exp
+	return now.Before(exp.Time)
 }
 
-func verifyIat(iat int64, now int64, required bool) bool {
-	if iat == 0 {
+func verifyIat(iat *Time, now *Time, required bool) bool {
+	if iat == nil {
 		return !required
 	}
-	return now >= iat
+	return iat.Before(now.Time)
 }
 
 func verifyIss(iss string, cmp string, required bool) bool {
@@ -131,9 +130,9 @@ func verifyIss(iss string, cmp string, required bool) bool {
 
 }
 
-func verifyNbf(nbf int64, now int64, required bool) bool {
-	if nbf == 0 {
+func verifyNbf(nbf *Time, now *Time, required bool) bool {
+	if nbf == nil {
 		return !required
 	}
-	return now >= nbf
+	return nbf.Before(now.Time)
 }

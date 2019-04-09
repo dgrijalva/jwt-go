@@ -18,7 +18,7 @@ func ExampleNewWithClaims_standardClaims() {
 
 	// Create the Claims
 	claims := &jwt.StandardClaims{
-		ExpiresAt: 15000,
+		ExpiresAt: jwt.NewTime(15000),
 		Issuer:    "test",
 	}
 
@@ -42,7 +42,7 @@ func ExampleNewWithClaims_customClaimsType() {
 	claims := MyCustomClaims{
 		"bar",
 		jwt.StandardClaims{
-			ExpiresAt: 15000,
+			ExpiresAt: jwt.NewTime(15000),
 			Issuer:    "test",
 		},
 	}
@@ -70,7 +70,7 @@ func ExampleParseWithClaims_customClaimsType() {
 		})
 
 		if claims, ok := token.Claims.(*MyCustomClaims); ok && token.Valid {
-			fmt.Printf("%v %v", claims.Foo, claims.StandardClaims.ExpiresAt)
+			fmt.Printf("%v %v", claims.Foo, claims.StandardClaims.ExpiresAt.Unix())
 		} else {
 			fmt.Println(err)
 		}
