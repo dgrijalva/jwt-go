@@ -1,8 +1,28 @@
 ## `jwt-go` Version History
 
+#### 4.0.0
+
+* **Compatibility Breaking Changes**: See MIGRATION_GUIDE.md for tips on updating your code
+	* Changed text in some errors to match go formatting standards. If you need to switch on error type, it's best to compare directly against the variables in the library rather than comparing their text.
+	* When a token is expired, the `Inner` error value will now be of type `ExipredError`
+	* Dropping (official) support for go1.6 or older. Older versions dating back to 1.4 _may_ continue to work, but are not being considered or tested against.
+
+#### 3.2.0
+
+* Added method `ParseUnverified` to allow users to split up the tasks of parsing and validation
+* HMAC signing method returns `ErrInvalidKeyType` instead of `ErrInvalidKey` where appropriate
+* Added options to `request.ParseFromRequest`, which allows for an arbitrary list of modifiers to parsing behavior. Initial set include `WithClaims` and `WithParser`. Existing usage of this function will continue to work as before.
+* Deprecated `ParseFromRequestWithClaims` to simplify API in the future.
+
+#### 3.1.0
+
+* Improvements to `jwt` command line tool
+* Added `SkipClaimsValidation` option to `Parser`
+* Documentation updates
+
 #### 3.0.0
 
-* **Compatibility Breaking Changes**
+* **Compatibility Breaking Changes**: See MIGRATION_GUIDE.md for tips on updating your code
 	* Dropped support for `[]byte` keys when using RSA signing methods.  This convenience feature could contribute to security vulnerabilities involving mismatched key types with signing methods.
 	* `ParseFromRequest` has been moved to `request` subpackage and usage has changed
 	* The `Claims` property on `Token` is now type `Claims` instead of `map[string]interface{}`.  The default value is type `MapClaims`, which is an alias to `map[string]interface{}`.  This makes it possible to use a custom type when decoding claims.
@@ -17,9 +37,16 @@
 	* Signing method registry is now thread safe
 	* Added new property to `ValidationError`, which contains the raw error returned by calls made by parse/verify (such as those returned by keyfunc or json parser)
 
-#### 2.6.0
+#### 2.7.0
 
-This will likely be the last backwards compatible release before 3.0.0.
+This will likely be the last backwards compatible release before 3.0.0, excluding essential bug fixes.
+
+* Added new option `-show` to the `jwt` command that will just output the decoded token without verifying
+* Error text for expired tokens includes how long it's been expired
+* Fixed incorrect error returned from `ParseRSAPublicKeyFromPEM`
+* Documentation updates
+
+#### 2.6.0
 
 * Exposed inner error within ValidationError
 * Fixed validation errors when using UseJSONNumber flag

@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
-	"github.com/dgrijalva/jwt-go/test"
+	"github.com/dgrijalva/jwt-go/v4"
+	"github.com/dgrijalva/jwt-go/v4/test"
 )
 
 var keyFuncError error = fmt.Errorf("error loading key")
@@ -60,7 +60,7 @@ var jwtTestData = []struct {
 		jwt.MapClaims{"foo": "bar", "exp": float64(time.Now().Unix() - 1)},
 		true,
 		0,
-		&jwt.Parser{ValidationOptions: &jwt.ValidationOptions{Leeway: 10}},
+		&jwt.Parser{ValidationOptions: &jwt.ValidationOptions{Leeway: 10 * time.Second}},
 	},
 	{
 		"basic nbf",
@@ -78,7 +78,7 @@ var jwtTestData = []struct {
 		jwt.MapClaims{"foo": "bar", "nbf": float64(time.Now().Unix() + 1)},
 		true,
 		0,
-		&jwt.Parser{ValidationOptions: &jwt.ValidationOptions{Leeway: 10}},
+		&jwt.Parser{ValidationOptions: &jwt.ValidationOptions{Leeway: 10 * time.Second}},
 	},
 	{
 		"expired and nbf",
@@ -157,7 +157,7 @@ var jwtTestData = []struct {
 		"",
 		defaultKeyFunc,
 		&jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(time.Second * 10).Unix(),
+			ExpiresAt: jwt.At(time.Now().Add(time.Second * 10).Truncate(time.Second)),
 		},
 		true,
 		0,
@@ -168,12 +168,12 @@ var jwtTestData = []struct {
 		"",
 		defaultKeyFunc,
 		&jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(-time.Second).Unix(),
-			NotBefore: time.Now().Add(time.Second).Unix(),
+			ExpiresAt: jwt.At(time.Now().Add(-time.Second).Truncate(time.Second)),
+			NotBefore: jwt.At(time.Now().Add(time.Second).Truncate(time.Second)),
 		},
 		true,
 		0,
-		&jwt.Parser{ValidationOptions: &jwt.ValidationOptions{Leeway: 10}},
+		&jwt.Parser{ValidationOptions: &jwt.ValidationOptions{Leeway: 10 * time.Second}},
 	},
 	{
 		"JSON Number - basic expired",
@@ -201,6 +201,15 @@ var jwtTestData = []struct {
 		false,
 		jwt.ValidationErrorNotValidYet | jwt.ValidationErrorExpired,
 		&jwt.Parser{UseJSONNumber: true},
+	},
+	{
+		"SkipClaimsValidation during token parsing",
+		"", // autogen
+		defaultKeyFunc,
+		jwt.MapClaims{"foo": "bar", "nbf": json.Number(fmt.Sprintf("%v", time.Now().Unix()+100))},
+		true,
+		0,
+		&jwt.Parser{UseJSONNumber: true, SkipClaimsValidation: true},
 	},
 }
 
@@ -243,7 +252,7 @@ func TestParser_Parse(t *testing.T) {
 		}
 
 		if (err == nil && !token.Valid) || (err != nil && token.Valid) {
-			t.Errorf("[%v] Inconsistent behavior between returned error and token.Valid")
+			t.Errorf("[%v] Inconsistent behavior between returned error and token.Valid", data.name)
 		}
 
 		if data.errors != 0 {
@@ -264,6 +273,46 @@ func TestParser_Parse(t *testing.T) {
 		}
 		if data.valid && token.Signature == "" {
 			t.Errorf("[%v] Signature is left unpopulated after parsing", data.name)
+		}
+	}
+}
+
+func TestParser_ParseUnverified(t *testing.T) {
+	privateKey := test.LoadRSAPrivateKeyFromDisk("test/sample_key")
+
+	// Iterate over test data set and run tests
+	for _, data := range jwtTestData {
+		// If the token string is blank, use helper function to generate string
+		if data.tokenString == "" {
+			data.tokenString = test.MakeSampleToken(data.claims, privateKey)
+		}
+
+		// Parse the token
+		var token *jwt.Token
+		var err error
+		var parser = data.parser
+		if parser == nil {
+			parser = new(jwt.Parser)
+		}
+		// Figure out correct claims type
+		switch data.claims.(type) {
+		case jwt.MapClaims:
+			token, _, err = parser.ParseUnverified(data.tokenString, jwt.MapClaims{})
+		case *jwt.StandardClaims:
+			token, _, err = parser.ParseUnverified(data.tokenString, &jwt.StandardClaims{})
+		}
+
+		if err != nil {
+			t.Errorf("[%v] Invalid token", data.name)
+		}
+
+		// Verify result matches expectation
+		if !reflect.DeepEqual(data.claims, token.Claims) {
+			t.Errorf("[%v] Claims mismatch. Expecting: %v  Got: %v", data.name, data.claims, token.Claims)
+		}
+
+		if data.valid && err != nil {
+			t.Errorf("[%v] Error while verifying token: %T:%v", data.name, err, err)
 		}
 	}
 }

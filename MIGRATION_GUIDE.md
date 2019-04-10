@@ -1,3 +1,7 @@
+## Migration Guide from v3 -> v4
+
+TODO: write this
+
 ## Migration Guide from v2 -> v3
 
 Version 3 adds several new, frequently requested features.  To do so, it introduces a few breaking changes.  We've worked to keep these as minimal as possible.  This guide explains the breaking changes and how you can quickly update your code.
@@ -56,8 +60,9 @@ This simple parsing example:
 is directly mapped to:
 
 ```go
-	if token, err := request.ParseFromRequest(tokenString, request.OAuth2Extractor, req, keyLookupFunc); err == nil {
-		fmt.Printf("Token for user %v expires %v", token.Claims["user"], token.Claims["exp"])
+	if token, err := request.ParseFromRequest(req, request.OAuth2Extractor, keyLookupFunc); err == nil {
+		claims := token.Claims.(jwt.MapClaims)
+		fmt.Printf("Token for user %v expires %v", claims["user"], claims["exp"])
 	}
 ```
 
@@ -81,7 +86,7 @@ To replace this behavior, we've added two helper methods: `ParseRSAPrivateKeyFro
 	func keyLookupFunc(*Token) (interface{}, error) {
 		// Don't forget to validate the alg is what you expect:
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
 		
 		// Look up key 

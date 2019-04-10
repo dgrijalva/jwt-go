@@ -2,9 +2,10 @@ package jwt_test
 
 import (
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
 	"io/ioutil"
 	"time"
+
+	"github.com/dgrijalva/jwt-go/v4"
 )
 
 // For HMAC signing method, the key can be any []byte. It is recommended to generate
@@ -49,8 +50,10 @@ func ExampleParse_hmac() {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// Don't forget to validate the alg is what you expect:
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
+
+		// hmacSampleSecret is a []byte containing your secret, e.g. []byte("my_secret_key")
 		return hmacSampleSecret, nil
 	})
 

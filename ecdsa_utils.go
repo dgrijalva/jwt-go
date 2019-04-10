@@ -7,12 +7,14 @@ import (
 	"errors"
 )
 
+// Errors returned by EC signing methods
 var (
-	ErrNotECPublicKey  = errors.New("Key is not a valid ECDSA public key")
-	ErrNotECPrivateKey = errors.New("Key is not a valid ECDSA private key")
+	ErrNotECPublicKey  = errors.New("key is not a valid ECDSA public key")
+	ErrNotECPrivateKey = errors.New("key is not a valid ECDSA private key")
 )
 
-// Parse PEM encoded Elliptic Curve Private Key Structure
+// ParseECPrivateKeyFromPEM is a helper function for
+// parsing a PEM encoded Elliptic Curve Private Key Structure
 func ParseECPrivateKeyFromPEM(key []byte) (*ecdsa.PrivateKey, error) {
 	var err error
 
@@ -37,7 +39,8 @@ func ParseECPrivateKeyFromPEM(key []byte) (*ecdsa.PrivateKey, error) {
 	return pkey, nil
 }
 
-// Parse PEM encoded PKCS1 or PKCS8 public key
+// ParseECPublicKeyFromPEM is a helper function for
+// parsing a PEM encoded PKCS1 or PKCS8 public key
 func ParseECPublicKeyFromPEM(key []byte) (*ecdsa.PublicKey, error) {
 	var err error
 

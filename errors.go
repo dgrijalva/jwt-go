@@ -2,6 +2,7 @@ package jwt
 
 import (
 	"errors"
+	"time"
 )
 
 // Error constants
@@ -23,11 +24,11 @@ const (
 	ValidationErrorIssuedAt      // IAT validation failed
 	ValidationErrorIssuer        // ISS validation failed
 	ValidationErrorNotValidYet   // NBF validation failed
-	ValidationErrorId            // JTI validation failed
+	ValidationErrorID            // JTI validation failed
 	ValidationErrorClaimsInvalid // Generic claims validation error
 )
 
-// Helper for constructing a ValidationError with a string error message
+// NewValidationError is a helper for constructing a ValidationError with a string error message
 func NewValidationError(errorText string, errorFlags uint32) *ValidationError {
 	return &ValidationError{
 		text:   errorText,
@@ -35,7 +36,7 @@ func NewValidationError(errorText string, errorFlags uint32) *ValidationError {
 	}
 }
 
-// The error from Parse if token is not valid
+// ValidationError is the error from Parse if token is not valid
 type ValidationError struct {
 	Inner  error  // stores the error returned by external dependencies, i.e.: KeyFunc
 	Errors uint32 // bitfield.  see ValidationError... constants
@@ -51,13 +52,21 @@ func (e ValidationError) Error() string {
 	} else {
 		return "token is invalid"
 	}
-	return e.Inner.Error()
 }
 
 // No errors
 func (e *ValidationError) valid() bool {
-	if e.Errors > 0 {
-		return false
-	}
-	return true
+	return e.Errors == 0
+}
+
+// ExpiredError allows the caller to know the delta between now and the expired time and the unvalidated claims.
+// A client system may have a bug that doesn't refresh a token in time, or there may be clock skew so this information can help you understand.
+type ExpiredError struct {
+	Now       int64
+	ExpiredBy time.Duration
+	Claims
+}
+
+func (e *ExpiredError) Error() string {
+	return "Token is expired"
 }

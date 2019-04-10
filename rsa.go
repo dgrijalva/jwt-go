@@ -6,7 +6,8 @@ import (
 	"crypto/rsa"
 )
 
-// Implements the RSA family of signing methods signing methods
+// SigningMethodRSA implements the RSA family of signing methods signing methods
+// Expects *rsa.PrivateKey for signing and *rsa.PublicKey for validation
 type SigningMethodRSA struct {
 	Name string
 	Hash crypto.Hash
@@ -39,12 +40,13 @@ func init() {
 	})
 }
 
+// Alg implements the Alg method from SigningMethod
 func (m *SigningMethodRSA) Alg() string {
 	return m.Name
 }
 
-// Implements the Verify method from SigningMethod
-// For this signing method, must be an rsa.PublicKey structure.
+// Verify implements the Verify method from SigningMethod
+// For this signing method, must be an *rsa.PublicKey structure.
 func (m *SigningMethodRSA) Verify(signingString, signature string, key interface{}) error {
 	var err error
 
@@ -72,8 +74,8 @@ func (m *SigningMethodRSA) Verify(signingString, signature string, key interface
 	return rsa.VerifyPKCS1v15(rsaKey, m.Hash, hasher.Sum(nil), sig)
 }
 
-// Implements the Sign method from SigningMethod
-// For this signing method, must be an rsa.PrivateKey structure.
+// Sign implements the Sign method from SigningMethod
+// For this signing method, must be an *rsa.PrivateKey structure.
 func (m *SigningMethodRSA) Sign(signingString string, key interface{}) (string, error) {
 	var rsaKey *rsa.PrivateKey
 	var ok bool
@@ -92,9 +94,9 @@ func (m *SigningMethodRSA) Sign(signingString string, key interface{}) (string, 
 	hasher.Write([]byte(signingString))
 
 	// Sign the string and return the encoded bytes
-	if sigBytes, err := rsa.SignPKCS1v15(rand.Reader, rsaKey, m.Hash, hasher.Sum(nil)); err == nil {
-		return EncodeSegment(sigBytes), nil
-	} else {
+	sigBytes, err := rsa.SignPKCS1v15(rand.Reader, rsaKey, m.Hash, hasher.Sum(nil))
+	if err != nil {
 		return "", err
 	}
+	return EncodeSegment(sigBytes), nil
 }
