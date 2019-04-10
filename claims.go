@@ -16,10 +16,10 @@ type Claims interface {
 	Valid(opts *ValidationOptions) error
 }
 
-// Options passed in to Claims.Valid
+// ValidationOptions passed in to Claims.Valid
 // Currently only supports Leeway (more coming soon)
 type ValidationOptions struct {
-	Leeway time.Duration // allow a bit (a minute or so) of extra time to allow for clock sku
+	Leeway time.Duration // allow a small amount of time to account for clock skew
 }
 
 // StandardClaims is a structured version of Claims Section, as referenced at
