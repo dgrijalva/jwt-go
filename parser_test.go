@@ -114,7 +114,7 @@ var jwtTestData = []struct {
 		jwt.MapClaims{"foo": "bar"},
 		false,
 		jwt.ValidationErrorSignatureInvalid,
-		&jwt.Parser{ValidMethods: []string{"HS256"}},
+		jwt.NewParser(jwt.WithValidMethods([]string{"HS256"})),
 	},
 	{
 		"valid signing method",
@@ -123,7 +123,7 @@ var jwtTestData = []struct {
 		jwt.MapClaims{"foo": "bar"},
 		true,
 		0,
-		&jwt.Parser{ValidMethods: []string{"RS256", "HS256"}},
+		jwt.NewParser(jwt.WithValidMethods([]string{"RS256", "HS256"})),
 	},
 	{
 		"JSON Number",
@@ -132,7 +132,7 @@ var jwtTestData = []struct {
 		jwt.MapClaims{"foo": json.Number("123.4")},
 		true,
 		0,
-		&jwt.Parser{UseJSONNumber: true},
+		jwt.NewParser(jwt.WithJSONNumber()),
 	},
 	{
 		"Standard Claims",
@@ -143,7 +143,7 @@ var jwtTestData = []struct {
 		},
 		true,
 		0,
-		&jwt.Parser{UseJSONNumber: true},
+		jwt.NewParser(jwt.WithJSONNumber()),
 	},
 	{
 		"JSON Number - basic expired",
@@ -152,7 +152,7 @@ var jwtTestData = []struct {
 		jwt.MapClaims{"foo": "bar", "exp": json.Number(fmt.Sprintf("%v", time.Now().Unix()-100))},
 		false,
 		jwt.ValidationErrorExpired,
-		&jwt.Parser{UseJSONNumber: true},
+		jwt.NewParser(jwt.WithJSONNumber()),
 	},
 	{
 		"JSON Number - basic nbf",
@@ -161,7 +161,7 @@ var jwtTestData = []struct {
 		jwt.MapClaims{"foo": "bar", "nbf": json.Number(fmt.Sprintf("%v", time.Now().Unix()+100))},
 		false,
 		jwt.ValidationErrorNotValidYet,
-		&jwt.Parser{UseJSONNumber: true},
+		jwt.NewParser(jwt.WithJSONNumber()),
 	},
 	{
 		"JSON Number - expired and nbf",
@@ -170,7 +170,7 @@ var jwtTestData = []struct {
 		jwt.MapClaims{"foo": "bar", "nbf": json.Number(fmt.Sprintf("%v", time.Now().Unix()+100)), "exp": json.Number(fmt.Sprintf("%v", time.Now().Unix()-100))},
 		false,
 		jwt.ValidationErrorNotValidYet | jwt.ValidationErrorExpired,
-		&jwt.Parser{UseJSONNumber: true},
+		jwt.NewParser(jwt.WithJSONNumber()),
 	},
 	{
 		"SkipClaimsValidation during token parsing",
@@ -179,7 +179,7 @@ var jwtTestData = []struct {
 		jwt.MapClaims{"foo": "bar", "nbf": json.Number(fmt.Sprintf("%v", time.Now().Unix()+100))},
 		true,
 		0,
-		&jwt.Parser{UseJSONNumber: true, SkipClaimsValidation: true},
+		jwt.NewParser(jwt.WithJSONNumber(), jwt.WithoutClaimsValidation()),
 	},
 }
 
