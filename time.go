@@ -2,7 +2,6 @@ package jwt
 
 import (
 	"encoding/json"
-	"math"
 	"reflect"
 	"time"
 )
@@ -25,7 +24,7 @@ type Time struct {
 // NewTime creates a new Time value from a float64, following
 // the JWT spec.
 func NewTime(t float64) *Time {
-	return At(time.Unix(int64(t), int64((t-math.Floor(t))*float64(time.Second))))
+	return At(time.Unix(0, int64(t*float64(time.Second))))
 }
 
 // Now returns a new Time value using the current time.
