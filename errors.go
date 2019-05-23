@@ -15,9 +15,10 @@ type errorPrinter interface {
 
 // Error constants
 var (
-	ErrInvalidKey      = errors.New("key is invalid")
-	ErrInvalidKeyType  = NewInvalidKeyTypeError("", "")
-	ErrHashUnavailable = errors.New("the requested hash function is unavailable")
+	ErrInvalidKey              = errors.New("key is invalid")
+	ErrInvalidKeyType          = NewInvalidKeyTypeError("", "")
+	ErrHashUnavailable         = errors.New("the requested hash function is unavailable")
+	ErrECDSASignatureUnmarshal = errors.New("unexpected extra bytes in ecda signature")
 )
 
 type InvalidKeyTypeError struct {
@@ -103,7 +104,6 @@ func (e *ValidationError) valid() bool {
 type ExpiredError struct {
 	Now       time.Time
 	ExpiredBy time.Duration
-	Claims
 }
 
 func (e *ExpiredError) Error() string {
