@@ -1,10 +1,5 @@
 package jwt
 
-import (
-	"encoding/json"
-	"errors"
-)
-
 // MapClaims is the Claims type that uses the map[string]interface{} for JSON decoding
 // This is the default Claims type if you don't supply one
 type MapClaims map[string]interface{}
@@ -25,19 +20,6 @@ func (m MapClaims) VerifyAudience(cmp string, req bool) bool {
 	return verifyAud(cs, cmp, req)
 }
 
-// VerifyExpiresAt compares the exp claim against cmp.
-// If required is false, this method will return true if the value matches or is unset
-func (m MapClaims) VerifyExpiresAt(cmp *Time, req bool) bool {
-	switch exp := m["exp"].(type) {
-	case float64:
-		return verifyExp(NewTime(exp), cmp, req)
-	case json.Number:
-		v, _ := exp.Float64()
-		return verifyExp(NewTime(v), cmp, req)
-	}
-	return req == false
-}
-
 // VerifyIssuer compares the iss claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (m MapClaims) VerifyIssuer(cmp string, req bool) bool {
@@ -45,43 +27,34 @@ func (m MapClaims) VerifyIssuer(cmp string, req bool) bool {
 	return verifyIss(iss, cmp, req)
 }
 
-// VerifyNotBefore compares the nbf claim against cmp.
-// If required is false, this method will return true if the value matches or is unset
-func (m MapClaims) VerifyNotBefore(cmp *Time, req bool) bool {
-	switch nbf := m["nbf"].(type) {
-	case float64:
-		return verifyNbf(NewTime(nbf), cmp, req)
-	case json.Number:
-		v, _ := nbf.Float64()
-		return verifyNbf(NewTime(v), cmp, req)
-	}
-	return req == false
-}
-
 // Valid validates time based claims "exp, iat, nbf".
 // There is no accounting for clock skew.
 // As well, if any of the above claims are not in the token, it will still
 // be considered a valid claim.
-func (m MapClaims) Valid() error {
+func (m MapClaims) Valid(h *ValidationHelper) error {
 	vErr := new(ValidationError)
-	now := Now()
 
-	if m.VerifyExpiresAt(now, false) == false {
-		var expiresAt *Time
-		switch exp := m["exp"].(type) {
-		case float64:
-			expiresAt = NewTime(exp)
-		case json.Number:
-			x, _ := exp.Float64()
-			expiresAt = NewTime(x)
-		}
-		delta := now.Sub(expiresAt.Time)
-		vErr.Inner = &ExpiredError{now.Unix(), delta, m}
+	if h == nil {
+		h = DefaultValidationHelper
+	}
+
+	exp, err := m.LoadTimeValue("exp")
+	if err != nil {
+		return err
+	}
+
+	if err = h.ValidateExpiresAt(exp); err != nil {
+		vErr.Inner = err
 		vErr.Errors |= ValidationErrorExpired
 	}
 
-	if m.VerifyNotBefore(now, false) == false {
-		vErr.Inner = errors.New("token is not valid yet")
+	nbf, err := m.LoadTimeValue("nbf")
+	if err != nil {
+		return err
+	}
+
+	if err = h.ValidateNotBefore(nbf); err != nil {
+		vErr.Inner = err
 		vErr.Errors |= ValidationErrorNotValidYet
 	}
 
@@ -90,4 +63,15 @@ func (m MapClaims) Valid() error {
 	}
 
 	return vErr
+}
+
+// LoadTimeValue extracts a *Time value from a key in m
+func (m MapClaims) LoadTimeValue(key string) (*Time, error) {
+	value, ok := m[key]
+	if !ok {
+		// No value present in map
+		return nil, nil
+	}
+
+	return ParseTime(value)
 }

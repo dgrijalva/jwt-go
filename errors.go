@@ -65,7 +65,6 @@ func (e *ValidationError) valid() bool {
 type ExpiredError struct {
 	Now       int64
 	ExpiredBy time.Duration
-	Claims
 }
 
 func (e *ExpiredError) Error() string {

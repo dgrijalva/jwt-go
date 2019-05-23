@@ -2,7 +2,6 @@ package jwt
 
 import (
 	"crypto/subtle"
-	"fmt"
 )
 
 // Claims is the interface used to hold the claims values of a token
@@ -11,7 +10,8 @@ import (
 // Claims are parsed and encoded using the standard library's encoding/json
 // package. Claims are passed directly to that.
 type Claims interface {
-	Valid() error
+	// A nil validation helper should use the default helper
+	Valid(*ValidationHelper) error
 }
 
 // StandardClaims is a structured version of Claims Section, as referenced at
@@ -32,20 +32,20 @@ type StandardClaims struct {
 // There is no accounting for clock skew.
 // As well, if any of the above claims are not in the token, it will still
 // be considered a valid claim.
-func (c StandardClaims) Valid() error {
+func (c StandardClaims) Valid(h *ValidationHelper) error {
 	vErr := new(ValidationError)
-	now := Now()
 
-	// The claims below are optional, by default, so if they are set to the
-	// default value in Go, let's not fail the verification for them.
-	if c.VerifyExpiresAt(now, false) == false {
-		delta := now.Sub(c.ExpiresAt.Time)
-		vErr.Inner = &ExpiredError{now.Unix(), delta, c}
+	if h == nil {
+		h = DefaultValidationHelper
+	}
+
+	if err := h.ValidateExpiresAt(c.ExpiresAt); err != nil {
+		vErr.Inner = err
 		vErr.Errors |= ValidationErrorExpired
 	}
 
-	if c.VerifyNotBefore(now, false) == false {
-		vErr.Inner = fmt.Errorf("token is not valid yet")
+	if err := h.ValidateNotBefore(c.NotBefore); err != nil {
+		vErr.Inner = err
 		vErr.Errors |= ValidationErrorNotValidYet
 	}
 
@@ -62,22 +62,10 @@ func (c *StandardClaims) VerifyAudience(cmp string, req bool) bool {
 	return verifyAud(c.Audience, cmp, req)
 }
 
-// VerifyExpiresAt compares the exp claim against cmp.
-// If required is false, this method will return true if the value matches or is unset
-func (c *StandardClaims) VerifyExpiresAt(cmp *Time, req bool) bool {
-	return verifyExp(c.ExpiresAt, cmp, req)
-}
-
 // VerifyIssuer compares the iss claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (c *StandardClaims) VerifyIssuer(cmp string, req bool) bool {
 	return verifyIss(c.Issuer, cmp, req)
-}
-
-// VerifyNotBefore compares the nbf claim against cmp.
-// If required is false, this method will return true if the value matches or is unset
-func (c *StandardClaims) VerifyNotBefore(cmp *Time, req bool) bool {
-	return verifyNbf(c.NotBefore, cmp, req)
 }
 
 // ----- helpers
@@ -94,13 +82,6 @@ func verifyAud(aud ClaimStrings, cmp string, required bool) bool {
 	return false
 }
 
-func verifyExp(exp *Time, now *Time, required bool) bool {
-	if exp == nil {
-		return !required
-	}
-	return now.Before(exp.Time)
-}
-
 func verifyIss(iss string, cmp string, required bool) bool {
 	if iss == "" {
 		return !required
@@ -110,11 +91,4 @@ func verifyIss(iss string, cmp string, required bool) bool {
 	}
 	return false
 
-}
-
-func verifyNbf(nbf *Time, now *Time, required bool) bool {
-	if nbf == nil {
-		return !required
-	}
-	return nbf.Before(now.Time)
 }

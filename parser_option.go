@@ -1,5 +1,7 @@
 package jwt
 
+import "time"
+
 // ParserOption implements functional options for parser behavior
 // see: https://dave.cheney.net/2014/10/17/functional-options-for-friendly-apis
 type ParserOption func(*Parser)
@@ -26,5 +28,13 @@ func WithJSONNumber() ParserOption {
 func WithoutClaimsValidation() ParserOption {
 	return func(p *Parser) {
 		p.skipClaimsValidation = true
+	}
+}
+
+// WithLeeway returns the ParserOption for specifying the
+// leeway window.
+func WithLeeway(d time.Duration) ParserOption {
+	return func(p *Parser) {
+		p.leeway = d
 	}
 }
