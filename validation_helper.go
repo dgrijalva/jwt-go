@@ -15,6 +15,14 @@ type ValidationHelper struct {
 	leeway  time.Duration
 }
 
+// NewValidationHelper creates a validation helper from a list of parser options
+// Not all parser options will impact validation
+// You are usually probably better off creating a custom parser and using GetValidationHelper
+func NewValidationHelper(options ...ParserOption) *ValidationHelper {
+	p := NewParser(options...)
+	return p.GetValidationHelper()
+}
+
 func (h *ValidationHelper) now() time.Time {
 	if h.nowFunc != nil {
 		return h.nowFunc()
