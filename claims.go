@@ -33,24 +33,18 @@ type StandardClaims struct {
 // As well, if any of the above claims are not in the token, it will still
 // be considered a valid claim.
 func (c StandardClaims) Valid(h *ValidationHelper) error {
-	vErr := new(ValidationError)
+	var vErr error
 
 	if h == nil {
 		h = DefaultValidationHelper
 	}
 
 	if err := h.ValidateExpiresAt(c.ExpiresAt); err != nil {
-		vErr.Inner = err
-		vErr.Errors |= ValidationErrorExpired
+		vErr = wrap(err, vErr)
 	}
 
 	if err := h.ValidateNotBefore(c.NotBefore); err != nil {
-		vErr.Inner = err
-		vErr.Errors |= ValidationErrorNotValidYet
-	}
-
-	if vErr.valid() {
-		return nil
+		vErr = wrap(err, vErr)
 	}
 
 	return vErr

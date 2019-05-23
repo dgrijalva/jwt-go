@@ -32,7 +32,7 @@ func (m MapClaims) VerifyIssuer(cmp string, req bool) bool {
 // As well, if any of the above claims are not in the token, it will still
 // be considered a valid claim.
 func (m MapClaims) Valid(h *ValidationHelper) error {
-	vErr := new(ValidationError)
+	var vErr error
 
 	if h == nil {
 		h = DefaultValidationHelper
@@ -44,8 +44,7 @@ func (m MapClaims) Valid(h *ValidationHelper) error {
 	}
 
 	if err = h.ValidateExpiresAt(exp); err != nil {
-		vErr.Inner = err
-		vErr.Errors |= ValidationErrorExpired
+		vErr = wrap(err, vErr)
 	}
 
 	nbf, err := m.LoadTimeValue("nbf")
@@ -54,12 +53,7 @@ func (m MapClaims) Valid(h *ValidationHelper) error {
 	}
 
 	if err = h.ValidateNotBefore(nbf); err != nil {
-		vErr.Inner = err
-		vErr.Errors |= ValidationErrorNotValidYet
-	}
-
-	if vErr.valid() {
-		return nil
+		vErr = wrap(err, vErr)
 	}
 
 	return vErr

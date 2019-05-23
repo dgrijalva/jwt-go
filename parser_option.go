@@ -37,5 +37,3 @@ func WithLeeway(d time.Duration) ParserOption {
 		p.ValidationHelper.leeway = d
 	}
 }
-	}
-}

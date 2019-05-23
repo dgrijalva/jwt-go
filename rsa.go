@@ -4,6 +4,7 @@ import (
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
+	"fmt"
 )
 
 // SigningMethodRSA implements the RSA family of signing methods signing methods
@@ -65,10 +66,10 @@ func (m *SigningMethodRSA) Verify(signingString, signature string, key interface
 	case crypto.Signer:
 		pub := k.Public()
 		if rsaKey, ok = pub.(*rsa.PublicKey); !ok {
-			return ErrInvalidKeyType
+			return &InvalidKeyError{Message: fmt.Sprintf("signer returned unexpected public key type: %T", pub)}
 		}
 	default:
-		return ErrInvalidKeyType
+		return NewInvalidKeyTypeError("*rsa.PublicKey or crypto.Signer", key)
 	}
 
 	// Create hasher
@@ -89,12 +90,12 @@ func (m *SigningMethodRSA) Sign(signingString string, key interface{}) (string, 
 	var ok bool
 
 	if signer, ok = key.(crypto.Signer); !ok {
-		return "", ErrInvalidKey
+		return "", NewInvalidKeyTypeError("*rsa.PublicKey or crypto.Signer", key)
 	}
 
 	//sanity check that the signer is an rsa signer
-	if _, ok := signer.Public().(*rsa.PublicKey); !ok {
-		return "", ErrInvalidKeyType
+	if pub, ok := signer.Public().(*rsa.PublicKey); !ok {
+		return "", &InvalidKeyError{Message: fmt.Sprintf("signer returned unexpected public key type: %T", pub)}
 	}
 
 	// Create the hasher

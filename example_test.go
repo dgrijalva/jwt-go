@@ -6,6 +6,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go/v4"
 	"github.com/dgrijalva/jwt-go/v4/test"
+	"golang.org/x/xerrors"
 )
 
 // Example (atypical) using the StandardClaims type by itself to parse a token.
@@ -88,17 +89,19 @@ func ExampleParse_errorChecking() {
 		return []byte("AllYourBase"), nil
 	})
 
+	var uErr *jwt.UnverfiableTokenError
+	var expErr *jwt.TokenExpiredError
+	var nbfErr *jwt.TokenNotValidYetError
+
+	// Use xerrors.Is to see what kind of error(s) occurred
 	if token.Valid {
 		fmt.Println("You look nice today")
-	} else if ve, ok := err.(*jwt.ValidationError); ok {
-		if ve.Errors&jwt.ValidationErrorMalformed != 0 {
-			fmt.Println("That's not even a token")
-		} else if ve.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
-			// Token is either expired or not active yet
-			fmt.Println("Timing is everything")
-		} else {
-			fmt.Println("Couldn't handle this token:", err)
-		}
+	} else if xerrors.As(err, &uErr) {
+		fmt.Println("That's not even a token")
+	} else if xerrors.As(err, &expErr) {
+		fmt.Println("Timing is everything")
+	} else if xerrors.As(err, &nbfErr) {
+		fmt.Println("Timing is everything")
 	} else {
 		fmt.Println("Couldn't handle this token:", err)
 	}

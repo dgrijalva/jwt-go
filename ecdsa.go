@@ -5,13 +5,8 @@ import (
 	"crypto/ecdsa"
 	"crypto/rand"
 	"encoding/asn1"
-	"errors"
+	"fmt"
 	"math/big"
-)
-
-// Errors returned by ecdsa signing method
-var (
-	ErrECDSAVerification = errors.New("crypto/ecdsa: verification error")
 )
 
 // SigningMethodECDSA implements the ECDSA family of signing methods signing methods
@@ -81,14 +76,14 @@ func (m *SigningMethodECDSA) Verify(signingString, signature string, key interfa
 	case crypto.Signer:
 		pub := k.Public()
 		if ecdsaKey, ok = pub.(*ecdsa.PublicKey); !ok {
-			return ErrInvalidKeyType
+			return &InvalidKeyError{Message: fmt.Sprintf("crypto.Signer returned an unexpected public key type: %T", pub)}
 		}
 	default:
-		return ErrInvalidKeyType
+		return NewInvalidKeyTypeError("*ecdsa.PublicKey or crypto.Signer", key)
 	}
 
 	if len(sig) != 2*m.KeySize {
-		return ErrECDSAVerification
+		return &UnverfiableTokenError{Message: "signature length is invalid"}
 	}
 
 	r := big.NewInt(0).SetBytes(sig[:m.KeySize])
@@ -105,7 +100,7 @@ func (m *SigningMethodECDSA) Verify(signingString, signature string, key interfa
 	if verifystatus := ecdsa.Verify(ecdsaKey, hasher.Sum(nil), r, s); verifystatus == true {
 		return nil
 	}
-	return ErrECDSAVerification
+	return new(InvalidSignatureError)
 }
 
 // Sign implements the Sign method from SigningMethod
@@ -116,12 +111,12 @@ func (m *SigningMethodECDSA) Sign(signingString string, key interface{}) (string
 	var ok bool
 
 	if signer, ok = key.(crypto.Signer); !ok {
-		return "", ErrInvalidKey
+		return "", NewInvalidKeyTypeError("*ecdsa.PrivateKey or crypto.Signer", key)
 	}
 
 	//sanity check that the signer is an ecdsa signer
 	if pub, ok = signer.Public().(*ecdsa.PublicKey); !ok {
-		return "", ErrInvalidKeyType
+		return "", &InvalidKeyError{Message: fmt.Sprintf("signer returned unexpected public key type: %T", pub)}
 	}
 
 	// Create the hasher
@@ -147,13 +142,13 @@ func (m *SigningMethodECDSA) Sign(signingString string, key interface{}) (string
 	}
 
 	if len(rest) != 0 {
-		return "", ErrECDSASignatureUnmarshal
+		return "", &UnverfiableTokenError{Message: "unexpected extra bytes in ecda signature"}
 	}
 
 	curveBits := pub.Curve.Params().BitSize
 
 	if m.CurveBits != curveBits {
-		return "", ErrInvalidKey
+		return "", &InvalidKeyError{Message: "CurveBits in public key don't match those in signing method"}
 	}
 
 	keyBytes := curveBits / 8

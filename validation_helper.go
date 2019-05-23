@@ -1,7 +1,6 @@
 package jwt
 
 import (
-	"fmt"
 	"time"
 )
 
@@ -11,8 +10,8 @@ var DefaultValidationHelper = &ValidationHelper{}
 // ValidationHelper is built by the parser and passed
 // to Claims.Value to carry parse/validation options
 type ValidationHelper struct {
-	nowFunc      func() time.Time // Override for time.Now. Mostly used for testing
-	leeway       time.Duration    // Leeway to provide when validating time values
+	nowFunc func() time.Time // Override for time.Now. Mostly used for testing
+	leeway  time.Duration    // Leeway to provide when validating time values
 }
 
 // NewValidationHelper creates a validation helper from a list of parser options
@@ -54,7 +53,7 @@ func (h *ValidationHelper) ValidateExpiresAt(exp *Time) error {
 	// Expiration has passed
 	if h.After(exp.Time) {
 		delta := h.now().Sub(exp.Time)
-		return &ExpiredError{h.now().Unix(), delta}
+		return &TokenExpiredError{At: h.now(), ExpiredBy: delta}
 	}
 
 	// Expiration has not passed
@@ -71,7 +70,8 @@ func (h *ValidationHelper) ValidateNotBefore(nbf *Time) error {
 
 	// Nbf hasn't been reached
 	if h.Before(nbf.Time) {
-		return fmt.Errorf("token is not valid yet")
+		delta := nbf.Time.Sub(h.now())
+		return &TokenNotValidYetError{At: h.now(), EarlyBy: delta}
 	}
 	// Nbf has been reached. valid.
 	return nil

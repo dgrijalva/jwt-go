@@ -51,7 +51,7 @@ func (m *SigningMethodHMAC) Verify(signingString, signature string, key interfac
 	// Verify the key is the right type
 	keyBytes, ok := key.([]byte)
 	if !ok {
-		return ErrInvalidKeyType
+		return NewInvalidKeyTypeError("[]byte", key)
 	}
 
 	// Decode signature, for comparison
@@ -81,16 +81,17 @@ func (m *SigningMethodHMAC) Verify(signingString, signature string, key interfac
 // Sign implements the Sign method from SigningMethod
 // Key must be []byte
 func (m *SigningMethodHMAC) Sign(signingString string, key interface{}) (string, error) {
-	if keyBytes, ok := key.([]byte); ok {
-		if !m.Hash.Available() {
-			return "", ErrHashUnavailable
-		}
-
-		hasher := hmac.New(m.Hash.New, keyBytes)
-		hasher.Write([]byte(signingString))
-
-		return EncodeSegment(hasher.Sum(nil)), nil
+	keyBytes, ok := key.([]byte)
+	if !ok {
+		return "", NewInvalidKeyTypeError("[]byte", key)
 	}
 
-	return "", ErrInvalidKeyType
+	if !m.Hash.Available() {
+		return "", ErrHashUnavailable
+	}
+
+	hasher := hmac.New(m.Hash.New, keyBytes)
+	hasher.Write([]byte(signingString))
+
+	return EncodeSegment(hasher.Sum(nil)), nil
 }

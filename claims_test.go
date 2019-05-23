@@ -8,6 +8,7 @@ import (
 
 	"github.com/dgrijalva/jwt-go/v4"
 	"github.com/dgrijalva/jwt-go/v4/test"
+	"golang.org/x/xerrors"
 )
 
 const (
@@ -49,25 +50,16 @@ func TestClaimValidExpired(t *testing.T) {
 			if err == nil {
 				t.Errorf("[%v] Expecting error.  Didn't get one.", name)
 			} else {
-				ve := err.(*jwt.ValidationError)
-				// compare the bitfield part of the error
-				if e := ve.Errors; e != jwt.ValidationErrorExpired {
-					t.Errorf("[%v] Errors don't match expectation.  %v != %v", name, e, jwt.ValidationErrorExpired)
-				}
-				switch vi := ve.Inner.(type) {
-				default:
-					expectedErrorStr := "token is expired by 1m40s"
-					if fmt.Sprint(ve.Inner.Error()) != expectedErrorStr {
-						t.Errorf("[%v] Errors inner text is not as expected. \"%v\" is not \"%v\"", name, ve.Inner, expectedErrorStr)
-					}
-				case *jwt.ExpiredError:
-					if vi.ExpiredBy != 100*time.Second {
-						t.Errorf("[%v] ExpiredError.ExpiredBy %v is not %v\n", name, vi.ExpiredBy, 100*time.Second)
-					}
-					if vi.Error() != "Token is expired" {
-						t.Errorf("[%v] Error message is not as expected \"%v\"\n", name, vi.Error())
-					}
+				var expErr *jwt.TokenExpiredError
 
+				if !xerrors.As(err, &expErr) {
+					t.Errorf("[%v] Expected error to unwrap as *jwt.TokenExpiredError but it didn't", name)
+					return
+				}
+
+				expectedErrorStr := "token is expired by 1m40s"
+				if expErr.Error() != expectedErrorStr {
+					t.Errorf("[%v] Error message is not as expected \"%v\" != \"%v\"", name, expErr.Error(), expectedErrorStr)
 				}
 			}
 		})
