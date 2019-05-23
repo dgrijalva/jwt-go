@@ -4,6 +4,7 @@ import (
 	"crypto"
 	"crypto/ecdsa"
 	"crypto/rand"
+	"encoding/asn1"
 	"errors"
 	"math/big"
 )
@@ -20,6 +21,11 @@ type SigningMethodECDSA struct {
 	Hash      crypto.Hash
 	KeySize   int
 	CurveBits int
+}
+
+// Mirrors the struct from crypto/ecdsa, we expect ecdsa.PrivateKey.Sign function to return this struct asn1 encoded
+type ecdsaSignature struct {
+	R, S *big.Int
 }
 
 // Specific instances for EC256 and company
@@ -67,9 +73,16 @@ func (m *SigningMethodECDSA) Verify(signingString, signature string, key interfa
 
 	// Get the key
 	var ecdsaKey *ecdsa.PublicKey
+	var ok bool
+
 	switch k := key.(type) {
 	case *ecdsa.PublicKey:
 		ecdsaKey = k
+	case crypto.Signer:
+		pub := k.Public()
+		if ecdsaKey, ok = pub.(*ecdsa.PublicKey); !ok {
+			return ErrInvalidKeyType
+		}
 	default:
 		return ErrInvalidKeyType
 	}
@@ -98,12 +111,16 @@ func (m *SigningMethodECDSA) Verify(signingString, signature string, key interfa
 // Sign implements the Sign method from SigningMethod
 // For this signing method, key must be an ecdsa.PrivateKey struct
 func (m *SigningMethodECDSA) Sign(signingString string, key interface{}) (string, error) {
-	// Get the key
-	var ecdsaKey *ecdsa.PrivateKey
-	switch k := key.(type) {
-	case *ecdsa.PrivateKey:
-		ecdsaKey = k
-	default:
+	var signer crypto.Signer
+	var pub *ecdsa.PublicKey
+	var ok bool
+
+	if signer, ok = key.(crypto.Signer); !ok {
+		return "", ErrInvalidKey
+	}
+
+	//sanity check that the signer is an ecdsa signer
+	if pub, ok = signer.Public().(*ecdsa.PublicKey); !ok {
 		return "", ErrInvalidKeyType
 	}
 
@@ -116,12 +133,24 @@ func (m *SigningMethodECDSA) Sign(signingString string, key interface{}) (string
 	hasher.Write([]byte(signingString))
 
 	// Sign the string and return r, s
-	r, s, err := ecdsa.Sign(rand.Reader, ecdsaKey, hasher.Sum(nil))
+	asn1Sig, err := signer.Sign(rand.Reader, hasher.Sum(nil), m.Hash)
 	if err != nil {
 		return "", err
 	}
 
-	curveBits := ecdsaKey.Curve.Params().BitSize
+	//the ecdsa.PrivateKey Sign function returns an asn1 encoded signature which is not what we want
+	// so we unmarshal it to get r and s to encode as described in rfc7518 section-3.4
+	var ecdsaSig ecdsaSignature
+	rest, err := asn1.Unmarshal(asn1Sig, &ecdsaSig)
+	if err != nil {
+		return "", err
+	}
+
+	if len(rest) != 0 {
+		return "", ErrECDSASignatureUnmarshal
+	}
+
+	curveBits := pub.Curve.Params().BitSize
 
 	if m.CurveBits != curveBits {
 		return "", ErrInvalidKey
@@ -132,14 +161,14 @@ func (m *SigningMethodECDSA) Sign(signingString string, key interface{}) (string
 		keyBytes++
 	}
 
-	// We serialize the outpus (r and s) into big-endian byte arrays and pad
+	// We serialize the output (r and s) into big-endian byte arrays and pad
 	// them with zeros on the left to make sure the sizes work out. Both arrays
 	// must be keyBytes long, and the output must be 2*keyBytes long.
-	rBytes := r.Bytes()
+	rBytes := ecdsaSig.R.Bytes()
 	rBytesPadded := make([]byte, keyBytes)
 	copy(rBytesPadded[keyBytes-len(rBytes):], rBytes)
 
-	sBytes := s.Bytes()
+	sBytes := ecdsaSig.S.Bytes()
 	sBytesPadded := make([]byte, keyBytes)
 	copy(sBytesPadded[keyBytes-len(sBytes):], sBytes)
 
