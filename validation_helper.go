@@ -11,16 +11,17 @@ var DefaultValidationHelper = &ValidationHelper{}
 // ValidationHelper is built by the parser and passed
 // to Claims.Value to carry parse/validation options
 type ValidationHelper struct {
-	nowFunc func() time.Time
-	leeway  time.Duration
+	nowFunc      func() time.Time // Override for time.Now. Mostly used for testing
+	leeway       time.Duration    // Leeway to provide when validating time values
 }
 
 // NewValidationHelper creates a validation helper from a list of parser options
 // Not all parser options will impact validation
-// You are usually probably better off creating a custom parser and using GetValidationHelper
+// If you already have a custom parser, you can use its ValidationHelper value
+// instead of creating a new one
 func NewValidationHelper(options ...ParserOption) *ValidationHelper {
 	p := NewParser(options...)
-	return p.GetValidationHelper()
+	return p.ValidationHelper
 }
 
 func (h *ValidationHelper) now() time.Time {

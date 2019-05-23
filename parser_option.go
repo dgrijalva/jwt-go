@@ -31,10 +31,11 @@ func WithoutClaimsValidation() ParserOption {
 	}
 }
 
-// WithLeeway returns the ParserOption for specifying the
-// leeway window.
+// WithLeeway returns the ParserOption for specifying the leeway window.
 func WithLeeway(d time.Duration) ParserOption {
 	return func(p *Parser) {
-		p.leeway = d
+		p.ValidationHelper.leeway = d
+	}
+}
 	}
 }
