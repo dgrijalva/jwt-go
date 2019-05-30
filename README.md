@@ -93,6 +93,10 @@ Without going too far down the rabbit hole, here's a description of the interact
 * OAuth defines several options for passing around authentication data. One popular method is called a "bearer token". A bearer token is simply a string that _should_ only be held by an authenticated user. Thus, simply presenting this token proves your identity. You can probably derive from here why a JWT might make a good bearer token.
 * Because bearer tokens are used for authentication, it's important they're kept secret. This is why transactions that use bearer tokens typically happen over SSL.
 
+### Troubleshooting
+
+This library uses descriptive error messages whenever possible. If you are not getting the expected result, have a look at the errors. The most common place people get stuck is providing the correct type of key to the parser. See the above section on signing methods and key types.
+
 ## More
 
 Documentation can be found [on godoc.org](http://godoc.org/github.com/dgrijalva/jwt-go).
