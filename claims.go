@@ -16,13 +16,14 @@ type Claims interface {
 // https://tools.ietf.org/html/rfc7519#section-4.1
 // See examples for how to use this with your own claim types
 type StandardClaims struct {
-	Audience  string `json:"aud,omitempty"`
-	ExpiresAt int64  `json:"exp,omitempty"`
-	Id        string `json:"jti,omitempty"`
-	IssuedAt  int64  `json:"iat,omitempty"`
-	Issuer    string `json:"iss,omitempty"`
-	NotBefore int64  `json:"nbf,omitempty"`
-	Subject   string `json:"sub,omitempty"`
+	// https://tools.ietf.org/html/rfc7519#section-4.1.3
+	Audience  interface{} `json:"aud,omitempty"`
+	ExpiresAt int64       `json:"exp,omitempty"`
+	Id        string      `json:"jti,omitempty"`
+	IssuedAt  int64       `json:"iat,omitempty"`
+	Issuer    string      `json:"iss,omitempty"`
+	NotBefore int64       `json:"nbf,omitempty"`
+	Subject   string      `json:"sub,omitempty"`
 }
 
 // Validates time based claims "exp, iat, nbf".
@@ -61,6 +62,10 @@ func (c StandardClaims) Valid() error {
 // Compares the aud claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (c *StandardClaims) VerifyAudience(cmp string, req bool) bool {
+	return verifyAud(c.Audience, []string{cmp}, req)
+}
+
+func (c *StandardClaims) VerifyMultipleAudiences(cmp []string, req bool) bool {
 	return verifyAud(c.Audience, cmp, req)
 }
 
@@ -90,15 +95,49 @@ func (c *StandardClaims) VerifyNotBefore(cmp int64, req bool) bool {
 
 // ----- helpers
 
-func verifyAud(aud string, cmp string, required bool) bool {
-	if aud == "" {
+func contains(aud []string, cmp string) bool {
+	for _, a := range aud {
+		if subtle.ConstantTimeCompare([]byte(a), []byte(cmp)) != 0 {
+			return true
+		}
+	}
+	return false
+}
+
+func verifyAud(aud interface{}, cmp []string, required bool) bool {
+
+	switch audVal := aud.(type) {
+	case []interface{}:
+		var audArray []string
+		for _, oneVal := range audVal {
+			if oneStr, ok := oneVal.(string); ok {
+				audArray = append(audArray, oneStr)
+			} else {
+				panic(fmt.Sprintf("Audience is type %T, but must be string or []string", audVal))
+			}
+		}
+		return verifyAudDeep(audArray, cmp, required)
+	case []string:
+		return verifyAudDeep(audVal, cmp, required)
+	case string:
+		return verifyAudDeep([]string{audVal}, cmp, required)
+	default:
+		panic(fmt.Sprintf("Audience is type %T, but must be string or []string", audVal))
+	}
+}
+
+func verifyAudDeep(aud []string, cmp []string, required bool) bool {
+	if len(aud) < 1 {
 		return !required
 	}
-	if subtle.ConstantTimeCompare([]byte(aud), []byte(cmp)) != 0 {
-		return true
-	} else {
-		return false
+
+	for _, c := range cmp {
+		if !contains(aud, c) {
+			return false
+		}
 	}
+
+	return true
 }
 
 func verifyExp(exp int64, now int64, required bool) bool {
