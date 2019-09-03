@@ -2,8 +2,9 @@ package jwt_test
 
 import (
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
 	"time"
+
+	"github.com/dgrijalva/jwt-go"
 )
 
 // Example (atypical) using the StandardClaims type by itself to parse a token.
@@ -22,8 +23,17 @@ func ExampleNewWithClaims_standardClaims() {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	ss, err := token.SignedString(mySigningKey)
-	fmt.Printf("%v %v", ss, err)
-	//Output: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE1MDAwLCJpc3MiOiJ0ZXN0In0.QsODzZu3lUZMVdhbO76u3Jv02iYCvEHcYVUI1kOWEU0 <nil>
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+	}
+
+	// signed string may differ depending on the order in which claims appear
+	var claimsAfterDecode jwt.StandardClaims
+	_, _ = jwt.ParseWithClaims(ss, &claimsAfterDecode, func(_ *jwt.Token) (interface{}, error) {
+		return mySigningKey, nil
+	})
+	fmt.Printf("%#v", claimsAfterDecode)
+	//Output: jwt.StandardClaims{Audience:"", ExpiresAt:15000, Id:"", IssuedAt:0, Issuer:"test", NotBefore:0, Subject:""}
 }
 
 // Example creating a token using a custom claims type.  The StandardClaim is embedded
@@ -47,8 +57,17 @@ func ExampleNewWithClaims_customClaimsType() {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	ss, err := token.SignedString(mySigningKey)
-	fmt.Printf("%v %v", ss, err)
-	//Output: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmb28iOiJiYXIiLCJleHAiOjE1MDAwLCJpc3MiOiJ0ZXN0In0.HE7fK0xOQwFEr4WDgRWj4teRPZ6i3GLwD5YCm6Pwu_c <nil>
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+	}
+
+	// signed string may differ depending on the order in which claims appear
+	var claimsAfterDecode MyCustomClaims
+	_, _ = jwt.ParseWithClaims(ss, &claimsAfterDecode, func(_ *jwt.Token) (interface{}, error) {
+		return mySigningKey, nil
+	})
+	fmt.Printf("%#v", claimsAfterDecode)
+	//Output: jwt_test.MyCustomClaims{Foo:"bar", StandardClaims:jwt.StandardClaims{Audience:"", ExpiresAt:15000, Id:"", IssuedAt:0, Issuer:"test", NotBefore:0, Subject:""}}
 }
 
 // Example creating a token using a custom claims type.  The StandardClaim is embedded

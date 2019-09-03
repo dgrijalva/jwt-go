@@ -2,9 +2,10 @@ package jwt_test
 
 import (
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
 	"io/ioutil"
 	"time"
+
+	"github.com/dgrijalva/jwt-go"
 )
 
 // For HMAC signing method, the key can be any []byte. It is recommended to generate
@@ -32,9 +33,19 @@ func ExampleNew_hmac() {
 
 	// Sign and get the complete encoded token as a string using the secret
 	tokenString, err := token.SignedString(hmacSampleSecret)
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+	}
 
-	fmt.Println(tokenString, err)
-	// Output: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmb28iOiJiYXIiLCJuYmYiOjE0NDQ0Nzg0MDB9.u1riaD1rW97opCoAuRCTy4w58Br-Zk-bh7vLiRIsrpU <nil>
+	// signed string may differ depending on the order in which claims appear
+	var claimsAfterDecode jwt.MapClaims
+	_, _ = jwt.ParseWithClaims(tokenString, &claimsAfterDecode, func(_ *jwt.Token) (interface{}, error) {
+		return hmacSampleSecret, nil
+	})
+
+	fmt.Printf("%v: %v ", "foo", claimsAfterDecode["foo"])
+	fmt.Printf("%v: %v", "nbf", claimsAfterDecode["nbf"])
+	// Output: foo: bar nbf: 1.4444784e+09
 }
 
 // Example parsing and validating a token using the HMAC signing method
@@ -51,7 +62,7 @@ func ExampleParse_hmac() {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
-		
+
 		// hmacSampleSecret is a []byte containing your secret, e.g. []byte("my_secret_key")
 		return hmacSampleSecret, nil
 	})
