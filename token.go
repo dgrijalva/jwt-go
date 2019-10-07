@@ -4,13 +4,12 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"strings"
-	"time"
 )
 
 // TimeFunc provides the current time when parsing token to validate "exp" claim (expiration time).
 // You can override it to use another time value.  This is useful for testing or if your
 // server uses a different time zone than your tokens.
-var TimeFunc = time.Now
+var TimeFunc = NewTime().Now
 
 // Parse methods use this callback function to supply
 // the key for verification.  The function receives the parsed,
@@ -27,6 +26,7 @@ type Token struct {
 	Claims    Claims                 // The second segment of the token
 	Signature string                 // The third segment of the token.  Populated when you Parse a token
 	Valid     bool                   // Is the token valid?  Populated when you Parse/Verify a token
+	ntpOffset int64
 }
 
 // Create a new Token.  Takes a signing method
