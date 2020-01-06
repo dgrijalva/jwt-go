@@ -9,9 +9,10 @@ import (
 
 // Parser is the type used to parse and validate a JWT token from string
 type Parser struct {
-	validMethods         []string // If populated, only these methods will be considered valid
-	useJSONNumber        bool     // Use JSON Number format in JSON decoder
-	skipClaimsValidation bool     // Skip claims validation during token parsing
+	validMethods         []string          // If populated, only these methods will be considered valid
+	useJSONNumber        bool              // Use JSON Number format in JSON decoder
+	skipClaimsValidation bool              // Skip claims validation during token parsing
+	unmarshaller         TokenUnmarshaller // Use this instead of encoding/json
 	*ValidationHelper
 }
 
@@ -116,6 +117,12 @@ func (p *Parser) ParseUnverified(tokenString string, claims Claims) (token *Toke
 
 	token = &Token{Raw: tokenString}
 
+	// choose unmarshaller
+	var unmarshaller = p.unmarshaller
+	if unmarshaller == nil {
+		unmarshaller = p.defaultUnmarshaller
+	}
+
 	// parse Header
 	var headerBytes []byte
 	if headerBytes, err = DecodeSegment(parts[0]); err != nil {
@@ -124,7 +131,7 @@ func (p *Parser) ParseUnverified(tokenString string, claims Claims) (token *Toke
 		}
 		return token, parts, &ValidationError{Inner: err, Errors: ValidationErrorMalformed}
 	}
-	if err = json.Unmarshal(headerBytes, &token.Header); err != nil {
+	if err = unmarshaller(HeadFieldDescriptor, headerBytes, &token.Header); err != nil {
 		return token, parts, &ValidationError{Inner: err, Errors: ValidationErrorMalformed}
 	}
 
@@ -135,15 +142,11 @@ func (p *Parser) ParseUnverified(tokenString string, claims Claims) (token *Toke
 	if claimBytes, err = DecodeSegment(parts[1]); err != nil {
 		return token, parts, &ValidationError{Inner: err, Errors: ValidationErrorMalformed}
 	}
-	dec := json.NewDecoder(bytes.NewBuffer(claimBytes))
-	if p.useJSONNumber {
-		dec.UseNumber()
-	}
 	// JSON Decode.  Special case for map type to avoid weird pointer behavior
 	if c, ok := token.Claims.(MapClaims); ok {
-		err = dec.Decode(&c)
+		err = unmarshaller(ClaimsFieldDescriptor, claimBytes, &c)
 	} else {
-		err = dec.Decode(&claims)
+		err = unmarshaller(ClaimsFieldDescriptor, claimBytes, &claims)
 	}
 	// Handle decode error
 	if err != nil {
@@ -160,4 +163,16 @@ func (p *Parser) ParseUnverified(tokenString string, claims Claims) (token *Toke
 	}
 
 	return token, parts, nil
+}
+
+func (p *Parser) defaultUnmarshaller(f FieldDescriptor, data []byte, v interface{}) error {
+	// If we don't need a special parser, use Unmarshal
+	if !p.useJSONNumber || f == HeadFieldDescriptor {
+		return json.Unmarshal(data, v)
+	}
+
+	// To enable the JSONNumber mode, we must use Decoder instead of Unmarshal
+	dec := json.NewDecoder(bytes.NewBuffer(data))
+	dec.UseNumber()
+	return dec.Decode(v)
 }
