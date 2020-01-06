@@ -3,7 +3,6 @@ package jwt_test
 import (
 	"encoding/json"
 	"fmt"
-	"reflect"
 	"testing"
 	"time"
 
@@ -45,7 +44,7 @@ func TestClaimValidExpired(t *testing.T) {
 		name := data.name
 		t.Logf("\t\tValidate the Claims with exp as %v at time %v", nowInt, expireAt)
 		test.At(time.Unix(nowInt, 0), func() {
-			err := data.claims.Valid()
+			err := data.claims.Valid(nil)
 			t.Log("\t\t\tExpect an error that includes the expired by 1m40s information")
 			if err == nil {
 				t.Errorf("[%v] Expecting error.  Didn't get one.", name)
@@ -64,9 +63,6 @@ func TestClaimValidExpired(t *testing.T) {
 				case *jwt.ExpiredError:
 					if vi.ExpiredBy != 100*time.Second {
 						t.Errorf("[%v] ExpiredError.ExpiredBy %v is not %v\n", name, vi.ExpiredBy, 100*time.Second)
-					}
-					if !reflect.DeepEqual(vi.Claims, data.claims) {
-						t.Errorf("[%v] Claims did not get set in expired error \"%v\"\n", name, vi.Error())
 					}
 					if vi.Error() != "Token is expired" {
 						t.Errorf("[%v] Error message is not as expected \"%v\"\n", name, vi.Error())

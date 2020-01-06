@@ -72,6 +72,15 @@ var jwtTestData = []struct {
 		nil,
 	},
 	{
+		"expired and nbf with leeway",
+		"", // autogen
+		defaultKeyFunc,
+		jwt.MapClaims{"foo": "bar", "nbf": float64(time.Now().Unix() + 50), "exp": float64(time.Now().Unix() - 50)},
+		true,
+		0,
+		jwt.NewParser(jwt.WithLeeway(100 * time.Second)),
+	},
+	{
 		"basic invalid",
 		"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.EhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg",
 		defaultKeyFunc,
@@ -114,7 +123,7 @@ var jwtTestData = []struct {
 		jwt.MapClaims{"foo": "bar"},
 		false,
 		jwt.ValidationErrorSignatureInvalid,
-		&jwt.Parser{ValidMethods: []string{"HS256"}},
+		jwt.NewParser(jwt.WithValidMethods([]string{"HS256"})),
 	},
 	{
 		"valid signing method",
@@ -123,7 +132,7 @@ var jwtTestData = []struct {
 		jwt.MapClaims{"foo": "bar"},
 		true,
 		0,
-		&jwt.Parser{ValidMethods: []string{"RS256", "HS256"}},
+		jwt.NewParser(jwt.WithValidMethods([]string{"RS256", "HS256"})),
 	},
 	{
 		"JSON Number",
@@ -132,7 +141,7 @@ var jwtTestData = []struct {
 		jwt.MapClaims{"foo": json.Number("123.4")},
 		true,
 		0,
-		&jwt.Parser{UseJSONNumber: true},
+		jwt.NewParser(jwt.WithJSONNumber()),
 	},
 	{
 		"Standard Claims",
@@ -143,7 +152,7 @@ var jwtTestData = []struct {
 		},
 		true,
 		0,
-		&jwt.Parser{UseJSONNumber: true},
+		jwt.NewParser(jwt.WithJSONNumber()),
 	},
 	{
 		"JSON Number - basic expired",
@@ -152,7 +161,7 @@ var jwtTestData = []struct {
 		jwt.MapClaims{"foo": "bar", "exp": json.Number(fmt.Sprintf("%v", time.Now().Unix()-100))},
 		false,
 		jwt.ValidationErrorExpired,
-		&jwt.Parser{UseJSONNumber: true},
+		jwt.NewParser(jwt.WithJSONNumber()),
 	},
 	{
 		"JSON Number - basic nbf",
@@ -161,7 +170,7 @@ var jwtTestData = []struct {
 		jwt.MapClaims{"foo": "bar", "nbf": json.Number(fmt.Sprintf("%v", time.Now().Unix()+100))},
 		false,
 		jwt.ValidationErrorNotValidYet,
-		&jwt.Parser{UseJSONNumber: true},
+		jwt.NewParser(jwt.WithJSONNumber()),
 	},
 	{
 		"JSON Number - expired and nbf",
@@ -170,7 +179,7 @@ var jwtTestData = []struct {
 		jwt.MapClaims{"foo": "bar", "nbf": json.Number(fmt.Sprintf("%v", time.Now().Unix()+100)), "exp": json.Number(fmt.Sprintf("%v", time.Now().Unix()-100))},
 		false,
 		jwt.ValidationErrorNotValidYet | jwt.ValidationErrorExpired,
-		&jwt.Parser{UseJSONNumber: true},
+		jwt.NewParser(jwt.WithJSONNumber()),
 	},
 	{
 		"SkipClaimsValidation during token parsing",
@@ -179,7 +188,79 @@ var jwtTestData = []struct {
 		jwt.MapClaims{"foo": "bar", "nbf": json.Number(fmt.Sprintf("%v", time.Now().Unix()+100))},
 		true,
 		0,
-		&jwt.Parser{UseJSONNumber: true, SkipClaimsValidation: true},
+		jwt.NewParser(jwt.WithJSONNumber(), jwt.WithoutClaimsValidation()),
+	},
+	{
+		"Audience - Required",
+		"", // autogen
+		defaultKeyFunc,
+		jwt.MapClaims{"aud": []interface{}{"foo", "bar"}},
+		false,
+		jwt.ValidationErrorAudience,
+		jwt.NewParser(),
+	},
+	{
+		"Audience - Ignored",
+		"", // autogen
+		defaultKeyFunc,
+		jwt.MapClaims{"aud": []interface{}{"foo", "bar"}},
+		true,
+		0,
+		jwt.NewParser(jwt.WithoutAudienceValidation()),
+	},
+	{
+		"Audience - Pass",
+		"", // autogen
+		defaultKeyFunc,
+		jwt.MapClaims{"aud": []interface{}{"foo", "bar"}},
+		true,
+		0,
+		jwt.NewParser(jwt.WithAudience("foo")),
+	},
+	{
+		"Audience - Fail",
+		"", // autogen
+		defaultKeyFunc,
+		jwt.MapClaims{"aud": []interface{}{"foo", "bar"}},
+		false,
+		jwt.ValidationErrorAudience,
+		jwt.NewParser(jwt.WithAudience("baz")),
+	},
+	{
+		"Issuer - Pass",
+		"", // autogen
+		defaultKeyFunc,
+		jwt.MapClaims{"iss": "foo"},
+		true,
+		0,
+		jwt.NewParser(jwt.WithIssuer("foo")),
+	},
+	{
+		"Issuer - Fail",
+		"", // autogen
+		defaultKeyFunc,
+		jwt.MapClaims{"iss": "foo"},
+		false,
+		jwt.ValidationErrorIssuer,
+		jwt.NewParser(jwt.WithIssuer("bar")),
+	},
+	{
+		"Issuer - Provided but not in claims",
+		"", // autogen
+		defaultKeyFunc,
+		jwt.MapClaims{},
+		false,
+		jwt.ValidationErrorIssuer,
+		jwt.NewParser(jwt.WithIssuer("bar")),
+	},
+	{
+		"Issuer - Ignored",
+		"", // autogen
+		defaultKeyFunc,
+		jwt.MapClaims{"iss": "foo"},
+		true,
+		0,
+		jwt.NewParser(),
 	},
 }
 

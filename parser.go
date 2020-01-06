@@ -9,9 +9,21 @@ import (
 
 // Parser is the type used to parse and validate a JWT token from string
 type Parser struct {
-	ValidMethods         []string // If populated, only these methods will be considered valid
-	UseJSONNumber        bool     // Use JSON Number format in JSON decoder
-	SkipClaimsValidation bool     // Skip claims validation during token parsing
+	validMethods         []string // If populated, only these methods will be considered valid
+	useJSONNumber        bool     // Use JSON Number format in JSON decoder
+	skipClaimsValidation bool     // Skip claims validation during token parsing
+	*ValidationHelper
+}
+
+// NewParser returns a new Parser with the specified options
+func NewParser(options ...ParserOption) *Parser {
+	p := &Parser{
+		ValidationHelper: new(ValidationHelper),
+	}
+	for _, option := range options {
+		option(p)
+	}
+	return p
 }
 
 // Parse will parse, validate, and return a token.
@@ -29,10 +41,10 @@ func (p *Parser) ParseWithClaims(tokenString string, claims Claims, keyFunc Keyf
 	}
 
 	// Verify signing method is in the required set
-	if p.ValidMethods != nil {
+	if p.validMethods != nil {
 		var signingMethodValid = false
 		var alg = token.Method.Alg()
-		for _, m := range p.ValidMethods {
+		for _, m := range p.validMethods {
 			if m == alg {
 				signingMethodValid = true
 				break
@@ -68,8 +80,8 @@ func (p *Parser) ParseWithClaims(tokenString string, claims Claims, keyFunc Keyf
 	}
 
 	// Validate Claims
-	if !p.SkipClaimsValidation && vErr.valid() {
-		if err := token.Claims.Valid(); err != nil {
+	if !p.skipClaimsValidation && vErr.valid() {
+		if err := token.Claims.Valid(p.ValidationHelper); err != nil {
 
 			// If the Claims Valid returned an error, check if it is a validation error,
 			// If it was another error type, create a ValidationError with a generic ClaimsInvalid flag set
@@ -124,7 +136,7 @@ func (p *Parser) ParseUnverified(tokenString string, claims Claims) (token *Toke
 		return token, parts, &ValidationError{Inner: err, Errors: ValidationErrorMalformed}
 	}
 	dec := json.NewDecoder(bytes.NewBuffer(claimBytes))
-	if p.UseJSONNumber {
+	if p.useJSONNumber {
 		dec.UseNumber()
 	}
 	// JSON Decode.  Special case for map type to avoid weird pointer behavior
