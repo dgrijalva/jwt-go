@@ -1,12 +1,18 @@
 package jwt
 
-// FieldDescriptor provides context to TokenMarshaller and TokenUnmarshaller
+// CodingContext provides context to TokenMarshaller and TokenUnmarshaller
+type CodingContext struct {
+	FieldDescriptor                        // Which field are we encoding/decoding?
+	Header          map[string]interface{} // The token Header, if available
+}
+
+// FieldDescriptor describes which field is being processed. Used by CodingContext
 // This is to enable the marshaller to treat the head and body differently
 type FieldDescriptor uint8
 
 // Constants describe which field is being processed by custom Marshaller
 const (
-	HeadFieldDescriptor   FieldDescriptor = 0
+	HeaderFieldDescriptor FieldDescriptor = 0
 	ClaimsFieldDescriptor FieldDescriptor = 1
 )
 
@@ -22,7 +28,7 @@ type signingOptions struct {
 // The field value will let your marshaller know which field is being processed.
 // This is to facilitate things like compression, where you wouldn't want to compress
 // the head.
-type TokenMarshaller func(field FieldDescriptor, v interface{}) ([]byte, error)
+type TokenMarshaller func(ctx CodingContext, v interface{}) ([]byte, error)
 
 // WithMarshaller returns a SigningOption that will tell the signing code to use your custom Marshaller
 func WithMarshaller(m TokenMarshaller) SigningOption {

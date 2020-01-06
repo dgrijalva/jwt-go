@@ -72,7 +72,8 @@ func (t *Token) SigningString(opts ...SigningOption) (string, error) {
 	inputParts := []interface{}{t.Header, t.Claims}
 	parts := make([]string, 2)
 	for i, v := range inputParts {
-		jsonValue, err := cfg.marshaller(FieldDescriptor(i), v)
+		ctx := CodingContext{FieldDescriptor(i), t.Header}
+		jsonValue, err := cfg.marshaller(ctx, v)
 		if err != nil {
 			return "", err
 		}
@@ -81,7 +82,7 @@ func (t *Token) SigningString(opts ...SigningOption) (string, error) {
 	return strings.Join(parts, "."), nil
 }
 
-func (t *Token) defaultMarshaller(f FieldDescriptor, v interface{}) ([]byte, error) {
+func (t *Token) defaultMarshaller(ctx CodingContext, v interface{}) ([]byte, error) {
 	return json.Marshal(v)
 }
 

@@ -64,7 +64,7 @@ func WithIssuer(iss string) ParserOption {
 // The field value will let your marshaller know which field is being processed.
 // This is to facilitate things like compression, where you wouldn't want to compress
 // the head.
-type TokenUnmarshaller func(field FieldDescriptor, data []byte, v interface{}) error
+type TokenUnmarshaller func(ctx CodingContext, data []byte, v interface{}) error
 
 // WithUnmarshaller returns the ParserOption that replaces the specified decoder
 func WithUnmarshaller(um TokenUnmarshaller) ParserOption {

@@ -131,7 +131,7 @@ func (p *Parser) ParseUnverified(tokenString string, claims Claims) (token *Toke
 		}
 		return token, parts, &ValidationError{Inner: err, Errors: ValidationErrorMalformed}
 	}
-	if err = unmarshaller(HeadFieldDescriptor, headerBytes, &token.Header); err != nil {
+	if err = unmarshaller(CodingContext{HeaderFieldDescriptor, nil}, headerBytes, &token.Header); err != nil {
 		return token, parts, &ValidationError{Inner: err, Errors: ValidationErrorMalformed}
 	}
 
@@ -143,10 +143,11 @@ func (p *Parser) ParseUnverified(tokenString string, claims Claims) (token *Toke
 		return token, parts, &ValidationError{Inner: err, Errors: ValidationErrorMalformed}
 	}
 	// JSON Decode.  Special case for map type to avoid weird pointer behavior
+	ctx := CodingContext{ClaimsFieldDescriptor, token.Header}
 	if c, ok := token.Claims.(MapClaims); ok {
-		err = unmarshaller(ClaimsFieldDescriptor, claimBytes, &c)
+		err = unmarshaller(ctx, claimBytes, &c)
 	} else {
-		err = unmarshaller(ClaimsFieldDescriptor, claimBytes, &claims)
+		err = unmarshaller(ctx, claimBytes, &claims)
 	}
 	// Handle decode error
 	if err != nil {
@@ -165,9 +166,10 @@ func (p *Parser) ParseUnverified(tokenString string, claims Claims) (token *Toke
 	return token, parts, nil
 }
 
-func (p *Parser) defaultUnmarshaller(f FieldDescriptor, data []byte, v interface{}) error {
+func (p *Parser) defaultUnmarshaller(ctx CodingContext, data []byte, v interface{}) error {
 	// If we don't need a special parser, use Unmarshal
-	if !p.useJSONNumber || f == HeadFieldDescriptor {
+	// We never use a special encoder for the header
+	if !p.useJSONNumber || ctx.FieldDescriptor == HeaderFieldDescriptor {
 		return json.Unmarshal(data, v)
 	}
 
