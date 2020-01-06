@@ -58,3 +58,13 @@ func WithIssuer(iss string) ParserOption {
 		p.ValidationHelper.issuer = &iss
 	}
 }
+
+// TokenUnmarshaller is the function signature required to supply custom decoding logic
+type TokenUnmarshaller func(field FieldDescriptor, data []byte, v interface{}) error
+
+// WithUnmarshaller returns the ParserOption that replaces the specified decoder
+func WithUnmarshaller(um TokenUnmarshaller) ParserOption {
+	return func(p *Parser) {
+		p.unmarshaller = um
+	}
+}
