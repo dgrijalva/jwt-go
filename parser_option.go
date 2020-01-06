@@ -59,7 +59,11 @@ func WithIssuer(iss string) ParserOption {
 	}
 }
 
-// TokenUnmarshaller is the function signature required to supply custom decoding logic
+// TokenUnmarshaller is the function signature required to supply custom JSON decoding logic.
+// It is the same as json.Marshal with the addition of the FieldDescriptor.
+// The field value will let your marshaller know which field is being processed.
+// This is to facilitate things like compression, where you wouldn't want to compress
+// the head.
 type TokenUnmarshaller func(field FieldDescriptor, data []byte, v interface{}) error
 
 // WithUnmarshaller returns the ParserOption that replaces the specified decoder
