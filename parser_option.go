@@ -37,5 +37,24 @@ func WithLeeway(d time.Duration) ParserOption {
 		p.ValidationHelper.leeway = d
 	}
 }
+
+// WithAudience returns the ParserOption for specifying an expected aud member value
+func WithAudience(aud string) ParserOption {
+	return func(p *Parser) {
+		p.ValidationHelper.audience = &aud
+	}
+}
+
+// WithoutAudienceValidation returns the ParserOption that specifies audience check should be skipped
+func WithoutAudienceValidation() ParserOption {
+	return func(p *Parser) {
+		p.ValidationHelper.skipAudience = true
+	}
+}
+
+// WithIssuer returns the ParserOption that specifies a value to compare against the iss claim
+func WithIssuer(iss string) ParserOption {
+	return func(p *Parser) {
+		p.ValidationHelper.issuer = &iss
 	}
 }
