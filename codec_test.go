@@ -12,9 +12,9 @@ import (
 
 func TestCustomCodec(t *testing.T) {
 	var customEncoderUsed = false
-	var encoder = func(f jwt.FieldDescriptor, v interface{}) ([]byte, error) {
+	var encoder = func(ctx jwt.CodingContext, v interface{}) ([]byte, error) {
 		customEncoderUsed = true
-		if f == jwt.HeadFieldDescriptor {
+		if ctx.FieldDescriptor == jwt.HeaderFieldDescriptor {
 			return json.Marshal(v)
 		}
 
@@ -22,9 +22,9 @@ func TestCustomCodec(t *testing.T) {
 		return []byte("abc123"), nil
 	}
 	var customDecoderUsed = false
-	var decoder = func(f jwt.FieldDescriptor, data []byte, v interface{}) error {
+	var decoder = func(ctx jwt.CodingContext, data []byte, v interface{}) error {
 		customDecoderUsed = true
-		if f == jwt.HeadFieldDescriptor {
+		if ctx.FieldDescriptor == jwt.HeaderFieldDescriptor {
 			return json.Unmarshal(data, v)
 		}
 
