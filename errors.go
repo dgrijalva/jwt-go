@@ -12,7 +12,15 @@ var (
 
 // Embeds b within a, if a is a valid wrapper. returns a
 // If a is not a valid wrapper, b is dropped
-func wrap(a, b error) error {
+// If one of the errors is nil, the other is returned
+func wrapError(a, b error) error {
+	if b == nil {
+		return a
+	}
+	if a == nil {
+		return b
+	}
+
 	type iErrorWrapper interface {
 		Wrap(error)
 		Unwrap() error

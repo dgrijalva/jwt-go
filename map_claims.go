@@ -40,7 +40,7 @@ func (m MapClaims) Valid(h *ValidationHelper) error {
 	}
 
 	if err = h.ValidateExpiresAt(exp); err != nil {
-		vErr = wrap(err, vErr)
+		vErr = wrapError(err, vErr)
 	}
 
 	nbf, err := m.LoadTimeValue("nbf")
@@ -49,14 +49,14 @@ func (m MapClaims) Valid(h *ValidationHelper) error {
 	}
 
 	if err = h.ValidateNotBefore(nbf); err != nil {
-		vErr = wrap(err, vErr)
+		vErr = wrapError(err, vErr)
 	}
 
 	// Try to parse the 'aud' claim
 	if aud, err := ParseClaimStrings(m["aud"]); err == nil && aud != nil {
 		// If it's present and well formed, validate
 		if err = h.ValidateAudience(aud); err != nil {
-			vErr = wrap(err, vErr)
+			vErr = wrapError(err, vErr)
 		}
 	} else if err != nil {
 		// If it's present and not well formed, return an error
@@ -65,7 +65,7 @@ func (m MapClaims) Valid(h *ValidationHelper) error {
 
 	iss, _ := m["iss"].(string)
 	if err = h.ValidateIssuer(iss); err != nil {
-		vErr = wrap(err, vErr)
+		vErr = wrapError(err, vErr)
 	}
 
 	return vErr

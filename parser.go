@@ -65,7 +65,7 @@ func (p *Parser) ParseWithClaims(tokenString string, claims Claims, keyFunc Keyf
 	}
 	if key, err = keyFunc(token); err != nil {
 		// keyFunc returned an error
-		return token, wrap(&UnverfiableTokenError{Message: "Keyfunc returned an error"}, err)
+		return token, wrapError(&UnverfiableTokenError{Message: "Keyfunc returned an error"}, err)
 	}
 
 	var vErr error
@@ -73,13 +73,13 @@ func (p *Parser) ParseWithClaims(tokenString string, claims Claims, keyFunc Keyf
 	// Perform validation
 	token.Signature = parts[2]
 	if err = token.Method.Verify(strings.Join(parts[0:2], "."), token.Signature, key); err != nil {
-		vErr = wrap(&InvalidSignatureError{}, err)
+		vErr = wrapError(&InvalidSignatureError{}, err)
 	}
 
 	// Validate Claims
 	if !p.skipClaimsValidation && vErr == nil {
 		if err := token.Claims.Valid(p.ValidationHelper); err != nil {
-			vErr = wrap(err, vErr)
+			vErr = wrapError(err, vErr)
 		}
 	}
 
@@ -117,10 +117,10 @@ func (p *Parser) ParseUnverified(tokenString string, claims Claims) (token *Toke
 		if strings.HasPrefix(strings.ToLower(tokenString), "bearer ") {
 			return token, parts, &MalformedTokenError{Message: "tokenstring should not contain 'bearer '"}
 		}
-		return token, parts, wrap(&MalformedTokenError{Message: "failed to decode token header"}, err)
+		return token, parts, wrapError(&MalformedTokenError{Message: "failed to decode token header"}, err)
 	}
 	if err = unmarshaller(CodingContext{HeaderFieldDescriptor, nil}, headerBytes, &token.Header); err != nil {
-		return token, parts, wrap(&MalformedTokenError{Message: "failed to unmarshal token header"}, err)
+		return token, parts, wrapError(&MalformedTokenError{Message: "failed to unmarshal token header"}, err)
 	}
 
 	// parse Claims
@@ -128,7 +128,7 @@ func (p *Parser) ParseUnverified(tokenString string, claims Claims) (token *Toke
 	token.Claims = claims
 
 	if claimBytes, err = DecodeSegment(parts[1]); err != nil {
-		return token, parts, wrap(&MalformedTokenError{Message: "failed to decode token claims"}, err)
+		return token, parts, wrapError(&MalformedTokenError{Message: "failed to decode token claims"}, err)
 	}
 	// JSON Decode.  Special case for map type to avoid weird pointer behavior
 	ctx := CodingContext{ClaimsFieldDescriptor, token.Header}
@@ -139,7 +139,7 @@ func (p *Parser) ParseUnverified(tokenString string, claims Claims) (token *Toke
 	}
 	// Handle decode error
 	if err != nil {
-		return token, parts, wrap(&MalformedTokenError{Message: "failed to unmarshal token claims"}, err)
+		return token, parts, wrapError(&MalformedTokenError{Message: "failed to unmarshal token claims"}, err)
 	}
 
 	// Lookup signature method

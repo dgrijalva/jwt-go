@@ -35,19 +35,19 @@ func (c StandardClaims) Valid(h *ValidationHelper) error {
 	}
 
 	if err := h.ValidateExpiresAt(c.ExpiresAt); err != nil {
-		vErr = wrap(err, vErr)
+		vErr = wrapError(err, vErr)
 	}
 
 	if err := h.ValidateNotBefore(c.NotBefore); err != nil {
-		vErr = wrap(err, vErr)
+		vErr = wrapError(err, vErr)
 	}
 
 	if err := h.ValidateAudience(c.Audience); err != nil {
-		vErr = wrap(err, vErr)
+		vErr = wrapError(err, vErr)
 	}
 
 	if err := h.ValidateIssuer(c.Issuer); err != nil {
-		vErr = wrap(err, vErr)
+		vErr = wrapError(err, vErr)
 	}
 
 	return vErr
