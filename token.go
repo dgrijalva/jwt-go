@@ -41,6 +41,11 @@ func NewWithClaims(method SigningMethod, claims Claims) *Token {
 }
 
 // SignedString returns the complete, signed token
+// Each signing method accepts a different type of key. See the documentation
+// for the signing method you're using to ensure you have the correct key type.
+// Examples:
+// - SigningMethodRSA ('RS256', etc) takes *rsa.PrivateKey
+// - SigningMethodHSA ('HS256', etc) takes []byte
 func (t *Token) SignedString(key interface{}, opts ...SigningOption) (string, error) {
 	var sig, sstr string
 	var err error
