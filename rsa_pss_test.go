@@ -136,7 +136,7 @@ func TestRSAPSSSaltLengthCompatibility(t *testing.T) {
 func makeToken(method jwt.SigningMethod) string {
 	token := jwt.NewWithClaims(method, jwt.StandardClaims{
 		Issuer:   "example",
-		IssuedAt: &jwt.Time{time.Now()},
+		IssuedAt: &jwt.Time{Time: time.Now()},
 	})
 	privateKey := test.LoadRSAPrivateKeyFromDisk("test/sample_key")
 	signed, err := token.SignedString(privateKey)
