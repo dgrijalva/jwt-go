@@ -61,7 +61,7 @@ func (h *ValidationHelper) ValidateExpiresAt(exp *Time) error {
 	// Expiration has passed
 	if h.After(exp.Time) {
 		delta := h.now().Sub(exp.Time)
-		return &ExpiredError{h.now().Unix(), delta}
+		return &TokenExpiredError{At: h.now(), ExpiredBy: delta}
 	}
 
 	// Expiration has not passed
@@ -78,7 +78,8 @@ func (h *ValidationHelper) ValidateNotBefore(nbf *Time) error {
 
 	// Nbf hasn't been reached
 	if h.Before(nbf.Time) {
-		return fmt.Errorf("token is not valid yet")
+		delta := nbf.Time.Sub(h.now())
+		return &TokenNotValidYetError{At: h.now(), EarlyBy: delta}
 	}
 	// Nbf has been reached. valid.
 	return nil
@@ -101,7 +102,7 @@ func (h *ValidationHelper) ValidateAudience(aud ClaimStrings) error {
 
 	// If there is an audience claim, but no value provided, fail
 	if h.audience == nil {
-		return NewValidationError("audience value was expected but not provided", ValidationErrorAudience)
+		return &InvalidAudienceError{Message: "audience value was expected but not provided"}
 	}
 
 	return h.ValidateAudienceAgainst(aud, *h.audience)
@@ -124,7 +125,7 @@ func (h *ValidationHelper) ValidateAudienceAgainst(aud ClaimStrings, compare str
 		}
 	}
 	if !match {
-		return NewValidationError(fmt.Sprintf("'%v' wasn't found in aud claim", compare), ValidationErrorAudience)
+		return &InvalidAudienceError{Message: fmt.Sprintf("'%v' wasn't found in aud claim", compare)}
 	}
 	return nil
 
@@ -146,5 +147,5 @@ func (h *ValidationHelper) ValidateIssuerAgainst(iss string, compare string) err
 		return nil
 	}
 
-	return NewValidationError("'iss' value doesn't match expectation", ValidationErrorIssuer)
+	return &InvalidIssuerError{Message: "'iss' value doesn't match expectation"}
 }

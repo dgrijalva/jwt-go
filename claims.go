@@ -28,34 +28,26 @@ type StandardClaims struct {
 // Validates "aud" if present in claims. (see: WithAudience, WithoutAudienceValidation)
 // Validates "iss" if option is provided (see: WithIssuer)
 func (c StandardClaims) Valid(h *ValidationHelper) error {
-	vErr := new(ValidationError)
+	var vErr error
 
 	if h == nil {
 		h = DefaultValidationHelper
 	}
 
 	if err := h.ValidateExpiresAt(c.ExpiresAt); err != nil {
-		vErr.Inner = err
-		vErr.Errors |= ValidationErrorExpired
+		vErr = wrapError(err, vErr)
 	}
 
 	if err := h.ValidateNotBefore(c.NotBefore); err != nil {
-		vErr.Inner = err
-		vErr.Errors |= ValidationErrorNotValidYet
+		vErr = wrapError(err, vErr)
 	}
 
 	if err := h.ValidateAudience(c.Audience); err != nil {
-		vErr.Inner = err
-		vErr.Errors |= ValidationErrorAudience
+		vErr = wrapError(err, vErr)
 	}
 
 	if err := h.ValidateIssuer(c.Issuer); err != nil {
-		vErr.Inner = err
-		vErr.Errors |= ValidationErrorIssuer
-	}
-
-	if vErr.valid() {
-		return nil
+		vErr = wrapError(err, vErr)
 	}
 
 	return vErr

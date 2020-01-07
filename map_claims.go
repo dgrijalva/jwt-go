@@ -9,7 +9,7 @@ func (m MapClaims) VerifyAudience(h *ValidationHelper, cmp string) error {
 	if aud, err := ParseClaimStrings(m["aud"]); err == nil && aud != nil {
 		return h.ValidateAudienceAgainst(aud, cmp)
 	} else if err != nil {
-		return NewValidationError("couldn't parse 'aud' value", ValidationErrorMalformed)
+		return &MalformedTokenError{Message: "couldn't parse 'aud' value"}
 	}
 	return nil
 }
@@ -18,7 +18,7 @@ func (m MapClaims) VerifyAudience(h *ValidationHelper, cmp string) error {
 func (m MapClaims) VerifyIssuer(h *ValidationHelper, cmp string) error {
 	iss, ok := m["iss"].(string)
 	if !ok {
-		return NewValidationError("'iss' expected but not present", ValidationErrorIssuer)
+		return &InvalidIssuerError{Message: "'iss' expected but not present"}
 	}
 	return h.ValidateIssuerAgainst(iss, cmp)
 }
@@ -28,7 +28,7 @@ func (m MapClaims) VerifyIssuer(h *ValidationHelper, cmp string) error {
 // Validates "aud" if present in claims. (see: WithAudience, WithoutAudienceValidation)
 // Validates "iss" if option is provided (see: WithIssuer)
 func (m MapClaims) Valid(h *ValidationHelper) error {
-	vErr := new(ValidationError)
+	var vErr error
 
 	if h == nil {
 		h = DefaultValidationHelper
@@ -40,8 +40,7 @@ func (m MapClaims) Valid(h *ValidationHelper) error {
 	}
 
 	if err = h.ValidateExpiresAt(exp); err != nil {
-		vErr.Inner = err
-		vErr.Errors |= ValidationErrorExpired
+		vErr = wrapError(err, vErr)
 	}
 
 	nbf, err := m.LoadTimeValue("nbf")
@@ -50,30 +49,23 @@ func (m MapClaims) Valid(h *ValidationHelper) error {
 	}
 
 	if err = h.ValidateNotBefore(nbf); err != nil {
-		vErr.Inner = err
-		vErr.Errors |= ValidationErrorNotValidYet
+		vErr = wrapError(err, vErr)
 	}
 
 	// Try to parse the 'aud' claim
 	if aud, err := ParseClaimStrings(m["aud"]); err == nil && aud != nil {
 		// If it's present and well formed, validate
 		if err = h.ValidateAudience(aud); err != nil {
-			vErr.Inner = err
-			vErr.Errors |= ValidationErrorAudience
+			vErr = wrapError(err, vErr)
 		}
 	} else if err != nil {
 		// If it's present and not well formed, return an error
-		return NewValidationError("couldn't parse 'aud' value", ValidationErrorMalformed)
+		return &MalformedTokenError{Message: "couldn't parse 'aud' value"}
 	}
 
 	iss, _ := m["iss"].(string)
 	if err = h.ValidateIssuer(iss); err != nil {
-		vErr.Inner = err
-		vErr.Errors |= ValidationErrorIssuer
-	}
-
-	if vErr.valid() {
-		return nil
+		vErr = wrapError(err, vErr)
 	}
 
 	return vErr

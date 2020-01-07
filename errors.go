@@ -1,72 +1,189 @@
 package jwt
 
 import (
-	"errors"
+	"fmt"
 	"time"
 )
 
 // Error constants
 var (
-	ErrInvalidKey              = errors.New("key is invalid")
-	ErrInvalidKeyType          = errors.New("key is of invalid type")
-	ErrHashUnavailable         = errors.New("the requested hash function is unavailable")
-	ErrECDSASignatureUnmarshal = errors.New("unexpected extra bytes in ecda signature")
+	ErrHashUnavailable = new(HashUnavailableError)
 )
 
-// The errors that might occur when parsing and validating a token
-const (
-	ValidationErrorMalformed        uint32 = 1 << iota // Token is malformed
-	ValidationErrorUnverifiable                        // Token could not be verified because of signing problems
-	ValidationErrorSignatureInvalid                    // Signature validation failed
-
-	// Standard Claim validation errors
-	ValidationErrorAudience      // AUD validation failed
-	ValidationErrorExpired       // EXP validation failed
-	ValidationErrorIssuedAt      // IAT validation failed
-	ValidationErrorIssuer        // ISS validation failed
-	ValidationErrorNotValidYet   // NBF validation failed
-	ValidationErrorID            // JTI validation failed
-	ValidationErrorClaimsInvalid // Generic claims validation error
-)
-
-// NewValidationError is a helper for constructing a ValidationError with a string error message
-func NewValidationError(errorText string, errorFlags uint32) *ValidationError {
-	return &ValidationError{
-		text:   errorText,
-		Errors: errorFlags,
+// Embeds b within a, if a is a valid wrapper. returns a
+// If a is not a valid wrapper, b is dropped
+// If one of the errors is nil, the other is returned
+func wrapError(a, b error) error {
+	if b == nil {
+		return a
 	}
-}
-
-// ValidationError is the error from Parse if token is not valid
-type ValidationError struct {
-	Inner  error  // stores the error returned by external dependencies, i.e.: KeyFunc
-	Errors uint32 // bitfield.  see ValidationError... constants
-	text   string // errors that do not have a valid error just have text
-}
-
-// Validation error is an error type
-func (e ValidationError) Error() string {
-	if e.Inner != nil {
-		return e.Inner.Error()
-	} else if e.text != "" {
-		return e.text
-	} else {
-		return "token is invalid"
+	if a == nil {
+		return b
 	}
+
+	type iErrorWrapper interface {
+		Wrap(error)
+	}
+	if w, ok := a.(iErrorWrapper); ok {
+		w.Wrap(b)
+	}
+	return a
 }
 
-// No errors
-func (e *ValidationError) valid() bool {
-	return e.Errors == 0
+// ErrorWrapper provides a simple, concrete helper for implementing nestable errors
+type ErrorWrapper struct{ err error }
+
+// Unwrap implements xerrors.Wrapper
+func (w ErrorWrapper) Unwrap() error {
+	return w.err
 }
 
-// ExpiredError allows the caller to know the delta between now and the expired time and the unvalidated claims.
+// Wrap stores the provided error value and returns it when Unwrap is called
+func (w ErrorWrapper) Wrap(err error) {
+	w.err = err
+}
+
+// InvalidKeyError is returned if the key is unusable for some reason other than type
+type InvalidKeyError struct {
+	Message string
+	ErrorWrapper
+}
+
+func (e *InvalidKeyError) Error() string {
+	return fmt.Sprintf("key is invalid: %v", e.Message)
+}
+
+// InvalidKeyTypeError is returned if the key is unusable because it is of an incompatible type
+type InvalidKeyTypeError struct {
+	Expected, Received string // String descriptions of expected and received types
+	ErrorWrapper
+}
+
+func (e *InvalidKeyTypeError) Error() string {
+	if e.Expected == "" && e.Received == "" {
+		return "key is of invalid type"
+	}
+	return fmt.Sprintf("key is of invalid type: expected %v, received %v", e.Expected, e.Received)
+}
+
+// NewInvalidKeyTypeError creates an InvalidKeyTypeError, automatically capturing the type
+// of received
+func NewInvalidKeyTypeError(expected string, received interface{}) error {
+	return &InvalidKeyTypeError{Expected: expected, Received: fmt.Sprintf("%T", received)}
+}
+
+type MalformedTokenError struct {
+	Message string
+	ErrorWrapper
+}
+
+func (e *MalformedTokenError) Error() string {
+	if e.Message == "" {
+		return "token is malformed"
+	}
+	return fmt.Sprintf("token is malformed: %v", e.Message)
+}
+
+type UnverfiableTokenError struct {
+	Message string
+	ErrorWrapper
+}
+
+func (e *UnverfiableTokenError) Error() string {
+	if e.Message == "" {
+		return "token is unverifiable"
+	}
+	return fmt.Sprintf("token is unverifiable: %v", e.Message)
+}
+
+type InvalidSignatureError struct {
+	Message string
+	ErrorWrapper
+}
+
+func (e *InvalidSignatureError) Error() string {
+	if e.Message == "" {
+		return "token signature is invalid"
+	}
+	return fmt.Sprintf("token signature is invalid: %v", e.Message)
+}
+
+// TokenExpiredError allows the caller to know the delta between now and the expired time and the unvalidated claims.
 // A client system may have a bug that doesn't refresh a token in time, or there may be clock skew so this information can help you understand.
-type ExpiredError struct {
-	Now       int64
-	ExpiredBy time.Duration
+type TokenExpiredError struct {
+	At           time.Time     // The time at which the exp was evaluated. Includes leeway.
+	ExpiredBy    time.Duration // How long the token had been expired at time of evaluation
+	ErrorWrapper               // Value for unwrapping
 }
 
-func (e *ExpiredError) Error() string {
-	return "Token is expired"
+func (e *TokenExpiredError) Error() string {
+	return fmt.Sprintf("token is expired by %v", e.ExpiredBy)
+}
+
+type TokenNotValidYetError struct {
+	At           time.Time     // The time at which the exp was evaluated. Includes leeway.
+	EarlyBy      time.Duration // How long the token had been expired at time of evaluation
+	ErrorWrapper               // Value for unwrapping
+}
+
+func (e *TokenNotValidYetError) Error() string {
+	return fmt.Sprintf("token is not valid yet; wait %v", e.EarlyBy)
+}
+
+type InvalidAudienceError struct {
+	Message string
+	ErrorWrapper
+}
+
+func (e *InvalidAudienceError) Error() string {
+	if e.Message == "" {
+		return "token audience is invalid"
+	}
+	return fmt.Sprintf("token audience is invalid: %v", e.Message)
+}
+
+type InvalidIssuerError struct {
+	Message string
+	ErrorWrapper
+}
+
+func (e *InvalidIssuerError) Error() string {
+	if e.Message == "" {
+		return "token issuer is invalid"
+	}
+	return fmt.Sprintf("token issuer is invalid: %v", e.Message)
+}
+
+// InvalidClaimsError is a catchall type for claims errors that don't have their own type
+type InvalidClaimsError struct {
+	Message string
+	ErrorWrapper
+}
+
+func (e *InvalidClaimsError) Error() string {
+	if e.Message == "" {
+		return "token claim is invalid"
+	}
+	return fmt.Sprintf("token claim is invalid: %v", e.Message)
+}
+
+// SigningError is a catchall type for signing errors
+type SigningError struct {
+	Message string
+	ErrorWrapper
+}
+
+func (e *SigningError) Error() string {
+	if e.Message == "" {
+		return "error encountered during signing"
+	}
+	return fmt.Sprintf("error encountered during signing: %v", e.Message)
+}
+
+type HashUnavailableError struct {
+	ErrorWrapper
+}
+
+func (e *HashUnavailableError) Error() string {
+	return "the requested hash function is unavailable"
 }
