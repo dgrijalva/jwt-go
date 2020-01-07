@@ -41,10 +41,10 @@ func NewWithClaims(method SigningMethod, claims Claims) *Token {
 }
 
 // SignedString returns the complete, signed token
-func (t *Token) SignedString(key interface{}) (string, error) {
+func (t *Token) SignedString(key interface{}, opts ...SigningOption) (string, error) {
 	var sig, sstr string
 	var err error
-	if sstr, err = t.SigningString(); err != nil {
+	if sstr, err = t.SigningString(opts...); err != nil {
 		return "", err
 	}
 	if sig, err = t.Method.Sign(sstr, key); err != nil {
@@ -57,24 +57,33 @@ func (t *Token) SignedString(key interface{}) (string, error) {
 // most expensive part of the whole deal.  Unless you
 // need this for something special, just go straight for
 // the SignedString.
-func (t *Token) SigningString() (string, error) {
-	var err error
-	parts := make([]string, 2)
-	for i := range parts {
-		var jsonValue []byte
-		if i == 0 {
-			if jsonValue, err = json.Marshal(t.Header); err != nil {
-				return "", err
-			}
-		} else {
-			if jsonValue, err = json.Marshal(t.Claims); err != nil {
-				return "", err
-			}
-		}
+func (t *Token) SigningString(opts ...SigningOption) (string, error) {
+	// Process options
+	var cfg = new(signingOptions)
+	for _, opt := range opts {
+		opt(cfg)
+	}
+	// Setup default marshaller
+	if cfg.marshaller == nil {
+		cfg.marshaller = t.defaultMarshaller
+	}
 
+	// Encode the two parts, then combine
+	inputParts := []interface{}{t.Header, t.Claims}
+	parts := make([]string, 2)
+	for i, v := range inputParts {
+		ctx := CodingContext{FieldDescriptor(i), t.Header}
+		jsonValue, err := cfg.marshaller(ctx, v)
+		if err != nil {
+			return "", err
+		}
 		parts[i] = EncodeSegment(jsonValue)
 	}
 	return strings.Join(parts, "."), nil
+}
+
+func (t *Token) defaultMarshaller(ctx CodingContext, v interface{}) ([]byte, error) {
+	return json.Marshal(v)
 }
 
 // Parse then validate, and return a token.

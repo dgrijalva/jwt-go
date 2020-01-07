@@ -1,9 +1,5 @@
 package jwt
 
-import (
-	"crypto/subtle"
-)
-
 // Claims is the interface used to hold the claims values of a token
 // For a type to be a Claims object, it must have a Valid method that determines
 // if the token is invalid for any supported reason
@@ -27,11 +23,10 @@ type StandardClaims struct {
 	Subject   string       `json:"sub,omitempty"`
 }
 
-// Valid implements Valid from Claims
-// Validates time based claims "exp, iat, nbf".
-// There is no accounting for clock skew.
-// As well, if any of the above claims are not in the token, it will still
-// be considered a valid claim.
+// Valid validates standard claims using ValidationHelper
+// Validates time based claims "exp, nbf" (see: WithLeeway)
+// Validates "aud" if present in claims. (see: WithAudience, WithoutAudienceValidation)
+// Validates "iss" if option is provided (see: WithIssuer)
 func (c StandardClaims) Valid(h *ValidationHelper) error {
 	var vErr error
 
@@ -47,42 +42,23 @@ func (c StandardClaims) Valid(h *ValidationHelper) error {
 		vErr = wrap(err, vErr)
 	}
 
+	if err := h.ValidateAudience(c.Audience); err != nil {
+		vErr = wrap(err, vErr)
+	}
+
+	if err := h.ValidateIssuer(c.Issuer); err != nil {
+		vErr = wrap(err, vErr)
+	}
+
 	return vErr
 }
 
 // VerifyAudience compares the aud claim against cmp.
-// If required is false, this method will return true if the value matches or is unset
-func (c *StandardClaims) VerifyAudience(cmp string, req bool) bool {
-	return verifyAud(c.Audience, cmp, req)
+func (c *StandardClaims) VerifyAudience(h *ValidationHelper, cmp string) error {
+	return h.ValidateAudienceAgainst(c.Audience, cmp)
 }
 
 // VerifyIssuer compares the iss claim against cmp.
-// If required is false, this method will return true if the value matches or is unset
-func (c *StandardClaims) VerifyIssuer(cmp string, req bool) bool {
-	return verifyIss(c.Issuer, cmp, req)
-}
-
-// ----- helpers
-
-func verifyAud(aud ClaimStrings, cmp string, required bool) bool {
-	if len(aud) == 0 {
-		return !required
-	}
-	for _, audStr := range aud {
-		if subtle.ConstantTimeCompare([]byte(audStr), []byte(cmp)) != 0 {
-			return true
-		}
-	}
-	return false
-}
-
-func verifyIss(iss string, cmp string, required bool) bool {
-	if iss == "" {
-		return !required
-	}
-	if subtle.ConstantTimeCompare([]byte(iss), []byte(cmp)) != 0 {
-		return true
-	}
-	return false
-
+func (c *StandardClaims) VerifyIssuer(h *ValidationHelper, cmp string) error {
+	return h.ValidateIssuerAgainst(c.Issuer, cmp)
 }

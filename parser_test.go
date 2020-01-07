@@ -191,6 +191,78 @@ var jwtTestData = []struct {
 		nil,
 		jwt.NewParser(jwt.WithJSONNumber(), jwt.WithoutClaimsValidation()),
 	},
+	{
+		"Audience - Required",
+		"", // autogen
+		defaultKeyFunc,
+		jwt.MapClaims{"aud": []interface{}{"foo", "bar"}},
+		false,
+		[]error{&jwt.InvalidAudienceError{}},
+		jwt.NewParser(),
+	},
+	{
+		"Audience - Ignored",
+		"", // autogen
+		defaultKeyFunc,
+		jwt.MapClaims{"aud": []interface{}{"foo", "bar"}},
+		true,
+		nil,
+		jwt.NewParser(jwt.WithoutAudienceValidation()),
+	},
+	{
+		"Audience - Pass",
+		"", // autogen
+		defaultKeyFunc,
+		jwt.MapClaims{"aud": []interface{}{"foo", "bar"}},
+		true,
+		nil,
+		jwt.NewParser(jwt.WithAudience("foo")),
+	},
+	{
+		"Audience - Fail",
+		"", // autogen
+		defaultKeyFunc,
+		jwt.MapClaims{"aud": []interface{}{"foo", "bar"}},
+		false,
+		[]error{&jwt.InvalidAudienceError{}},
+		jwt.NewParser(jwt.WithAudience("baz")),
+	},
+	{
+		"Issuer - Pass",
+		"", // autogen
+		defaultKeyFunc,
+		jwt.MapClaims{"iss": "foo"},
+		true,
+		nil,
+		jwt.NewParser(jwt.WithIssuer("foo")),
+	},
+	{
+		"Issuer - Fail",
+		"", // autogen
+		defaultKeyFunc,
+		jwt.MapClaims{"iss": "foo"},
+		false,
+		[]error{&jwt.InvalidIssuerError{}},
+		jwt.NewParser(jwt.WithIssuer("bar")),
+	},
+	{
+		"Issuer - Provided but not in claims",
+		"", // autogen
+		defaultKeyFunc,
+		jwt.MapClaims{},
+		false,
+		[]error{&jwt.InvalidIssuerError{}},
+		jwt.NewParser(jwt.WithIssuer("bar")),
+	},
+	{
+		"Issuer - Ignored",
+		"", // autogen
+		defaultKeyFunc,
+		jwt.MapClaims{"iss": "foo"},
+		true,
+		nil,
+		jwt.NewParser(),
+	},
 }
 
 func TestParser_Parse(t *testing.T) {

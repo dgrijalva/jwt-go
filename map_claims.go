@@ -5,32 +5,28 @@ package jwt
 type MapClaims map[string]interface{}
 
 // VerifyAudience compares the aud claim against cmp.
-// If required is false, this method will return true if the value matches or is unset
-func (m MapClaims) VerifyAudience(cmp string, req bool) bool {
-	aud, ok := m["aud"]
-	if !ok {
-		return !req
+func (m MapClaims) VerifyAudience(h *ValidationHelper, cmp string) error {
+	if aud, err := ParseClaimStrings(m["aud"]); err == nil && aud != nil {
+		return h.ValidateAudienceAgainst(aud, cmp)
+	} else if err != nil {
+		return &MalformedTokenError{Message: "couldn't parse 'aud' value"}
 	}
-
-	cs, err := ParseClaimStrings(aud)
-	if err != nil {
-		return false
-	}
-
-	return verifyAud(cs, cmp, req)
+	return nil
 }
 
 // VerifyIssuer compares the iss claim against cmp.
-// If required is false, this method will return true if the value matches or is unset
-func (m MapClaims) VerifyIssuer(cmp string, req bool) bool {
-	iss, _ := m["iss"].(string)
-	return verifyIss(iss, cmp, req)
+func (m MapClaims) VerifyIssuer(h *ValidationHelper, cmp string) error {
+	iss, ok := m["iss"].(string)
+	if !ok {
+		return &InvalidIssuerError{Message: "'iss' expected but not present"}
+	}
+	return h.ValidateIssuerAgainst(iss, cmp)
 }
 
-// Valid validates time based claims "exp, iat, nbf".
-// There is no accounting for clock skew.
-// As well, if any of the above claims are not in the token, it will still
-// be considered a valid claim.
+// Valid validates standard claims using ValidationHelper
+// Validates time based claims "exp, nbf" (see: WithLeeway)
+// Validates "aud" if present in claims. (see: WithAudience, WithoutAudienceValidation)
+// Validates "iss" if option is provided (see: WithIssuer)
 func (m MapClaims) Valid(h *ValidationHelper) error {
 	var vErr error
 
@@ -53,6 +49,22 @@ func (m MapClaims) Valid(h *ValidationHelper) error {
 	}
 
 	if err = h.ValidateNotBefore(nbf); err != nil {
+		vErr = wrap(err, vErr)
+	}
+
+	// Try to parse the 'aud' claim
+	if aud, err := ParseClaimStrings(m["aud"]); err == nil && aud != nil {
+		// If it's present and well formed, validate
+		if err = h.ValidateAudience(aud); err != nil {
+			vErr = wrap(err, vErr)
+		}
+	} else if err != nil {
+		// If it's present and not well formed, return an error
+		return &MalformedTokenError{Message: "couldn't parse 'aud' value"}
+	}
+
+	iss, _ := m["iss"].(string)
+	if err = h.ValidateIssuer(iss); err != nil {
 		vErr = wrap(err, vErr)
 	}
 

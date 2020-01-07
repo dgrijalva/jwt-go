@@ -37,3 +37,38 @@ func WithLeeway(d time.Duration) ParserOption {
 		p.ValidationHelper.leeway = d
 	}
 }
+
+// WithAudience returns the ParserOption for specifying an expected aud member value
+func WithAudience(aud string) ParserOption {
+	return func(p *Parser) {
+		p.ValidationHelper.audience = &aud
+	}
+}
+
+// WithoutAudienceValidation returns the ParserOption that specifies audience check should be skipped
+func WithoutAudienceValidation() ParserOption {
+	return func(p *Parser) {
+		p.ValidationHelper.skipAudience = true
+	}
+}
+
+// WithIssuer returns the ParserOption that specifies a value to compare against the iss claim
+func WithIssuer(iss string) ParserOption {
+	return func(p *Parser) {
+		p.ValidationHelper.issuer = &iss
+	}
+}
+
+// TokenUnmarshaller is the function signature required to supply custom JSON decoding logic.
+// It is the same as json.Marshal with the addition of the FieldDescriptor.
+// The field value will let your marshaller know which field is being processed.
+// This is to facilitate things like compression, where you wouldn't want to compress
+// the head.
+type TokenUnmarshaller func(ctx CodingContext, data []byte, v interface{}) error
+
+// WithUnmarshaller returns the ParserOption that replaces the specified decoder
+func WithUnmarshaller(um TokenUnmarshaller) ParserOption {
+	return func(p *Parser) {
+		p.unmarshaller = um
+	}
+}
