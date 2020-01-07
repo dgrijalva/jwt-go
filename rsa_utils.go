@@ -9,7 +9,7 @@ import (
 
 // Errors returned by RSA Signing Method and helpers
 var (
-	ErrKeyMustBePEMEncoded = errors.New("invalid Key: Key must be PEM encoded PKCS1 or PKCS8 private key")
+	ErrKeyMustBePEMEncoded = errors.New("invalid Key: Key must be PEM encoded PKCS1 or PKCS8 key")
 	ErrNotRSAPrivateKey    = errors.New("key is not a valid RSA private key")
 	ErrNotRSAPublicKey     = errors.New("key is not a valid RSA public key")
 )
