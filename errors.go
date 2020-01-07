@@ -23,7 +23,6 @@ func wrapError(a, b error) error {
 
 	type iErrorWrapper interface {
 		Wrap(error)
-		Unwrap() error
 	}
 	if w, ok := a.(iErrorWrapper); ok {
 		w.Wrap(b)
