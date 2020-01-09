@@ -62,6 +62,35 @@ func TestHMACVerify(t *testing.T) {
 	}
 }
 
+func TestHMACVerifyKeyRotation(t *testing.T) {
+	invalidKey1 := []byte("foo")
+	invalidKey2 := []byte("bar")
+	for _, data := range hmacTestData {
+		parts := strings.Split(data.tokenString, ".")
+
+		method := jwt.GetSigningMethod(data.alg)
+		err := method.Verify(strings.Join(parts[0:2], "."), parts[2], [][]byte{invalidKey1, hmacTestKey, invalidKey2})
+		if data.valid && err != nil {
+			t.Errorf("[%v] Error while verifying key: %v", data.name, err)
+		}
+		if !data.valid && err == nil {
+			t.Errorf("[%v] Invalid key passed validation", data.name)
+		}
+
+		if !data.valid {
+			continue
+		}
+		err = method.Verify(strings.Join(parts[0:2], "."), parts[2], [][]byte{})
+		if err == nil {
+			t.Errorf("[%v] Empty key list passed validation", data.name)
+		}
+		err = method.Verify(strings.Join(parts[0:2], "."), parts[2], [][]byte{invalidKey1, invalidKey2})
+		if err == nil {
+			t.Errorf("[%v] Key list with only invalid keys passed validation", data.name)
+		}
+	}
+}
+
 func TestHMACSign(t *testing.T) {
 	for _, data := range hmacTestData {
 		if data.valid {
