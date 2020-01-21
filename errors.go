@@ -57,3 +57,8 @@ func (e ValidationError) Error() string {
 func (e *ValidationError) valid() bool {
 	return e.Errors == 0
 }
+
+// Unwrap unwraps error
+func (e *ValidationError) Unwrap() error {
+	return e.Inner
+}
