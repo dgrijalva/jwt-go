@@ -67,6 +67,11 @@ func ExampleParseWithClaims_customClaimsType() {
 			return []byte("AllYourBase"), nil
 		})
 
+		if err != nil {
+			fmt.Println("invalid tokenString")
+			return
+		}
+
 		if claims, ok := token.Claims.(*MyCustomClaims); ok && token.Valid {
 			fmt.Printf("%v %v", claims.Foo, claims.StandardClaims.ExpiresAt)
 		} else {
@@ -94,6 +99,11 @@ func ExampleParse_errorChecking() {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		return []byte("AllYourBase"), nil
 	})
+
+	if err != nil {
+		fmt.Println("invalid tokenString")
+		return
+	}
 
 	if token.Valid {
 		fmt.Println("You look nice today")
