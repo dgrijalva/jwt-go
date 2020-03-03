@@ -16,13 +16,13 @@ type Claims interface {
 // https://tools.ietf.org/html/rfc7519#section-4.1
 // See examples for how to use this with your own claim types
 type StandardClaims struct {
-	Audience  []string `json:"aud,omitempty"`
-	ExpiresAt int64    `json:"exp,omitempty"`
-	Id        string   `json:"jti,omitempty"`
-	IssuedAt  int64    `json:"iat,omitempty"`
-	Issuer    string   `json:"iss,omitempty"`
-	NotBefore int64    `json:"nbf,omitempty"`
-	Subject   string   `json:"sub,omitempty"`
+	Audience  interface{} `json:"aud,omitempty"`
+	ExpiresAt int64       `json:"exp,omitempty"`
+	Id        string      `json:"jti,omitempty"`
+	IssuedAt  int64       `json:"iat,omitempty"`
+	Issuer    string      `json:"iss,omitempty"`
+	NotBefore int64       `json:"nbf,omitempty"`
+	Subject   string      `json:"sub,omitempty"`
 }
 
 // Validates time based claims "exp, iat, nbf".
@@ -61,7 +61,17 @@ func (c StandardClaims) Valid() error {
 // Compares the aud claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (c *StandardClaims) VerifyAudience(cmp string, req bool) bool {
-	return verifyAud(c.Audience, cmp, req)
+	var aud []string
+	if l, ok := c.Audience.([]interface{}); ok {
+		for _, a := range l {
+			aud = append(aud, a.(string))
+		}
+	} else if l, ok := c.Audience.([]string); ok {
+		aud = l
+	} else if l, ok := c.Audience.(string); ok {
+		aud = []string{l}
+	}
+	return verifyAud(aud, cmp, req)
 }
 
 // Compares the exp claim against cmp.
