@@ -16,7 +16,7 @@ type Claims interface {
 // https://tools.ietf.org/html/rfc7519#section-4.1
 // See examples for how to use this with your own claim types
 type StandardClaims struct {
-	Audience  string `json:"aud,omitempty"`
+	Audience  interface{} `json:"aud,omitempty"`
 	ExpiresAt int64  `json:"exp,omitempty"`
 	Id        string `json:"jti,omitempty"`
 	IssuedAt  int64  `json:"iat,omitempty"`
@@ -90,7 +90,28 @@ func (c *StandardClaims) VerifyNotBefore(cmp int64, req bool) bool {
 
 // ----- helpers
 
-func verifyAud(aud string, cmp string, required bool) bool {
+func verifyAud(aud interface{}, cmp string, required bool) bool {
+	switch audVal := aud.(type) {
+	case []interface{}:
+		audArray := []string{}
+		for _, oneVal := range audVal {
+			if oneStr, ok := oneVal.(string); ok {
+				audArray = append(audArray, oneStr)
+			} else {
+				panic(fmt.Sprintf("Audience is type %T, but must be string or []string", audVal))
+			}
+		}
+		return verifyAudMany( audArray, cmp, required)
+	case []string:
+		return verifyAudMany( audVal, cmp, required)
+	case string:
+		return verifyAudOne( audVal, cmp, required)
+	default:
+		panic(fmt.Sprintf("Audience is type %T, but must be string or []string", audVal))
+	}
+}
+
+func verifyAudOne(aud string, cmp string, required bool) bool {
 	if aud == "" {
 		return !required
 	}
@@ -99,6 +120,19 @@ func verifyAud(aud string, cmp string, required bool) bool {
 	} else {
 		return false
 	}
+}
+
+func verifyAudMany(audArray []string, cmp string, required bool) bool {
+	if len(audArray) < 1 {
+		return !required
+	}
+
+	for _, aud := range audArray {
+		if subtle.ConstantTimeCompare([]byte(aud), []byte(cmp)) != 0 {
+			return true
+		}
+	}
+	return false
 }
 
 func verifyExp(exp int64, now int64, required bool) bool {
