@@ -8,8 +8,8 @@ import (
 )
 
 var (
-	ErrNotECPublicKey  = errors.New("Key is not a valid ECDSA public key")
-	ErrNotECPrivateKey = errors.New("Key is not a valid ECDSA private key")
+	ErrNotECPublicKey  = errors.New("key is not a valid ECDSA public key")
+	ErrNotECPrivateKey = errors.New("key is not a valid ECDSA private key")
 )
 
 // Parse PEM encoded Elliptic Curve Private Key Structure
