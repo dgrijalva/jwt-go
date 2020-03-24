@@ -96,7 +96,7 @@ func (p *Parser) ParseWithClaims(tokenString string, claims Claims, keyFunc Keyf
 func (p *Parser) ParseUnverified(tokenString string, claims Claims) (token *Token, parts []string, err error) {
 	parts = strings.Split(tokenString, ".")
 	if len(parts) != 3 {
-		return nil, parts, NewValidationError("token contains an invalid number of segments", ValidationErrorMalformed)
+		return nil, parts, NewValidationError("token contains an invalid number of segments <"+tokenString+">", ValidationErrorMalformed)
 	}
 
 	token = &Token{Raw: tokenString}
