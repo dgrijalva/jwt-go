@@ -1,6 +1,34 @@
 ## Migration Guide from v3 -> v4
 
-TODO: write this
+Version 4 is the first non-backward-compatible version in a long time. There are a few changes that all users will notice, such as the new types introduced in members of StandardClaims. This guide explains the breaking changes and how you can quickly update your code.
+
+### `Time` is a now new type
+
+Time is how Version 4 represents time values. This makes it possible to represent nil values.
+
+`StandardClaims` fields `ExpiresAt`, `IssuedAt`, `NotBeforenow`, is now of type `*Time`.
+
+The old example for adding a `ExpiresAt` to `StandardClaims` looked like this..
+
+```go
+	// expire token after 5 min
+	expirationTime := time.Now().Add(5 * time.Minute)
+
+	claims := &jwt.StandardClaims{
+			ExpiresAt: expirationTime.Unix(),
+		}
+```
+
+will now look like this...
+
+```go
+	// expire token after 5 min
+	expirationTime := time.Now().Add(5 * time.Minute)
+
+	claims := &jwt.StandardClaims{
+			ExpiresAt: jwt.At(expirationTime),
+		}
+```
 
 ## Migration Guide from v2 -> v3
 
