@@ -19,6 +19,7 @@ type ValidationHelper struct {
 	leeway       time.Duration    // Leeway to provide when validating time values
 	audience     *string          // Expected audience value
 	skipAudience bool             // Ignore aud check
+	requireAudience bool          // Make sure aud value exists
 	issuer       *string          // Expected issuer value. ignored if nil
 }
 
@@ -97,7 +98,11 @@ func (h *ValidationHelper) ValidateAudience(aud ClaimStrings) error {
 
 	// If there's no audience claim, ignore
 	if aud == nil || len(aud) == 0 {
-		return nil
+		if h.requireAudience {
+			return &InvalidAudienceError{Message: "audience value is missing"}
+		} else {
+			return nil
+		}
 	}
 
 	// If there is an audience claim, but no value provided, fail
@@ -112,7 +117,11 @@ func (h *ValidationHelper) ValidateAudience(aud ClaimStrings) error {
 // It is used by ValidateAudience, but exposed as a helper for other implementations
 func (h *ValidationHelper) ValidateAudienceAgainst(aud ClaimStrings, compare string) error {
 	if aud == nil {
-		return nil
+		if h.requireAudience {
+			return &InvalidAudienceError{Message: "audience value is missing"}
+		} else {
+			return nil
+		}
 	}
 
 	// Compare provided value with aud claim.
