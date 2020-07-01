@@ -45,6 +45,14 @@ func WithAudience(aud string) ParserOption {
 	}
 }
 
+// WithAudienceRequired returns the ParserOption for specifying a required aud member value
+func WithAudienceRequired(aud string) ParserOption {
+	return func(p *Parser) {
+		p.ValidationHelper.audience = &aud
+		p.ValidationHelper.requireAudience = true
+	}
+}
+
 // WithoutAudienceValidation returns the ParserOption that specifies audience check should be skipped
 func WithoutAudienceValidation() ParserOption {
 	return func(p *Parser) {

@@ -201,6 +201,15 @@ var jwtTestData = []struct {
 		jwt.NewParser(),
 	},
 	{
+		"Audience - Required in Claims",
+		"", // autogen
+		defaultKeyFunc,
+		jwt.MapClaims{"aud": []interface{}{}},
+		false,
+		[]error{&jwt.InvalidAudienceError{}},
+		jwt.NewParser(jwt.WithAudienceRequired("foo")),
+	},
+	{
 		"Audience - Ignored",
 		"", // autogen
 		defaultKeyFunc,
