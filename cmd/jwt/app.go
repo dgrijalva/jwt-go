@@ -210,25 +210,16 @@ func signToken() error {
 			token.Header[k] = v
 		}
 	}
-
-	if isEs() {
-		if k, ok := key.([]byte); !ok {
+	
+	if k, ok := key.([]byte); !ok {
 			return fmt.Errorf("Couldn't convert key data to key")
-		} else {
-			key, err = jwt.ParseECPrivateKeyFromPEM(k)
-			if err != nil {
-				return err
-			}
-		}
-	} else if isRs() {
-		if k, ok := key.([]byte); !ok {
-			return fmt.Errorf("Couldn't convert key data to key")
-		} else {
-			key, err = jwt.ParseRSAPrivateKeyFromPEM(k)
-			if err != nil {
-				return err
-			}
-		}
+	} else if isEs() {
+		key, err = jwt.ParseECPrivateKeyFromPEM(k)
+	} else if isRS() {
+		key, err = jwt.ParseRSAPrivateKeyFromPEM(k)
+	}
+	if err != nil {
+		return err
 	}
 
 	if out, err := token.SignedString(key); err == nil {
