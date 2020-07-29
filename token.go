@@ -76,10 +76,14 @@ func (t *Token) SigningString() (string, error) {
 			if jsonValue, err = json.Marshal(t.Claims); err != nil {
 				return "", err
 			}
-			if t.Header["b64"] == true {
-				parts[i] = EncodeSegment(jsonValue)
+			if _, ok := t.Header["b64"]; ok {
+				if t.Header["b64"] == false {
+					parts[i] = string(jsonValue)
+				} else {
+					parts[i] = EncodeSegment(jsonValue)
+				}
 			} else {
-				parts[i] = string(jsonValue)
+				parts[i] = EncodeSegment(jsonValue)
 			}
 		}
 	}
