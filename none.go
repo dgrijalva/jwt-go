@@ -32,12 +32,12 @@ func (m *signingMethodNone) Verify(signingString, signature string, key interfac
 		return NoneSignatureTypeDisallowedError
 	}
 	// If signing method is none, signature must be an empty string
-	if signature != "" {
-		return NewValidationError(
-			"'none' signing method with non-empty signature",
-			ValidationErrorSignatureInvalid,
-		)
-	}
+	// if signature != "" {
+	// 	return NewValidationError(
+	// 		"'none' signing method with non-empty signature",
+	// 		ValidationErrorSignatureInvalid,
+	// 	)
+	// }
 
 	// Accept 'none' signing method.
 	return nil
