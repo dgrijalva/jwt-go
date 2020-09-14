@@ -20,6 +20,7 @@ func (m MapClaims) VerifyAudience(cmp string, req bool) bool {
 		strAud, _ := m["aud"].(string)
 		aud = append(aud, strAud)
 	}
+
 	return verifyAud(aud, cmp, req)
 }
 

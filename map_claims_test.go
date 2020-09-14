@@ -61,7 +61,6 @@ func Test_mapClaims_string_aud_no_claim(t *testing.T){
 
 func Test_mapClaims_string_aud_no_claim_not_required(t *testing.T){
 	mapClaims := MapClaims{
-		//"aud": "",
 	}
 	want := false
 	got := mapClaims.VerifyAudience("foo", false)
