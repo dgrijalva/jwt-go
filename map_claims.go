@@ -13,7 +13,13 @@ type MapClaims map[string]interface{}
 // Compares the aud claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (m MapClaims) VerifyAudience(cmp string, req bool) bool {
-	aud, _ := m["aud"].(string)
+	aud, _ := m["aud"].([]string)
+
+	// special case where aud is a single string not list of strings
+	if aud == nil {
+		strAud, _ := m["aud"].(string)
+		aud = append(aud, strAud)
+	}
 	return verifyAud(aud, cmp, req)
 }
 
