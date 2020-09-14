@@ -2,7 +2,7 @@ package jwt_test
 
 import (
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
+	"github.com/form3tech-oss/jwt-go"
 	"time"
 )
 
@@ -11,7 +11,7 @@ import (
 // to provide standard validation features.  You can use it alone, but there's
 // no way to retrieve other fields after parsing.
 // See the CustomClaimsType example for intended usage.
-func ExampleNewWithClaims_standardClaims() {
+func NewWithClaims_standardClaims() {
 	mySigningKey := []byte("AllYourBase")
 
 	// Create the Claims
@@ -28,7 +28,7 @@ func ExampleNewWithClaims_standardClaims() {
 
 // Example creating a token using a custom claims type.  The StandardClaim is embedded
 // in the custom type to allow for easy encoding, parsing and validation of standard claims.
-func ExampleNewWithClaims_customClaimsType() {
+func NewWithClaims_customClaimsType() {
 	mySigningKey := []byte("AllYourBase")
 
 	type MyCustomClaims struct {
@@ -53,7 +53,7 @@ func ExampleNewWithClaims_customClaimsType() {
 
 // Example creating a token using a custom claims type.  The StandardClaim is embedded
 // in the custom type to allow for easy encoding, parsing and validation of standard claims.
-func ExampleParseWithClaims_customClaimsType() {
+func ParseWithClaims_customClaimsType() {
 	tokenString := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmb28iOiJiYXIiLCJleHAiOjE1MDAwLCJpc3MiOiJ0ZXN0In0.HE7fK0xOQwFEr4WDgRWj4teRPZ6i3GLwD5YCm6Pwu_c"
 
 	type MyCustomClaims struct {
@@ -87,7 +87,7 @@ func at(t time.Time, f func()) {
 }
 
 // An example of parsing the error types using bitfield checks
-func ExampleParse_errorChecking() {
+func Parse_errorChecking() {
 	// Token from another example.  This token is expired
 	var tokenString = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmb28iOiJiYXIiLCJleHAiOjE1MDAwLCJpc3MiOiJ0ZXN0In0.HE7fK0xOQwFEr4WDgRWj4teRPZ6i3GLwD5YCm6Pwu_c"
 
