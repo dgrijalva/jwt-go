@@ -34,12 +34,12 @@ func wrapError(a, b error) error {
 type ErrorWrapper struct{ err error }
 
 // Unwrap implements xerrors.Wrapper
-func (w ErrorWrapper) Unwrap() error {
+func (w *ErrorWrapper) Unwrap() error {
 	return w.err
 }
 
 // Wrap stores the provided error value and returns it when Unwrap is called
-func (w ErrorWrapper) Wrap(err error) {
+func (w *ErrorWrapper) Wrap(err error) {
 	w.err = err
 }
 
