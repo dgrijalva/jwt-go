@@ -63,6 +63,8 @@ func ExampleParseWithClaims_customClaimsType() {
 
 	// sample token is expired.  override time so it parses as valid
 	at(time.Unix(0, 0), func() {
+		// A pointer to the MyCustomClaims object must be used so the JSON decoder can function properly
+		// See https://github.com/dgrijalva/jwt-go/issues/345
 		token, err := jwt.ParseWithClaims(tokenString, &MyCustomClaims{}, func(token *jwt.Token) (interface{}, error) {
 			return []byte("AllYourBase"), nil
 		})
