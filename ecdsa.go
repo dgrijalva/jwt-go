@@ -43,7 +43,7 @@ func init() {
 	})
 
 	// ES512
-	SigningMethodES512 = &SigningMethodECDSA{"ES512", crypto.SHA512, 66, 521}
+	SigningMethodES512 = &SigningMethodECDSA{"ES512", crypto.SHA512, 66, 512}
 	RegisterSigningMethod(SigningMethodES512.Alg(), func() SigningMethod {
 		return SigningMethodES512
 	})
