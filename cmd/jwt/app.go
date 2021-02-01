@@ -98,7 +98,7 @@ func printJSON(j interface{}) error {
 	var out []byte
 	var err error
 
-	if *flagCompact == false {
+	if !*flagCompact {
 		out, err = json.MarshalIndent(j, "", "    ")
 	} else {
 		out, err = json.Marshal(j)

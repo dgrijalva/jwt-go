@@ -27,7 +27,7 @@ func (m MapClaims) VerifyExpiresAt(cmp int64, req bool) bool {
 		v, _ := exp.Int64()
 		return verifyExp(v, cmp, req)
 	}
-	return req == false
+	return !req
 }
 
 // Compares the iat claim against cmp.
@@ -40,7 +40,7 @@ func (m MapClaims) VerifyIssuedAt(cmp int64, req bool) bool {
 		v, _ := iat.Int64()
 		return verifyIat(v, cmp, req)
 	}
-	return req == false
+	return !req
 }
 
 // Compares the iss claim against cmp.
@@ -60,7 +60,7 @@ func (m MapClaims) VerifyNotBefore(cmp int64, req bool) bool {
 		v, _ := nbf.Int64()
 		return verifyNbf(v, cmp, req)
 	}
-	return req == false
+	return !req
 }
 
 // Validates time based claims "exp, iat, nbf".
@@ -71,17 +71,17 @@ func (m MapClaims) Valid() error {
 	vErr := new(ValidationError)
 	now := TimeFunc().Unix()
 
-	if m.VerifyExpiresAt(now, false) == false {
+	if !m.VerifyExpiresAt(now, false) {
 		vErr.Inner = errors.New("Token is expired")
 		vErr.Errors |= ValidationErrorExpired
 	}
 
-	if m.VerifyIssuedAt(now, false) == false {
+	if !m.VerifyIssuedAt(now, false) {
 		vErr.Inner = errors.New("Token used before issued")
 		vErr.Errors |= ValidationErrorIssuedAt
 	}
 
-	if m.VerifyNotBefore(now, false) == false {
+	if !m.VerifyNotBefore(now, false) {
 		vErr.Inner = errors.New("Token is not valid yet")
 		vErr.Errors |= ValidationErrorNotValidYet
 	}
