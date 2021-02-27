@@ -87,13 +87,20 @@ func TestECDSASign(t *testing.T) {
 
 		if data.valid {
 			parts := strings.Split(data.tokenString, ".")
+			toSign := strings.Join(parts[0:2], ".")
 			method := jwt.GetSigningMethod(data.alg)
-			sig, err := method.Sign(strings.Join(parts[0:2], "."), ecdsaKey)
+			sig, err := method.Sign(toSign, ecdsaKey)
+
 			if err != nil {
 				t.Errorf("[%v] Error signing token: %v", data.name, err)
 			}
 			if sig == parts[2] {
 				t.Errorf("[%v] Identical signatures\nbefore:\n%v\nafter:\n%v", data.name, parts[2], sig)
+			}
+
+			err = method.Verify(toSign, sig, ecdsaKey.Public())
+			if err != nil {
+				t.Errorf("[%v] Sign produced an invalid signature: %v", data.name, err)
 			}
 		}
 	}
