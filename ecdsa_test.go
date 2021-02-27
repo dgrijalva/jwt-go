@@ -105,3 +105,42 @@ func TestECDSASign(t *testing.T) {
 		}
 	}
 }
+
+func BenchmarkECDSASigning(b *testing.B) {
+	for _, data := range ecdsaTestData {
+		key, _ := ioutil.ReadFile(data.keys["private"])
+
+		ecdsaKey, err := jwt.ParseECPrivateKeyFromPEM(key)
+		if err != nil {
+			b.Fatalf("Unable to parse ECDSA private key: %v", err)
+		}
+
+		method := jwt.GetSigningMethod(data.alg)
+
+		b.Run(data.name, func(b *testing.B) {
+			benchmarkSigning(b, method, ecdsaKey)
+		})
+
+		// Directly call method.Sign without the decoration of *Token.
+		b.Run(data.name+"/sign-only", func(b *testing.B) {
+			if !data.valid {
+				b.Skipf("Skipping because data is not valid")
+			}
+
+			parts := strings.Split(data.tokenString, ".")
+			toSign := strings.Join(parts[0:2], ".")
+
+			b.ReportAllocs()
+			b.ResetTimer()
+			for i := 0; i < b.N; i++ {
+				sig, err := method.Sign(toSign, ecdsaKey)
+				if err != nil {
+					b.Fatalf("[%v] Error signing token: %v", data.name, err)
+				}
+				if sig == parts[2] {
+					b.Fatalf("[%v] Identical signatures\nbefore:\n%v\nafter:\n%v", data.name, parts[2], sig)
+				}
+			}
+		})
+	}
+}
