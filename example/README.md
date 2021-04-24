@@ -13,9 +13,9 @@ import (
 
 // example usage
 func main() {
-	secretKey := util.GodotEnv("JWT_SECRET")
+
 	userData := map[string]interface{}{"id": 1, "email": "johndoe13@gmail.com"}
-	accessToken, errToken := util.Sign(userData, secretKey, 5) // data -> secretkey -> expireAt
+	accessToken, errToken := util.Sign(userData, "JWT_SECRET", 5) // data -> secretkey -> expireAt
 
 	if errToken != nil {
 		logrus.Fatal(errToken.Error())
@@ -38,15 +38,15 @@ import (
 
 // example usage
 func main() {
-	secretKey := util.GodotEnv("JWT_SECRET")
+
 	userData := map[string]interface{}{"id": 1, "email": "johndoe13@gmail.com"}
-	accessToken, errToken := util.Sign(userData, secretKey, 5) // data -> secretkey -> expireAt
+	accessToken, errToken := util.Sign(userData, "JWT_SECRET", 5) // data -> secretkey -> expireAt
 
 	if errToken != nil {
 		logrus.Fatal(errToken.Error())
 	}
 
-	verifiedToken, errTokenVerified := util.VerifyToken(accessToken, secretKey)
+	verifiedToken, errTokenVerified := util.VerifyToken(accessToken, "JWT_SECRET")
 
 	if errTokenVerified != nil {
 		logrus.Fatal(errTokenVerified.Error())
@@ -69,15 +69,15 @@ import (
 
 // example usage
 func main() {
-	secretKey := util.GodotEnv("JWT_SECRET")
+
 	userData := map[string]interface{}{"id": 1, "email": "johndoe13@gmail.com"}
-	accessToken, errToken := util.Sign(userData, secretKey, 5) // data -> secretkey -> expireAt
+	accessToken, errToken := util.Sign(userData, "JWT_SECRET", 5) // data -> secretkey -> expireAt
 
 	if errToken != nil {
 		logrus.Fatal(errToken.Error())
 	}
 
-	verifiedToken, errTokenVerified := util.VerifyToken(accessToken, secretKey)
+	verifiedToken, errTokenVerified := util.VerifyToken(accessToken, "JWT_SECRET")
 
 	if errTokenVerified != nil {
 		logrus.Fatal(errTokenVerified.Error())
