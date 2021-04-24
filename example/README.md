@@ -48,7 +48,7 @@ func main() {
 
 	verifiedToken, errTokenVerified := util.VerifyToken(accessToken, secretKey)
 
-	if errToken != nil {
+	if errTokenVerified != nil {
 		logrus.Fatal(errTokenVerified.Error())
 	}
 
@@ -79,7 +79,7 @@ func main() {
 
 	verifiedToken, errTokenVerified := util.VerifyToken(accessToken, secretKey)
 
-	if errToken != nil {
+	if errTokenVerified != nil {
 		logrus.Fatal(errTokenVerified.Error())
 	}
 
