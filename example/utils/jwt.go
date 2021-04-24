@@ -23,7 +23,7 @@ type AccessToken struct {
 // created accessToken like jwt.sign in javascript
 func SignToken(Data map[string]interface{}, SecrePublicKeyEnvName string, ExpiredAt time.Duration) (string, error) {
 
-	expiredAt := time.Now().Add(time.Minute * ExpiredAt).Unix()
+	expiredAt := time.Now().Add(time.Duration(time.Second) * ExpiredAt).Unix()
 
 	jwtSecretKey := GodotEnv(SecrePublicKeyEnvName)
 
