@@ -46,7 +46,7 @@ func main() {
 		logrus.Fatal(errToken.Error())
 	}
 
-	verifiedToken, errTokenVerified := util.VerifyToken(accessToken, util.GodotEnv("JWT_SECRET"))
+	verifiedToken, errTokenVerified := util.VerifyToken(accessToken, secretKey)
 
 	if errToken != nil {
 		logrus.Fatal(errTokenVerified.Error())
@@ -77,7 +77,7 @@ func main() {
 		logrus.Fatal(errToken.Error())
 	}
 
-	verifiedToken, errTokenVerified := util.VerifyToken(accessToken, util.GodotEnv("JWT_SECRET"))
+	verifiedToken, errTokenVerified := util.VerifyToken(accessToken, secretKey)
 
 	if errToken != nil {
 		logrus.Fatal(errTokenVerified.Error())
