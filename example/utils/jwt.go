@@ -21,13 +21,12 @@ type AccessToken struct {
 }
 
 // created accessToken like jwt.sign in javascript
-func SignToken(Data map[string]interface{}, SecrePublicKey string, ExpiredAt time.Duration) (string, error) {
+func SignToken(Data map[string]interface{}, SecrePublicKeyEnvName string, ExpiredAt time.Duration) (string, error) {
 
 	expiredAt := time.Now().Add(time.Minute * ExpiredAt).Unix()
 
-	jwtSecretKey := SecrePublicKey
+	jwtSecretKey := GodotEnv(SecrePublicKeyEnvName)
 
-	// metadata for your application
 	claims := jwt.MapClaims{}
 	claims["expiredAt"] = expiredAt
 	claims["authorization"] = true
@@ -48,10 +47,12 @@ func SignToken(Data map[string]interface{}, SecrePublicKey string, ExpiredAt tim
 }
 
 // verified accessToken like jwt.verify in javascript
-func VerifyToken(accessToken, SecrePublicKey string) (*jwt.Token, error) {
+func VerifyToken(accessToken, SecrePublicKeyEnvName string) (*jwt.Token, error) {
+	
+	jwtSecretKey := GodotEnv(SecrePublicKeyEnvName)
 
 	token, err := jwt.Parse(accessToken, func(token *jwt.Token) (interface{}, error) {
-		return []byte(SecrePublicKey), nil
+		return []byte(jwtSecretKey), nil
 	})
 
 	if err != nil {
