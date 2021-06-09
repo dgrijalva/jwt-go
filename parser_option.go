@@ -59,6 +59,14 @@ func WithIssuer(iss string) ParserOption {
 	}
 }
 
+// WithTimeFunc returns the PerserOption that specifies an override for time.Now.
+// This is useful for testing or if your server uses a different time zone than your tokens.
+func WithTimeFunc(now func() time.Time) ParserOption {
+	return func(p *Parser) {
+		p.ValidationHelper.nowFunc = now
+	}
+}
+
 // TokenUnmarshaller is the function signature required to supply custom JSON decoding logic.
 // It is the same as json.Marshal with the addition of the FieldDescriptor.
 // The field value will let your marshaller know which field is being processed.
