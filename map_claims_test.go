@@ -57,6 +57,41 @@ func Test_mapClaims_string_aud_fail(t *testing.T) {
 	if want != got {
 		t.Fatalf("Failed to verify claims, wanted: %v got %v", want, got)
 	}
+
+}
+
+func Test_mapclaims_verify_issued_at_invalid_type_string(t *testing.T) {
+	mapClaims := MapClaims{
+		"iat": "foo",
+	}
+	want := false
+	got := mapClaims.VerifyIssuedAt(0, false)
+	if want != got {
+		t.Fatalf("Failed to verify claims, wanted: %v got %v", want, got)
+	}
+}
+
+func Test_mapclaims_verify_not_before_invalid_type_string(t *testing.T) {
+	mapClaims := MapClaims{
+		"nbf": "foo",
+	}
+	want := false
+	got := mapClaims.VerifyNotBefore(0, false)
+	if want != got {
+		t.Fatalf("Failed to verify claims, wanted: %v got %v", want, got)
+	}
+}
+
+func Test_mapclaims_verify_expires_at_invalid_type_string(t *testing.T) {
+	mapClaims := MapClaims{
+		"exp": "foo",
+	}
+	want := false
+	got := mapClaims.VerifyExpiresAt(0, false)
+
+	if want != got {
+		t.Fatalf("Failed to verify claims, wanted: %v got %v", want, got)
+	}
 }
 
 func Test_mapClaims_string_aud_no_claim(t *testing.T) {
