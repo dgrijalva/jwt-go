@@ -1,3 +1,9 @@
+# THIS REPOSITORY IS NO LONGER MAINTANED
+
+The new repository can be found at: https://github.com/golang-jwt/jwt
+
+For more information, see issue [#462](https://github.com/dgrijalva/jwt-go/issues/462).
+
 # jwt-go
 
 [![Build Status](https://travis-ci.org/dgrijalva/jwt-go.svg?branch=master)](https://travis-ci.org/dgrijalva/jwt-go)
