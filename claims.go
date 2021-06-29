@@ -16,13 +16,13 @@ type Claims interface {
 // https://tools.ietf.org/html/rfc7519#section-4.1
 // See examples for how to use this with your own claim types
 type StandardClaims struct {
-	Audience  string `json:"aud,omitempty"`
-	ExpiresAt int64  `json:"exp,omitempty"`
-	Id        string `json:"jti,omitempty"`
-	IssuedAt  int64  `json:"iat,omitempty"`
-	Issuer    string `json:"iss,omitempty"`
-	NotBefore int64  `json:"nbf,omitempty"`
-	Subject   string `json:"sub,omitempty"`
+	Audience  interface{} `json:"aud,omitempty"`
+	ExpiresAt int64       `json:"exp,omitempty"`
+	Id        string      `json:"jti,omitempty"`
+	IssuedAt  int64       `json:"iat,omitempty"`
+	Issuer    string      `json:"iss,omitempty"`
+	NotBefore int64       `json:"nbf,omitempty"`
+	Subject   string      `json:"sub,omitempty"`
 }
 
 // Validates time based claims "exp, iat, nbf".
@@ -58,10 +58,27 @@ func (c StandardClaims) Valid() error {
 	return vErr
 }
 
+// Extracts an array of audience values from the aud field.
+func ExtractAudience(c *StandardClaims) []string {
+	switch c.Audience.(type) {
+	case []interface{}:
+		auds := make([]string, len(c.Audience.([]interface{})))
+		for i, value := range c.Audience.([]interface{}) {
+			auds[i] = value.(string)
+		}
+		return auds
+	case []string:
+		return c.Audience.([]string)
+	default:
+		return []string{c.Audience.(string)}
+	}
+}
+
 // Compares the aud claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (c *StandardClaims) VerifyAudience(cmp string, req bool) bool {
-	return verifyAud(c.Audience, cmp, req)
+	audiences := ExtractAudience(c)
+	return verifyAud(audiences, cmp, req)
 }
 
 // Compares the exp claim against cmp.
@@ -90,13 +107,15 @@ func (c *StandardClaims) VerifyNotBefore(cmp int64, req bool) bool {
 
 // ----- helpers
 
-func verifyAud(aud string, cmp string, required bool) bool {
-	if aud == "" {
+func verifyAud(auds []string, cmp string, required bool) bool {
+	if len(auds) == 0 {
 		return !required
-	}
-	if subtle.ConstantTimeCompare([]byte(aud), []byte(cmp)) != 0 {
-		return true
 	} else {
+		for _, aud := range auds {
+			if len(aud) == len(cmp) && subtle.ConstantTimeCompare([]byte(aud), []byte(cmp)) != 0 {
+				return true
+			}
+		}
 		return false
 	}
 }
