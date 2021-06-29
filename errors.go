@@ -44,11 +44,12 @@ type ValidationError struct {
 
 // Validation error is an error type
 func (e ValidationError) Error() string {
-	if e.Inner != nil {
+	switch {
+	case e.Inner != nil:
 		return e.Inner.Error()
-	} else if e.text != "" {
+	case e.text != "":
 		return e.text
-	} else {
+	default:
 		return "token is invalid"
 	}
 }
