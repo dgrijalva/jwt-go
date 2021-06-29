@@ -108,3 +108,53 @@ This library uses descriptive error messages whenever possible. If you are not g
 Documentation can be found [on godoc.org](http://godoc.org/github.com/dgrijalva/jwt-go).
 
 The command line utility included in this project (cmd/jwt) provides a straightforward example of token creation and parsing as well as a useful tool for debugging your own integration. You'll also find several implementation examples in the documentation.
+
+### Benchmarks
+
+This section describe gains from migrating from `encoding/json` standard library to jsoniter (`github.com/json-iterator/go`).
+
+TL;DR: pure JSON operations are about 30% faster, HS signing methods about 10% faster, whereas RSA signing methods remain
+dominated by cryptographic operations,  making the impact of JSON improvements negligible.
+
+Note that the parsing benchmark uses a small token with only a few claims: for large complex tokens, actual benefit is larger.
+
+`go version go1.12.6 linux/amd64, Intel Core i5-6200U@2.3 GHz (dual core)`
+
+`$ go test -bench=. -benchmem -benchtime 10s`
+
+##### Signing benchmarks
+
+```
+HS algorithms - Standard encoding/json
+
+BenchmarkHS256Signing-4   	10000000	      2458 ns/op	    1584 B/op	      32 allocs/op
+BenchmarkHS384Signing-4   	 5000000	      2790 ns/op	    1968 B/op	      32 allocs/op
+BenchmarkHS512Signing-4   	 5000000	      2799 ns/op	    2064 B/op	      32 allocs/op
+
+HS algorithms - jsoniter
+
+BenchmarkHS256Signing-4   	10000000	      2036 ns/op	    1308 B/op	      26 allocs/op
+BenchmarkHS384Signing-4   	10000000	      2359 ns/op	    1693 B/op	      26 allocs/op
+BenchmarkHS512Signing-4   	10000000	      2412 ns/op	    1789 B/op	      26 allocs/op
+
+RS algorithms - Standard encoding/json
+
+BenchmarkRS256Signing-4   	   20000	    926550 ns/op	   49217 B/op	     169 allocs/op
+BenchmarkRS384Signing-4   	   20000	    907624 ns/op	   49329 B/op	     169 allocs/op
+BenchmarkRS512Signing-4   	   20000	    941379 ns/op	   49346 B/op	     169 allocs/op
+
+RS algorithms - jsoniter
+
+BenchmarkRS256Signing-4   	   20000	    920077 ns/op	   48970 B/op	     164 allocs/op
+BenchmarkRS384Signing-4   	   20000	    939164 ns/op	   49082 B/op	     164 allocs/op
+BenchmarkRS512Signing-4   	   20000	    913491 ns/op	   49100 B/op	     164 allocs/op
+```
+
+##### Claims parsing benchmark 
+`ParseUnverified` applied on small token with a few custom claims.
+
+```
+standard json lib     BenchmarkParsing-4        	 2000000	      6556 ns/op	    4192 B/op	      94 allocs/op
+jsoniter              BenchmarkParsing-4        	 3000000	      4886 ns/op	    3657 B/op	      91 allocs/op
+```
+

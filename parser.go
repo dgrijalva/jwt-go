@@ -2,24 +2,35 @@ package jwt
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"strings"
+
+	jsoniter "github.com/json-iterator/go"
 )
 
+var (
+	json jsoniter.API
+)
+
+func init() {
+	json = jsoniter.ConfigFastest
+}
+
+// Parser knows how to parse a JWT
 type Parser struct {
 	ValidMethods         []string // If populated, only these methods will be considered valid
 	UseJSONNumber        bool     // Use JSON Number format in JSON decoder
 	SkipClaimsValidation bool     // Skip claims validation during token parsing
 }
 
-// Parse, validate, and return a token.
+// Parse validates and returns a token.
 // keyFunc will receive the parsed token and should return the key for validating.
 // If everything is kosher, err will be nil
 func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	return p.ParseWithClaims(tokenString, MapClaims{}, keyFunc)
 }
 
+// ParseWithClaims parses the token and hydrates Claims passed as parameter.
 func (p *Parser) ParseWithClaims(tokenString string, claims Claims, keyFunc Keyfunc) (*Token, error) {
 	token, parts, err := p.ParseUnverified(tokenString, claims)
 	if err != nil {

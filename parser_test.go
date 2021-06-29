@@ -184,6 +184,10 @@ var jwtTestData = []struct {
 }
 
 func TestParser_Parse(t *testing.T) {
+	testParse(t)
+}
+
+func testParse(t testing.TB) {
 	privateKey := test.LoadRSAPrivateKeyFromDisk("test/sample_key")
 
 	// Iterate over test data set and run tests
@@ -298,4 +302,42 @@ func benchmarkSigning(b *testing.B, method jwt.SigningMethod, key interface{}) {
 		}
 	})
 
+}
+
+func BenchmarkParsing(b *testing.B) {
+	type MyCustomClaims struct {
+		Foo    string              `json:"foo"`
+		Bar    uint32              `json:"bar"`
+		Float  float64             `json:"float"`
+		Groups []string            `json:"groups"`
+		Roles  map[string][]string `json:"roles"`
+		jwt.StandardClaims
+	}
+
+	//keyfunc := defaultKeyFunc
+	claims := &MyCustomClaims{
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(time.Second * 10).Unix(),
+		},
+		Foo:    "foo",
+		Bar:    123,
+		Float:  1.5,
+		Groups: []string{"A", "B", "C"},
+		Roles: map[string][]string{
+			"app":    {"x", "y", "z"},
+			"master": {"X", "Y", "Z"},
+		},
+	}
+	privateKey := test.LoadRSAPrivateKeyFromDisk("test/sample_key")
+	tokenString := test.MakeSampleToken(claims, privateKey)
+	parser := &jwt.Parser{UseJSONNumber: true}
+
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			token, _, err := parser.ParseUnverified(tokenString, jwt.MapClaims{})
+			if token == nil || err != nil {
+				b.FailNow()
+			}
+		}
+	})
 }
