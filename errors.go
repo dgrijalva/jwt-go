@@ -48,9 +48,9 @@ func (e ValidationError) Error() string {
 		return e.Inner.Error()
 	} else if e.text != "" {
 		return e.text
-	} else {
-		return "token is invalid"
-	}
+  } else {
+	  return "token is invalid"
+  }
 }
 
 // No errors
