@@ -47,12 +47,6 @@ func (m *SigningMethodHMAC) Alg() string {
 
 // Verify the signature of HSXXX tokens.  Returns nil if the signature is valid.
 func (m *SigningMethodHMAC) Verify(signingString, signature string, key interface{}) error {
-	// Verify the key is the right type
-	keyBytes, ok := key.([]byte)
-	if !ok {
-		return ErrInvalidKeyType
-	}
-
 	// Decode signature, for comparison
 	sig, err := DecodeSegment(signature)
 	if err != nil {
@@ -64,17 +58,32 @@ func (m *SigningMethodHMAC) Verify(signingString, signature string, key interfac
 		return ErrHashUnavailable
 	}
 
-	// This signing method is symmetric, so we validate the signature
-	// by reproducing the signature from the signing string and key, then
-	// comparing that against the provided signature.
-	hasher := hmac.New(m.Hash.New, keyBytes)
-	hasher.Write([]byte(signingString))
-	if !hmac.Equal(sig, hasher.Sum(nil)) {
-		return ErrSignatureInvalid
+	// Verify the keys are the right types
+	var keys [][]byte
+	switch v := key.(type) {
+	case []byte:
+		keys = append(keys, v)
+	case [][]byte:
+		keys = v
+	}
+	if len(keys) == 0 {
+		return ErrInvalidKeyType
 	}
 
-	// No validation errors.  Signature is good.
-	return nil
+	var lastErr error
+	for _, keyBytes := range keys {
+		// This signing method is symmetric, so we validate the signature
+		// by reproducing the signature from the signing string and key, then
+		// comparing that against the provided signature.
+		hasher := hmac.New(m.Hash.New, keyBytes)
+		hasher.Write([]byte(signingString))
+		if hmac.Equal(sig, hasher.Sum(nil)) {
+			// No validation errors.  Signature is good.
+			return nil
+		}
+		lastErr = ErrSignatureInvalid
+	}
+	return lastErr
 }
 
 // Implements the Sign method from SigningMethod for this signing method.

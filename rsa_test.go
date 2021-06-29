@@ -1,6 +1,7 @@
 package jwt_test
 
 import (
+	"crypto/rsa"
 	"github.com/dgrijalva/jwt-go"
 	"io/ioutil"
 	"strings"
@@ -58,6 +59,18 @@ func TestRSAVerify(t *testing.T) {
 		}
 		if !data.valid && err == nil {
 			t.Errorf("[%v] Invalid key passed validation", data.name)
+		}
+
+		if !data.valid {
+			continue
+		}
+		err = method.Verify(strings.Join(parts[0:2], "."), parts[2], []*rsa.PublicKey{key})
+		if err != nil {
+			t.Errorf("[%v] Error while verifying key list: %v", data.name, err)
+		}
+		err = method.Verify(strings.Join(parts[0:2], "."), parts[2], []*rsa.PublicKey{})
+		if err == nil {
+			t.Errorf("[%v] Empty key list passed validation", data.name)
 		}
 	}
 }

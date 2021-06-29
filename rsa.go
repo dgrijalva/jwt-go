@@ -45,7 +45,8 @@ func (m *SigningMethodRSA) Alg() string {
 }
 
 // Implements the Verify method from SigningMethod
-// For this signing method, must be an *rsa.PublicKey structure.
+// For this signing method, key must be in types of either *rsa.PublicKey or
+// []*rsa.PublicKey (for rotation keys).
 func (m *SigningMethodRSA) Verify(signingString, signature string, key interface{}) error {
 	var err error
 
@@ -55,22 +56,34 @@ func (m *SigningMethodRSA) Verify(signingString, signature string, key interface
 		return err
 	}
 
-	var rsaKey *rsa.PublicKey
-	var ok bool
-
-	if rsaKey, ok = key.(*rsa.PublicKey); !ok {
-		return ErrInvalidKeyType
-	}
-
-	// Create hasher
 	if !m.Hash.Available() {
 		return ErrHashUnavailable
 	}
-	hasher := m.Hash.New()
-	hasher.Write([]byte(signingString))
 
-	// Verify the signature
-	return rsa.VerifyPKCS1v15(rsaKey, m.Hash, hasher.Sum(nil), sig)
+	var keys []*rsa.PublicKey
+	switch v := key.(type) {
+	case *rsa.PublicKey:
+		keys = append(keys, v)
+	case []*rsa.PublicKey:
+		keys = v
+	}
+	if len(keys) == 0 {
+		return ErrInvalidKeyType
+	}
+
+	var lastErr error
+	for _, rsaKey := range keys {
+		// Create hasher
+		hasher := m.Hash.New()
+		hasher.Write([]byte(signingString))
+
+		// Verify the signature
+		lastErr = rsa.VerifyPKCS1v15(rsaKey, m.Hash, hasher.Sum(nil), sig)
+		if lastErr == nil {
+			return nil
+		}
+	}
+	return lastErr
 }
 
 // Implements the Sign method from SigningMethod
