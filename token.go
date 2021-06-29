@@ -71,13 +71,21 @@ func (t *Token) SigningString() (string, error) {
 			if jsonValue, err = json.Marshal(t.Header); err != nil {
 				return "", err
 			}
+			parts[i] = EncodeSegment(jsonValue)
 		} else {
 			if jsonValue, err = json.Marshal(t.Claims); err != nil {
 				return "", err
 			}
+			if _, ok := t.Header["b64"]; ok {
+				if t.Header["b64"] == false {
+					parts[i] = string(jsonValue)
+				} else {
+					parts[i] = EncodeSegment(jsonValue)
+				}
+			} else {
+				parts[i] = EncodeSegment(jsonValue)
+			}
 		}
-
-		parts[i] = EncodeSegment(jsonValue)
 	}
 	return strings.Join(parts, "."), nil
 }
