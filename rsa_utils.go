@@ -7,13 +7,15 @@ import (
 	"errors"
 )
 
+// Errors returned by RSA Signing Method and helpers
 var (
-	ErrKeyMustBePEMEncoded = errors.New("Invalid Key: Key must be a PEM encoded PKCS1 or PKCS8 key")
-	ErrNotRSAPrivateKey    = errors.New("Key is not a valid RSA private key")
-	ErrNotRSAPublicKey     = errors.New("Key is not a valid RSA public key")
+	ErrKeyMustBePEMEncoded = errors.New("invalid Key: Key must be PEM encoded PKCS1 or PKCS8 key")
+	ErrNotRSAPrivateKey    = errors.New("key is not a valid RSA private key")
+	ErrNotRSAPublicKey     = errors.New("key is not a valid RSA public key")
 )
 
-// Parse PEM encoded PKCS1 or PKCS8 private key
+// ParseRSAPrivateKeyFromPEM is a helper method for
+// parsing PEM encoded PKCS1 or PKCS8 private key
 func ParseRSAPrivateKeyFromPEM(key []byte) (*rsa.PrivateKey, error) {
 	var err error
 
@@ -39,7 +41,8 @@ func ParseRSAPrivateKeyFromPEM(key []byte) (*rsa.PrivateKey, error) {
 	return pkey, nil
 }
 
-// Parse PEM encoded PKCS1 or PKCS8 private key protected with password
+// ParseRSAPrivateKeyFromPEMWithPassword is a helper method for
+// parsing PEM encoded PKCS1 or PKCS8 private key, encrypted with a password
 func ParseRSAPrivateKeyFromPEMWithPassword(key []byte, password string) (*rsa.PrivateKey, error) {
 	var err error
 
@@ -71,7 +74,8 @@ func ParseRSAPrivateKeyFromPEMWithPassword(key []byte, password string) (*rsa.Pr
 	return pkey, nil
 }
 
-// Parse PEM encoded PKCS1 or PKCS8 public key
+// ParseRSAPublicKeyFromPEM is a helper method for
+// parsing a PEM encoded PKCS1 or PKCS8 public key
 func ParseRSAPublicKeyFromPEM(key []byte) (*rsa.PublicKey, error) {
 	var err error
 

@@ -8,8 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
-	"github.com/dgrijalva/jwt-go/test"
+	"github.com/dgrijalva/jwt-go/v4"
+	"github.com/dgrijalva/jwt-go/v4/test"
+	"golang.org/x/xerrors"
 )
 
 var keyFuncError error = fmt.Errorf("error loading key")
@@ -32,7 +33,7 @@ var jwtTestData = []struct {
 	keyfunc     jwt.Keyfunc
 	claims      jwt.Claims
 	valid       bool
-	errors      uint32
+	errors      []error
 	parser      *jwt.Parser
 }{
 	{
@@ -41,7 +42,7 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		jwt.MapClaims{"foo": "bar"},
 		true,
-		0,
+		nil,
 		nil,
 	},
 	{
@@ -50,7 +51,7 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		jwt.MapClaims{"foo": "bar", "exp": float64(time.Now().Unix() - 100)},
 		false,
-		jwt.ValidationErrorExpired,
+		[]error{&jwt.TokenExpiredError{}},
 		nil,
 	},
 	{
@@ -59,7 +60,7 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		jwt.MapClaims{"foo": "bar", "nbf": float64(time.Now().Unix() + 100)},
 		false,
-		jwt.ValidationErrorNotValidYet,
+		[]error{&jwt.TokenNotValidYetError{}},
 		nil,
 	},
 	{
@@ -68,8 +69,17 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		jwt.MapClaims{"foo": "bar", "nbf": float64(time.Now().Unix() + 100), "exp": float64(time.Now().Unix() - 100)},
 		false,
-		jwt.ValidationErrorNotValidYet | jwt.ValidationErrorExpired,
+		[]error{&jwt.TokenExpiredError{}, &jwt.TokenNotValidYetError{}},
 		nil,
+	},
+	{
+		"expired and nbf with leeway",
+		"", // autogen
+		defaultKeyFunc,
+		jwt.MapClaims{"foo": "bar", "nbf": float64(time.Now().Unix() + 50), "exp": float64(time.Now().Unix() - 50)},
+		true,
+		nil,
+		jwt.NewParser(jwt.WithLeeway(100 * time.Second)),
 	},
 	{
 		"basic invalid",
@@ -77,7 +87,7 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		jwt.MapClaims{"foo": "bar"},
 		false,
-		jwt.ValidationErrorSignatureInvalid,
+		[]error{&jwt.InvalidSignatureError{}},
 		nil,
 	},
 	{
@@ -86,7 +96,7 @@ var jwtTestData = []struct {
 		nilKeyFunc,
 		jwt.MapClaims{"foo": "bar"},
 		false,
-		jwt.ValidationErrorUnverifiable,
+		[]error{&jwt.UnverfiableTokenError{}},
 		nil,
 	},
 	{
@@ -95,7 +105,7 @@ var jwtTestData = []struct {
 		emptyKeyFunc,
 		jwt.MapClaims{"foo": "bar"},
 		false,
-		jwt.ValidationErrorSignatureInvalid,
+		[]error{&jwt.InvalidSignatureError{}},
 		nil,
 	},
 	{
@@ -104,7 +114,7 @@ var jwtTestData = []struct {
 		errorKeyFunc,
 		jwt.MapClaims{"foo": "bar"},
 		false,
-		jwt.ValidationErrorUnverifiable,
+		[]error{&jwt.UnverfiableTokenError{}},
 		nil,
 	},
 	{
@@ -113,8 +123,8 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		jwt.MapClaims{"foo": "bar"},
 		false,
-		jwt.ValidationErrorSignatureInvalid,
-		&jwt.Parser{ValidMethods: []string{"HS256"}},
+		[]error{&jwt.InvalidSignatureError{}},
+		jwt.NewParser(jwt.WithValidMethods([]string{"HS256"})),
 	},
 	{
 		"valid signing method",
@@ -122,8 +132,8 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		jwt.MapClaims{"foo": "bar"},
 		true,
-		0,
-		&jwt.Parser{ValidMethods: []string{"RS256", "HS256"}},
+		nil,
+		jwt.NewParser(jwt.WithValidMethods([]string{"RS256", "HS256"})),
 	},
 	{
 		"JSON Number",
@@ -131,19 +141,19 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		jwt.MapClaims{"foo": json.Number("123.4")},
 		true,
-		0,
-		&jwt.Parser{UseJSONNumber: true},
+		nil,
+		jwt.NewParser(jwt.WithJSONNumber()),
 	},
 	{
 		"Standard Claims",
 		"",
 		defaultKeyFunc,
 		&jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(time.Second * 10).Unix(),
+			ExpiresAt: jwt.At(time.Now().Add(time.Second * 10).Truncate(time.Second)),
 		},
 		true,
-		0,
-		&jwt.Parser{UseJSONNumber: true},
+		nil,
+		jwt.NewParser(jwt.WithJSONNumber()),
 	},
 	{
 		"JSON Number - basic expired",
@@ -151,8 +161,8 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		jwt.MapClaims{"foo": "bar", "exp": json.Number(fmt.Sprintf("%v", time.Now().Unix()-100))},
 		false,
-		jwt.ValidationErrorExpired,
-		&jwt.Parser{UseJSONNumber: true},
+		[]error{&jwt.TokenExpiredError{}},
+		jwt.NewParser(jwt.WithJSONNumber()),
 	},
 	{
 		"JSON Number - basic nbf",
@@ -160,8 +170,8 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		jwt.MapClaims{"foo": "bar", "nbf": json.Number(fmt.Sprintf("%v", time.Now().Unix()+100))},
 		false,
-		jwt.ValidationErrorNotValidYet,
-		&jwt.Parser{UseJSONNumber: true},
+		[]error{&jwt.TokenNotValidYetError{}},
+		jwt.NewParser(jwt.WithJSONNumber()),
 	},
 	{
 		"JSON Number - expired and nbf",
@@ -169,8 +179,8 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		jwt.MapClaims{"foo": "bar", "nbf": json.Number(fmt.Sprintf("%v", time.Now().Unix()+100)), "exp": json.Number(fmt.Sprintf("%v", time.Now().Unix()-100))},
 		false,
-		jwt.ValidationErrorNotValidYet | jwt.ValidationErrorExpired,
-		&jwt.Parser{UseJSONNumber: true},
+		[]error{&jwt.TokenExpiredError{}, &jwt.TokenNotValidYetError{}},
+		jwt.NewParser(jwt.WithJSONNumber()),
 	},
 	{
 		"SkipClaimsValidation during token parsing",
@@ -178,8 +188,80 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		jwt.MapClaims{"foo": "bar", "nbf": json.Number(fmt.Sprintf("%v", time.Now().Unix()+100))},
 		true,
-		0,
-		&jwt.Parser{UseJSONNumber: true, SkipClaimsValidation: true},
+		nil,
+		jwt.NewParser(jwt.WithJSONNumber(), jwt.WithoutClaimsValidation()),
+	},
+	{
+		"Audience - Required",
+		"", // autogen
+		defaultKeyFunc,
+		jwt.MapClaims{"aud": []interface{}{"foo", "bar"}},
+		false,
+		[]error{&jwt.InvalidAudienceError{}},
+		jwt.NewParser(),
+	},
+	{
+		"Audience - Ignored",
+		"", // autogen
+		defaultKeyFunc,
+		jwt.MapClaims{"aud": []interface{}{"foo", "bar"}},
+		true,
+		nil,
+		jwt.NewParser(jwt.WithoutAudienceValidation()),
+	},
+	{
+		"Audience - Pass",
+		"", // autogen
+		defaultKeyFunc,
+		jwt.MapClaims{"aud": []interface{}{"foo", "bar"}},
+		true,
+		nil,
+		jwt.NewParser(jwt.WithAudience("foo")),
+	},
+	{
+		"Audience - Fail",
+		"", // autogen
+		defaultKeyFunc,
+		jwt.MapClaims{"aud": []interface{}{"foo", "bar"}},
+		false,
+		[]error{&jwt.InvalidAudienceError{}},
+		jwt.NewParser(jwt.WithAudience("baz")),
+	},
+	{
+		"Issuer - Pass",
+		"", // autogen
+		defaultKeyFunc,
+		jwt.MapClaims{"iss": "foo"},
+		true,
+		nil,
+		jwt.NewParser(jwt.WithIssuer("foo")),
+	},
+	{
+		"Issuer - Fail",
+		"", // autogen
+		defaultKeyFunc,
+		jwt.MapClaims{"iss": "foo"},
+		false,
+		[]error{&jwt.InvalidIssuerError{}},
+		jwt.NewParser(jwt.WithIssuer("bar")),
+	},
+	{
+		"Issuer - Provided but not in claims",
+		"", // autogen
+		defaultKeyFunc,
+		jwt.MapClaims{},
+		false,
+		[]error{&jwt.InvalidIssuerError{}},
+		jwt.NewParser(jwt.WithIssuer("bar")),
+	},
+	{
+		"Issuer - Ignored",
+		"", // autogen
+		defaultKeyFunc,
+		jwt.MapClaims{"iss": "foo"},
+		true,
+		nil,
+		jwt.NewParser(),
 	},
 }
 
@@ -225,19 +307,15 @@ func TestParser_Parse(t *testing.T) {
 			t.Errorf("[%v] Inconsistent behavior between returned error and token.Valid", data.name)
 		}
 
-		if data.errors != 0 {
+		if data.errors != nil {
 			if err == nil {
 				t.Errorf("[%v] Expecting error.  Didn't get one.", data.name)
 			} else {
-
-				ve := err.(*jwt.ValidationError)
-				// compare the bitfield part of the error
-				if e := ve.Errors; e != data.errors {
-					t.Errorf("[%v] Errors don't match expectation.  %v != %v", data.name, e, data.errors)
-				}
-
-				if err.Error() == keyFuncError.Error() && ve.Inner != keyFuncError {
-					t.Errorf("[%v] Inner error does not match expectation.  %v != %v", data.name, ve.Inner, keyFuncError)
+				for _, expected := range data.errors {
+					var xxx error = expected
+					if !xerrors.As(err, &xxx) {
+						t.Errorf("[%v] Error is expected to match type %T but doesn't", data.name, expected)
+					}
 				}
 			}
 		}

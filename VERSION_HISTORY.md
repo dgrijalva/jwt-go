@@ -1,5 +1,28 @@
 ## `jwt-go` Version History
 
+#### 4.0.0
+
+* **Compatibility Breaking Changes**: See MIGRATION_GUIDE.md for tips on updating your code 
+    * Errors have been updated significantly to take advantage of the changes to errors in go1.13/go2/xerrors
+        * The previous 'enum' describing error types has been replaced with unique types for every kind of error
+        * The new error types carry more information and interoperate properly with errors.As
+    * Dropping (official) support for go1.10 or older. Older versions dating back to 1.4 **may** continue to work, but are not being considered or tested against. 1.3 and previous will no longer work with this library.
+    * Behavior of time values has changed significantly, primarily to handle nil values, but also to be more consistent with Go:
+        * All time values used by the library are expressed using time.Time and time.Duration. This includes automatic parsing and encoding of the JWT unix timestamp format. 
+        * `StandardClaims` time values use the new `Time` type, which wraps time.Time to handle things nil values gracefully
+    * The method for describing custom parsing/validating behaviors has changed. The properties exposed on Parser have been replaced with `ParserOption`s. See https://dave.cheney.net/2014/10/17/functional-options-for-friendly-apis for the theory. See `ParserOption` and `SigningOption` for more details
+    * Per the spec, if the `aud` claim is present, it will be automatically validated. See `WithAudience` and `WithoutAudienceValidation`
+    * The `Valid` method on `Claims` now takes an argument, `ValidationHelper`.
+* Added support for Leeway. If you have issues with clock sku between the issuing machine and the consuming machine, you can allow for a grace period. See `WithLeeway`
+* Added support for custom JSON encoder/decoders. See `WithMarshaller` and `WithUnmarshaller`
+* Added support for issuer validation. See `WithIssuer`
+* Updated error messages and comments to comply with linter recommendations
+* Added `KnownKeyfunc` for when you know both the signing method and the key without needing to look at the token Header. This should dramatically simplify many common use cases.
+* Added `ValidationHelper` to make it easier to implement custom Claims types without having to rewrite a bunch of built-in behavior, such as time comparison and leeway. `ValidationHelper` is built with `ParserOptions` and provides the same methods used by built in claims types to handle validation.
+* Added support for `crypto.Signer` on several signing methods. This was a common request.
+* Added new type, `ClaimStrings`, which will correctly handle properties such as `aud` that can be either an array of strings or a single string. `ClaimStrings` is an alias to `[]string`, but with custom decoding behavior. This means all the built in `aud` validation behavior now expects `[]string` instead of `string`. This was a common request.
+
+
 #### 3.2.0
 
 * Added method `ParseUnverified` to allow users to split up the tasks of parsing and validation

@@ -7,19 +7,34 @@ import (
 	"strings"
 )
 
+// Parser is the type used to parse and validate a JWT token from string
 type Parser struct {
-	ValidMethods         []string // If populated, only these methods will be considered valid
-	UseJSONNumber        bool     // Use JSON Number format in JSON decoder
-	SkipClaimsValidation bool     // Skip claims validation during token parsing
+	validMethods         []string          // If populated, only these methods will be considered valid
+	useJSONNumber        bool              // Use JSON Number format in JSON decoder
+	skipClaimsValidation bool              // Skip claims validation during token parsing
+	unmarshaller         TokenUnmarshaller // Use this instead of encoding/json
+	*ValidationHelper
 }
 
-// Parse, validate, and return a token.
+// NewParser returns a new Parser with the specified options
+func NewParser(options ...ParserOption) *Parser {
+	p := &Parser{
+		ValidationHelper: new(ValidationHelper),
+	}
+	for _, option := range options {
+		option(p)
+	}
+	return p
+}
+
+// Parse will parse, validate, and return a token.
 // keyFunc will receive the parsed token and should return the key for validating.
 // If everything is kosher, err will be nil
 func (p *Parser) Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 	return p.ParseWithClaims(tokenString, MapClaims{}, keyFunc)
 }
 
+// ParseWithClaims is just like parse, but with the claims type specified
 func (p *Parser) ParseWithClaims(tokenString string, claims Claims, keyFunc Keyfunc) (*Token, error) {
 	token, parts, err := p.ParseUnverified(tokenString, claims)
 	if err != nil {
@@ -27,10 +42,10 @@ func (p *Parser) ParseWithClaims(tokenString string, claims Claims, keyFunc Keyf
 	}
 
 	// Verify signing method is in the required set
-	if p.ValidMethods != nil {
+	if p.validMethods != nil {
 		var signingMethodValid = false
 		var alg = token.Method.Alg()
-		for _, m := range p.ValidMethods {
+		for _, m := range p.validMethods {
 			if m == alg {
 				signingMethodValid = true
 				break
@@ -38,7 +53,7 @@ func (p *Parser) ParseWithClaims(tokenString string, claims Claims, keyFunc Keyf
 		}
 		if !signingMethodValid {
 			// signing method is not in the listed set
-			return token, NewValidationError(fmt.Sprintf("signing method %v is invalid", alg), ValidationErrorSignatureInvalid)
+			return token, &UnverfiableTokenError{Message: fmt.Sprintf("signing method %v is invalid", alg)}
 		}
 	}
 
@@ -46,71 +61,66 @@ func (p *Parser) ParseWithClaims(tokenString string, claims Claims, keyFunc Keyf
 	var key interface{}
 	if keyFunc == nil {
 		// keyFunc was not provided.  short circuiting validation
-		return token, NewValidationError("no Keyfunc was provided.", ValidationErrorUnverifiable)
+		return token, &UnverfiableTokenError{Message: "no Keyfunc was provided."}
 	}
 	if key, err = keyFunc(token); err != nil {
 		// keyFunc returned an error
-		if ve, ok := err.(*ValidationError); ok {
-			return token, ve
-		}
-		return token, &ValidationError{Inner: err, Errors: ValidationErrorUnverifiable}
+		return token, wrapError(&UnverfiableTokenError{Message: "Keyfunc returned an error"}, err)
 	}
 
-	vErr := &ValidationError{}
-
-	// Validate Claims
-	if !p.SkipClaimsValidation {
-		if err := token.Claims.Valid(); err != nil {
-
-			// If the Claims Valid returned an error, check if it is a validation error,
-			// If it was another error type, create a ValidationError with a generic ClaimsInvalid flag set
-			if e, ok := err.(*ValidationError); !ok {
-				vErr = &ValidationError{Inner: err, Errors: ValidationErrorClaimsInvalid}
-			} else {
-				vErr = e
-			}
-		}
-	}
+	var vErr error
 
 	// Perform validation
 	token.Signature = parts[2]
 	if err = token.Method.Verify(strings.Join(parts[0:2], "."), token.Signature, key); err != nil {
-		vErr.Inner = err
-		vErr.Errors |= ValidationErrorSignatureInvalid
+		vErr = wrapError(&InvalidSignatureError{}, err)
 	}
 
-	if vErr.valid() {
+	// Validate Claims
+	if !p.skipClaimsValidation && vErr == nil {
+		if err := token.Claims.Valid(p.ValidationHelper); err != nil {
+			vErr = wrapError(err, vErr)
+		}
+	}
+
+	if vErr == nil {
 		token.Valid = true
-		return token, nil
 	}
 
 	return token, vErr
 }
 
+// ParseUnverified is used to inspect a token without validating it
 // WARNING: Don't use this method unless you know what you're doing
 //
 // This method parses the token but doesn't validate the signature. It's only
 // ever useful in cases where you know the signature is valid (because it has
 // been checked previously in the stack) and you want to extract values from
-// it.
+// it. Or for debuggery.
 func (p *Parser) ParseUnverified(tokenString string, claims Claims) (token *Token, parts []string, err error) {
 	parts = strings.Split(tokenString, ".")
 	if len(parts) != 3 {
-		return nil, parts, NewValidationError("token contains an invalid number of segments", ValidationErrorMalformed)
+		return nil, parts, &MalformedTokenError{Message: "token contains an invalid number of segments"}
 	}
 
 	token = &Token{Raw: tokenString}
+
+	// choose unmarshaller
+	var unmarshaller = p.unmarshaller
+	if unmarshaller == nil {
+		unmarshaller = p.defaultUnmarshaller
+	}
 
 	// parse Header
 	var headerBytes []byte
 	if headerBytes, err = DecodeSegment(parts[0]); err != nil {
 		if strings.HasPrefix(strings.ToLower(tokenString), "bearer ") {
-			return token, parts, NewValidationError("tokenstring should not contain 'bearer '", ValidationErrorMalformed)
+			return token, parts, &MalformedTokenError{Message: "tokenstring should not contain 'bearer '"}
 		}
-		return token, parts, &ValidationError{Inner: err, Errors: ValidationErrorMalformed}
+		return token, parts, wrapError(&MalformedTokenError{Message: "failed to decode token header"}, err)
 	}
-	if err = json.Unmarshal(headerBytes, &token.Header); err != nil {
-		return token, parts, &ValidationError{Inner: err, Errors: ValidationErrorMalformed}
+	if err = unmarshaller(CodingContext{HeaderFieldDescriptor, nil}, headerBytes, &token.Header); err != nil {
+		return token, parts, wrapError(&MalformedTokenError{Message: "failed to unmarshal token header"}, err)
 	}
 
 	// parse Claims
@@ -118,31 +128,41 @@ func (p *Parser) ParseUnverified(tokenString string, claims Claims) (token *Toke
 	token.Claims = claims
 
 	if claimBytes, err = DecodeSegment(parts[1]); err != nil {
-		return token, parts, &ValidationError{Inner: err, Errors: ValidationErrorMalformed}
-	}
-	dec := json.NewDecoder(bytes.NewBuffer(claimBytes))
-	if p.UseJSONNumber {
-		dec.UseNumber()
+		return token, parts, wrapError(&MalformedTokenError{Message: "failed to decode token claims"}, err)
 	}
 	// JSON Decode.  Special case for map type to avoid weird pointer behavior
+	ctx := CodingContext{ClaimsFieldDescriptor, token.Header}
 	if c, ok := token.Claims.(MapClaims); ok {
-		err = dec.Decode(&c)
+		err = unmarshaller(ctx, claimBytes, &c)
 	} else {
-		err = dec.Decode(&claims)
+		err = unmarshaller(ctx, claimBytes, &claims)
 	}
 	// Handle decode error
 	if err != nil {
-		return token, parts, &ValidationError{Inner: err, Errors: ValidationErrorMalformed}
+		return token, parts, wrapError(&MalformedTokenError{Message: "failed to unmarshal token claims"}, err)
 	}
 
 	// Lookup signature method
 	if method, ok := token.Header["alg"].(string); ok {
 		if token.Method = GetSigningMethod(method); token.Method == nil {
-			return token, parts, NewValidationError("signing method (alg) is unavailable.", ValidationErrorUnverifiable)
+			return token, parts, &UnverfiableTokenError{Message: "signing method (alg) is unavailable."}
 		}
 	} else {
-		return token, parts, NewValidationError("signing method (alg) is unspecified.", ValidationErrorUnverifiable)
+		return token, parts, &UnverfiableTokenError{Message: "signing method (alg) is unspecified."}
 	}
 
 	return token, parts, nil
+}
+
+func (p *Parser) defaultUnmarshaller(ctx CodingContext, data []byte, v interface{}) error {
+	// If we don't need a special parser, use Unmarshal
+	// We never use a special encoder for the header
+	if !p.useJSONNumber || ctx.FieldDescriptor == HeaderFieldDescriptor {
+		return json.Unmarshal(data, v)
+	}
+
+	// To enable the JSONNumber mode, we must use Decoder instead of Unmarshal
+	dec := json.NewDecoder(bytes.NewBuffer(data))
+	dec.UseNumber()
+	return dec.Decode(v)
 }

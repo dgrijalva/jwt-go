@@ -1,9 +1,10 @@
 package jwt_test
 
 import (
-	"github.com/dgrijalva/jwt-go"
 	"strings"
 	"testing"
+
+	"github.com/dgrijalva/jwt-go/v4"
 )
 
 var noneTestData = []struct {

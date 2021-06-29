@@ -1,134 +1,64 @@
 package jwt
 
-import (
-	"crypto/subtle"
-	"fmt"
-	"time"
-)
-
-// For a type to be a Claims object, it must just have a Valid method that determines
+// Claims is the interface used to hold the claims values of a token
+// For a type to be a Claims object, it must have a Valid method that determines
 // if the token is invalid for any supported reason
+// Claims are parsed and encoded using the standard library's encoding/json
+// package. Claims are passed directly to that.
 type Claims interface {
-	Valid() error
+	// A nil validation helper should use the default helper
+	Valid(*ValidationHelper) error
 }
 
-// Structured version of Claims Section, as referenced at
+// StandardClaims is a structured version of Claims Section, as referenced at
 // https://tools.ietf.org/html/rfc7519#section-4.1
 // See examples for how to use this with your own claim types
 type StandardClaims struct {
-	Audience  string `json:"aud,omitempty"`
-	ExpiresAt int64  `json:"exp,omitempty"`
-	Id        string `json:"jti,omitempty"`
-	IssuedAt  int64  `json:"iat,omitempty"`
-	Issuer    string `json:"iss,omitempty"`
-	NotBefore int64  `json:"nbf,omitempty"`
-	Subject   string `json:"sub,omitempty"`
+	Audience  ClaimStrings `json:"aud,omitempty"`
+	ExpiresAt *Time        `json:"exp,omitempty"`
+	ID        string       `json:"jti,omitempty"`
+	IssuedAt  *Time        `json:"iat,omitempty"`
+	Issuer    string       `json:"iss,omitempty"`
+	NotBefore *Time        `json:"nbf,omitempty"`
+	Subject   string       `json:"sub,omitempty"`
 }
 
-// Validates time based claims "exp, iat, nbf".
-// There is no accounting for clock skew.
-// As well, if any of the above claims are not in the token, it will still
-// be considered a valid claim.
-func (c StandardClaims) Valid() error {
-	vErr := new(ValidationError)
-	now := TimeFunc().Unix()
+// Valid validates standard claims using ValidationHelper
+// Validates time based claims "exp, nbf" (see: WithLeeway)
+// Validates "aud" if present in claims. (see: WithAudience, WithoutAudienceValidation)
+// Validates "iss" if option is provided (see: WithIssuer)
+func (c StandardClaims) Valid(h *ValidationHelper) error {
+	var vErr error
 
-	// The claims below are optional, by default, so if they are set to the
-	// default value in Go, let's not fail the verification for them.
-	if c.VerifyExpiresAt(now, false) == false {
-		delta := time.Unix(now, 0).Sub(time.Unix(c.ExpiresAt, 0))
-		vErr.Inner = fmt.Errorf("token is expired by %v", delta)
-		vErr.Errors |= ValidationErrorExpired
+	if h == nil {
+		h = DefaultValidationHelper
 	}
 
-	if c.VerifyIssuedAt(now, false) == false {
-		vErr.Inner = fmt.Errorf("Token used before issued")
-		vErr.Errors |= ValidationErrorIssuedAt
+	if err := h.ValidateExpiresAt(c.ExpiresAt); err != nil {
+		vErr = wrapError(err, vErr)
 	}
 
-	if c.VerifyNotBefore(now, false) == false {
-		vErr.Inner = fmt.Errorf("token is not valid yet")
-		vErr.Errors |= ValidationErrorNotValidYet
+	if err := h.ValidateNotBefore(c.NotBefore); err != nil {
+		vErr = wrapError(err, vErr)
 	}
 
-	if vErr.valid() {
-		return nil
+	if err := h.ValidateAudience(c.Audience); err != nil {
+		vErr = wrapError(err, vErr)
+	}
+
+	if err := h.ValidateIssuer(c.Issuer); err != nil {
+		vErr = wrapError(err, vErr)
 	}
 
 	return vErr
 }
 
-// Compares the aud claim against cmp.
-// If required is false, this method will return true if the value matches or is unset
-func (c *StandardClaims) VerifyAudience(cmp string, req bool) bool {
-	return verifyAud(c.Audience, cmp, req)
+// VerifyAudience compares the aud claim against cmp.
+func (c *StandardClaims) VerifyAudience(h *ValidationHelper, cmp string) error {
+	return h.ValidateAudienceAgainst(c.Audience, cmp)
 }
 
-// Compares the exp claim against cmp.
-// If required is false, this method will return true if the value matches or is unset
-func (c *StandardClaims) VerifyExpiresAt(cmp int64, req bool) bool {
-	return verifyExp(c.ExpiresAt, cmp, req)
-}
-
-// Compares the iat claim against cmp.
-// If required is false, this method will return true if the value matches or is unset
-func (c *StandardClaims) VerifyIssuedAt(cmp int64, req bool) bool {
-	return verifyIat(c.IssuedAt, cmp, req)
-}
-
-// Compares the iss claim against cmp.
-// If required is false, this method will return true if the value matches or is unset
-func (c *StandardClaims) VerifyIssuer(cmp string, req bool) bool {
-	return verifyIss(c.Issuer, cmp, req)
-}
-
-// Compares the nbf claim against cmp.
-// If required is false, this method will return true if the value matches or is unset
-func (c *StandardClaims) VerifyNotBefore(cmp int64, req bool) bool {
-	return verifyNbf(c.NotBefore, cmp, req)
-}
-
-// ----- helpers
-
-func verifyAud(aud string, cmp string, required bool) bool {
-	if aud == "" {
-		return !required
-	}
-	if subtle.ConstantTimeCompare([]byte(aud), []byte(cmp)) != 0 {
-		return true
-	} else {
-		return false
-	}
-}
-
-func verifyExp(exp int64, now int64, required bool) bool {
-	if exp == 0 {
-		return !required
-	}
-	return now <= exp
-}
-
-func verifyIat(iat int64, now int64, required bool) bool {
-	if iat == 0 {
-		return !required
-	}
-	return now >= iat
-}
-
-func verifyIss(iss string, cmp string, required bool) bool {
-	if iss == "" {
-		return !required
-	}
-	if subtle.ConstantTimeCompare([]byte(iss), []byte(cmp)) != 0 {
-		return true
-	} else {
-		return false
-	}
-}
-
-func verifyNbf(nbf int64, now int64, required bool) bool {
-	if nbf == 0 {
-		return !required
-	}
-	return now >= nbf
+// VerifyIssuer compares the iss claim against cmp.
+func (c *StandardClaims) VerifyIssuer(h *ValidationHelper, cmp string) error {
+	return h.ValidateIssuerAgainst(c.Issuer, cmp)
 }

@@ -2,8 +2,11 @@ package jwt_test
 
 import (
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
 	"time"
+
+	"github.com/dgrijalva/jwt-go/v4"
+	"github.com/dgrijalva/jwt-go/v4/test"
+	"golang.org/x/xerrors"
 )
 
 // Example (atypical) using the StandardClaims type by itself to parse a token.
@@ -16,7 +19,7 @@ func ExampleNewWithClaims_standardClaims() {
 
 	// Create the Claims
 	claims := &jwt.StandardClaims{
-		ExpiresAt: 15000,
+		ExpiresAt: jwt.NewTime(15000),
 		Issuer:    "test",
 	}
 
@@ -40,7 +43,7 @@ func ExampleNewWithClaims_customClaimsType() {
 	claims := MyCustomClaims{
 		"bar",
 		jwt.StandardClaims{
-			ExpiresAt: 15000,
+			ExpiresAt: jwt.NewTime(15000),
 			Issuer:    "test",
 		},
 	}
@@ -62,28 +65,19 @@ func ExampleParseWithClaims_customClaimsType() {
 	}
 
 	// sample token is expired.  override time so it parses as valid
-	at(time.Unix(0, 0), func() {
+	test.At(time.Unix(0, 0), func() {
 		token, err := jwt.ParseWithClaims(tokenString, &MyCustomClaims{}, func(token *jwt.Token) (interface{}, error) {
 			return []byte("AllYourBase"), nil
 		})
 
 		if claims, ok := token.Claims.(*MyCustomClaims); ok && token.Valid {
-			fmt.Printf("%v %v", claims.Foo, claims.StandardClaims.ExpiresAt)
+			fmt.Printf("%v %v", claims.Foo, claims.StandardClaims.ExpiresAt.Unix())
 		} else {
 			fmt.Println(err)
 		}
 	})
 
 	// Output: bar 15000
-}
-
-// Override time value for tests.  Restore default value after.
-func at(t time.Time, f func()) {
-	jwt.TimeFunc = func() time.Time {
-		return t
-	}
-	f()
-	jwt.TimeFunc = time.Now
 }
 
 // An example of parsing the error types using bitfield checks
@@ -95,17 +89,19 @@ func ExampleParse_errorChecking() {
 		return []byte("AllYourBase"), nil
 	})
 
+	var uErr *jwt.UnverfiableTokenError
+	var expErr *jwt.TokenExpiredError
+	var nbfErr *jwt.TokenNotValidYetError
+
+	// Use xerrors.Is to see what kind of error(s) occurred
 	if token.Valid {
 		fmt.Println("You look nice today")
-	} else if ve, ok := err.(*jwt.ValidationError); ok {
-		if ve.Errors&jwt.ValidationErrorMalformed != 0 {
-			fmt.Println("That's not even a token")
-		} else if ve.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
-			// Token is either expired or not active yet
-			fmt.Println("Timing is everything")
-		} else {
-			fmt.Println("Couldn't handle this token:", err)
-		}
+	} else if xerrors.As(err, &uErr) {
+		fmt.Println("That's not even a token")
+	} else if xerrors.As(err, &expErr) {
+		fmt.Println("Timing is everything")
+	} else if xerrors.As(err, &nbfErr) {
+		fmt.Println("Timing is everything")
 	} else {
 		fmt.Println("Couldn't handle this token:", err)
 	}

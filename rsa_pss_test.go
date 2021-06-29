@@ -3,14 +3,15 @@
 package jwt_test
 
 import (
+	"crypto"
 	"crypto/rsa"
 	"io/ioutil"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
-	"github.com/dgrijalva/jwt-go/test"
+	"github.com/dgrijalva/jwt-go/v4"
+	"github.com/dgrijalva/jwt-go/v4/test"
 )
 
 var rsaPSSTestData = []struct {
@@ -103,6 +104,7 @@ func TestRSAPSSSaltLengthCompatibility(t *testing.T) {
 		SigningMethodRSA: jwt.SigningMethodPS256.SigningMethodRSA,
 		Options: &rsa.PSSOptions{
 			SaltLength: rsa.PSSSaltLengthEqualsHash,
+			Hash:       crypto.SHA256,
 		},
 	}
 
@@ -111,6 +113,7 @@ func TestRSAPSSSaltLengthCompatibility(t *testing.T) {
 		SigningMethodRSA: jwt.SigningMethodPS256.SigningMethodRSA,
 		Options: &rsa.PSSOptions{
 			SaltLength: rsa.PSSSaltLengthAuto,
+			Hash:       crypto.SHA256,
 		},
 	}
 	if !verify(jwt.SigningMethodPS256, makeToken(ps256SaltLengthEqualsHash)) {
@@ -133,7 +136,7 @@ func TestRSAPSSSaltLengthCompatibility(t *testing.T) {
 func makeToken(method jwt.SigningMethod) string {
 	token := jwt.NewWithClaims(method, jwt.StandardClaims{
 		Issuer:   "example",
-		IssuedAt: time.Now().Unix(),
+		IssuedAt: &jwt.Time{Time: time.Now()},
 	})
 	privateKey := test.LoadRSAPrivateKeyFromDisk("test/sample_key")
 	signed, err := token.SignedString(privateKey)
