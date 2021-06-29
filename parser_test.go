@@ -290,6 +290,8 @@ func TestParser_ParseUnverified(t *testing.T) {
 // Helper method for benchmarking various methods
 func benchmarkSigning(b *testing.B, method jwt.SigningMethod, key interface{}) {
 	t := jwt.New(method)
+	b.ReportAllocs()
+	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			if _, err := t.SignedString(key); err != nil {
