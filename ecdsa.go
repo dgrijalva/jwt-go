@@ -128,18 +128,12 @@ func (m *SigningMethodECDSA) Sign(signingString string, key interface{}) (string
 			keyBytes += 1
 		}
 
-		// We serialize the outpus (r and s) into big-endian byte arrays and pad
+		// We serialize the outputs (r and s) into big-endian byte arrays and pad
 		// them with zeros on the left to make sure the sizes work out. Both arrays
 		// must be keyBytes long, and the output must be 2*keyBytes long.
-		rBytes := r.Bytes()
-		rBytesPadded := make([]byte, keyBytes)
-		copy(rBytesPadded[keyBytes-len(rBytes):], rBytes)
-
-		sBytes := s.Bytes()
-		sBytesPadded := make([]byte, keyBytes)
-		copy(sBytesPadded[keyBytes-len(sBytes):], sBytes)
-
-		out := append(rBytesPadded, sBytesPadded...)
+		out := make([]byte, 2*keyBytes)
+		r.FillBytes(out[0:keyBytes])
+		s.FillBytes(out[keyBytes:])
 
 		return EncodeSegment(out), nil
 	} else {
