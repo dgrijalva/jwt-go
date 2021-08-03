@@ -75,6 +75,53 @@ func TestECDSAVerify(t *testing.T) {
 	}
 }
 
+func TestECDSAVerifyKeyRotation(t *testing.T) {
+	targetName := "Basic ES256"
+	for _, data := range ecdsaTestData {
+		if data.name != targetName {
+			continue
+		}
+
+		var err error
+
+		key, _ := ioutil.ReadFile("test/ec256-public.pem")
+		var ecdsaKey *ecdsa.PublicKey
+		if ecdsaKey, err = jwt.ParseECPublicKeyFromPEM(key); err != nil {
+			t.Errorf("Unable to parse ECDSA public key: %v", err)
+		}
+
+		key, _ = ioutil.ReadFile("test/ec384-public.pem")
+		var invalidKey1 *ecdsa.PublicKey
+		if invalidKey1, err = jwt.ParseECPublicKeyFromPEM(key); err != nil {
+			t.Errorf("Unable to parse ECDSA public key: %v", err)
+		}
+
+		key, _ = ioutil.ReadFile("test/ec512-public.pem")
+		var invalidKey2 *ecdsa.PublicKey
+		if invalidKey2, err = jwt.ParseECPublicKeyFromPEM(key); err != nil {
+			t.Errorf("Unable to parse ECDSA public key: %v", err)
+		}
+
+		parts := strings.Split(data.tokenString, ".")
+
+		method := jwt.GetSigningMethod(data.alg)
+		err = method.Verify(strings.Join(parts[0:2], "."), parts[2], []*ecdsa.PublicKey{invalidKey1, ecdsaKey, invalidKey2})
+		if err != nil {
+			t.Errorf("[%v] Error while verifying key: %v", data.name, err)
+		}
+
+		err = method.Verify(strings.Join(parts[0:2], "."), parts[2], []*ecdsa.PublicKey{})
+		if err == nil {
+			t.Errorf("[%v] Empty key list passed validation", data.name)
+		}
+
+		err = method.Verify(strings.Join(parts[0:2], "."), parts[2], []*ecdsa.PublicKey{invalidKey1, invalidKey2})
+		if err == nil {
+			t.Errorf("[%v] Key list with only invalid keys passed validation", data.name)
+		}
+	}
+}
+
 func TestECDSASign(t *testing.T) {
 	for _, data := range ecdsaTestData {
 		var err error
