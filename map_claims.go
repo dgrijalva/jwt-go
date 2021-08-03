@@ -1,12 +1,11 @@
 package jwt
 
 import (
-	"encoding/json"
+	stdjson "encoding/json"
 	"errors"
-	// "fmt"
 )
 
-// Claims type that uses the map[string]interface{} for JSON decoding
+// MapClaims is a type of Claims that uses the map[string]interface{} for JSON decoding
 // This is the default claims type if you don't supply one
 type MapClaims map[string]interface{}
 
@@ -37,7 +36,7 @@ func (m MapClaims) VerifyExpiresAt(cmp int64, req bool) bool {
 	switch exp := m["exp"].(type) {
 	case float64:
 		return verifyExp(int64(exp), cmp, req)
-	case json.Number:
+	case stdjson.Number:
 		v, _ := exp.Int64()
 		return verifyExp(v, cmp, req)
 	}
@@ -50,7 +49,7 @@ func (m MapClaims) VerifyIssuedAt(cmp int64, req bool) bool {
 	switch iat := m["iat"].(type) {
 	case float64:
 		return verifyIat(int64(iat), cmp, req)
-	case json.Number:
+	case stdjson.Number:
 		v, _ := iat.Int64()
 		return verifyIat(v, cmp, req)
 	}
@@ -70,7 +69,7 @@ func (m MapClaims) VerifyNotBefore(cmp int64, req bool) bool {
 	switch nbf := m["nbf"].(type) {
 	case float64:
 		return verifyNbf(int64(nbf), cmp, req)
-	case json.Number:
+	case stdjson.Number:
 		v, _ := nbf.Int64()
 		return verifyNbf(v, cmp, req)
 	}
