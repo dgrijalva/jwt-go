@@ -35,6 +35,10 @@ func (m MapClaims) VerifyAudience(cmp string, req bool) bool {
 // If required is false, this method will return true if the value matches or is unset
 func (m MapClaims) VerifyExpiresAt(cmp int64, req bool) bool {
 	switch exp := m["exp"].(type) {
+	case int64:
+		return verifyExp(exp, cmp, req)
+	case int:
+		return verifyExp(int64(exp), cmp, req)
 	case float64:
 		return verifyExp(int64(exp), cmp, req)
 	case json.Number:
@@ -48,6 +52,10 @@ func (m MapClaims) VerifyExpiresAt(cmp int64, req bool) bool {
 // If required is false, this method will return true if the value matches or is unset
 func (m MapClaims) VerifyIssuedAt(cmp int64, req bool) bool {
 	switch iat := m["iat"].(type) {
+	case int64:
+		return verifyIat(iat, cmp, req)
+	case int:
+		return verifyIat(int64(iat), cmp, req)
 	case float64:
 		return verifyIat(int64(iat), cmp, req)
 	case json.Number:
@@ -68,6 +76,10 @@ func (m MapClaims) VerifyIssuer(cmp string, req bool) bool {
 // If required is false, this method will return true if the value matches or is unset
 func (m MapClaims) VerifyNotBefore(cmp int64, req bool) bool {
 	switch nbf := m["nbf"].(type) {
+	case int64:
+		return verifyNbf(nbf, cmp, req)
+	case int:
+		return verifyNbf(int64(nbf), cmp, req)
 	case float64:
 		return verifyNbf(int64(nbf), cmp, req)
 	case json.Number:
