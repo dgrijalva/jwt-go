@@ -2,8 +2,9 @@ package jwt_test
 
 import (
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
 	"time"
+
+	"github.com/dgrijalva/jwt-go"
 )
 
 // Example (atypical) using the StandardClaims type by itself to parse a token.
@@ -63,7 +64,12 @@ func ExampleParseWithClaims_customClaimsType() {
 
 	// sample token is expired.  override time so it parses as valid
 	at(time.Unix(0, 0), func() {
-		token, err := jwt.ParseWithClaims(tokenString, &MyCustomClaims{}, func(token *jwt.Token) (interface{}, error) {
+		c := &MyCustomClaims{
+			StandardClaims: jwt.StandardClaims{
+				IatLeeway: 10 * time.Second,
+			},
+		}
+		token, err := jwt.ParseWithClaims(tokenString, c, func(token *jwt.Token) (interface{}, error) {
 			return []byte("AllYourBase"), nil
 		})
 
